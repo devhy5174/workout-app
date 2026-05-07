@@ -1,11 +1,11 @@
 import { Link } from "react-router-dom";
 import { useCharacter } from "../context/CharacterContext";
+import { storage } from "../utils/storage";
+import { calculateStreak, getThisWeekWorkouts } from "../utils/streak";
 
-const streak = 7;
 const steps = 6234;
 const stepGoal = 10000;
-const workoutDays = 3;
-const workoutGoal = 5;
+const workoutGoal = 7;
 const points = 234;
 const pointGoal = 500;
 
@@ -41,8 +41,6 @@ const messages = [
   "넌 할 수 있어, 믿어! 💪",
   "조금만 더! 거의 다 왔어 ✨",
 ];
-const bubbleMsg = messages[streak % messages.length];
-
 function ProgressBar({
   value,
   max,
@@ -67,6 +65,12 @@ export default function Home() {
   const { selectedCharacter } = useCharacter();
   const characterEmoji = selectedCharacter?.emoji ?? "🏃";
   const characterName = selectedCharacter?.name ?? null;
+
+  const history = storage.getWorkoutHistory();
+  const streak = calculateStreak(history);
+  const weekWorkouts = getThisWeekWorkouts(history);
+  const workoutDays = weekWorkouts.filter(Boolean).length;
+  const bubbleMsg = messages[streak % messages.length];
 
   return (
     <div className="flex flex-col h-full overflow-y-auto pb-20 bg-bg">
@@ -174,19 +178,25 @@ export default function Home() {
           />
           {/* 요일 동그라미 */}
           <div className="flex justify-between pt-1">
-            {["월", "화", "수", "목", "금"].map((day, i) => (
-              <div key={day} className="flex flex-col items-center gap-1.5">
-                <div
-                  className={`w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold transition-colors ${
-                    i < workoutDays
-                      ? "bg-primary text-white shadow-sm"
-                      : "border-2 border-gray-100 text-gray-300"
-                  }`}
-                >
-                  {day}
+            {["월", "화", "수", "목", "금", "토", "일"].map((day, i) => {
+              const isWeekendDay = i >= 5;
+              const didWorkout = weekWorkouts[i];
+              return (
+                <div key={day} className="flex flex-col items-center gap-1.5">
+                  <div
+                    className={`w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold transition-colors ${
+                      didWorkout && !isWeekendDay
+                        ? "bg-primary text-white shadow-sm"
+                        : didWorkout && isWeekendDay
+                        ? "border-2 border-yellow-300 bg-yellow-50"
+                        : "border-2 border-gray-100 text-gray-300"
+                    }`}
+                  >
+                    {didWorkout && isWeekendDay ? "⭐" : day}
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
 

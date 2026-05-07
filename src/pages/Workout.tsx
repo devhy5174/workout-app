@@ -122,6 +122,7 @@ export default function Workout() {
 
     const prevKcal = storage.getBurnedKcal() ?? 0;
     storage.setBurnedKcal(prevKcal + currentCalories);
+    storage.addWorkoutToday();
 
     // 식단 저장
     storage.setRecommendedDiet({
