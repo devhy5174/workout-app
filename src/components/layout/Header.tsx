@@ -12,6 +12,7 @@ const pageTitles: Record<string, string> = {
 
 export default function Header() {
   const { pathname } = useLocation();
+  if (pathname === "/workout") return null;
   const title = pageTitles[pathname] ?? "워크아웃";
 
   return (

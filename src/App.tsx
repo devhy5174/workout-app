@@ -8,6 +8,7 @@ import Goal from "./pages/Goal";
 import Diet from "./pages/Diet";
 import Points from "./pages/Points";
 import Settings from "./pages/Settings";
+import Workout from "./pages/Workout";
 
 export default function App() {
   return (
@@ -23,6 +24,7 @@ export default function App() {
             <Route path="/diet" element={<Diet />} />
             <Route path="/points" element={<Points />} />
             <Route path="/settings" element={<Settings />} />
+            <Route path="/workout" element={<Workout />} />
           </Routes>
         </main>
         <BottomNav />

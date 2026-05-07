@@ -1,3 +1,5 @@
+import { Link } from "react-router-dom";
+
 const streak = 7;
 const steps = 6234;
 const stepGoal = 10000;
@@ -78,8 +80,17 @@ export default function Home() {
         </div>
       </div>
 
+      {/* 운동 시작 버튼 */}
+      <Link
+        to="/workout"
+        className="mx-6 mt-5 py-4 rounded-2xl text-white font-extrabold text-center text-base shadow-lg active:scale-95 transition block"
+        style={{ background: "linear-gradient(135deg, var(--color-primary), var(--color-secondary))" }}
+      >
+        🏃 운동 시작하기
+      </Link>
+
       {/* 스탯 카드 */}
-      <div className="mx-4 mt-6 flex flex-col gap-4">
+      <div className="mx-4 mt-5 flex flex-col gap-4">
         {/* 걸음 수 */}
         <div className="bg-white rounded-3xl shadow-sm p-6 flex flex-col gap-3">
           <div className="flex justify-between items-center">
