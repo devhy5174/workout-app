@@ -118,7 +118,20 @@ export default function Home() {
       </div>
 
       {/* 스탯 카드 */}
-      <div className="mx-4 mt-5 flex flex-col gap-4">
+      <div className="mx-4 mt-10 flex flex-col gap-4">
+        {/* 운동 시작 버튼 */}
+        <Link
+          to="/workout"
+          className="py-5 rounded-2xl font-extrabold text-center text-lg active:scale-95 transition block border-2"
+          style={{
+            color: "var(--color-primary)",
+            borderColor: "var(--color-primary)",
+            backgroundColor: "transparent",
+            animation: "border-glow 2.4s ease-in-out infinite",
+          }}
+        >
+          운동 시작하기
+        </Link>
         {/* 걸음 수 */}
         <div className="bg-white rounded-3xl shadow-sm p-6 flex flex-col gap-3">
           <div className="flex justify-between items-center">
@@ -197,20 +210,6 @@ export default function Home() {
             color="bg-gradient-to-r from-accent to-primary"
           />
         </div>
-
-        {/* 운동 시작 버튼 */}
-        <Link
-          to="/workout"
-          className="py-3 rounded-2xl font-extrabold text-center text-sm active:scale-95 transition block border-2"
-          style={{
-            color: "var(--color-primary)",
-            borderColor: "var(--color-primary)",
-            backgroundColor: "transparent",
-            animation: "border-glow 2.4s ease-in-out infinite",
-          }}
-        >
-          🏃 운동 시작하기
-        </Link>
       </div>
 
       {/* 이번주 TOP 3 */}
