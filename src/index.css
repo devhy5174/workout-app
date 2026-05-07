@@ -1,3 +1,41 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  * {
+    font-family: "Nunito", "Nanum Round Gothic", sans-serif;
+  }
+
+  body {
+    background-color: var(--color-bg);
+    color: var(--color-text);
+  }
+
+  /* 🔴 에너지 테마 (기본) */
+  [data-theme="energy"] {
+    --color-primary: #ff5733;
+    --color-secondary: #ff8c42;
+    --color-accent: #ffd93d;
+    --color-bg: #fff8f5;
+    --color-text: #2d2d2d;
+  }
+
+  /* 🟢 네이처 테마 */
+  [data-theme="nature"] {
+    --color-primary: #2ecc71;
+    --color-secondary: #f1c40f;
+    --color-accent: #a8e063;
+    --color-bg: #f5fff8;
+    --color-text: #2d2d2d;
+  }
+
+  /* 🔵 코스모 테마 */
+  [data-theme="cosmo"] {
+    --color-primary: #5b6cf9;
+    --color-secondary: #a855f7;
+    --color-accent: #818cf8;
+    --color-bg: #f5f5ff;
+    --color-text: #2d2d2d;
+  }
+}
