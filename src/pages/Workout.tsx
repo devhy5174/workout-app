@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useCharacter } from "../context/CharacterContext";
+import { storage } from "../utils/storage";
 
 // ── 캐릭터별 추천 식단 (더미) ───────────────────
 const DIET_BY_CHARACTER: Record<
@@ -107,9 +108,30 @@ export default function Workout() {
   const durationLabel =
     elapsedMin > 0 ? `${elapsedMin}분 ${elapsedSec}초` : `${elapsedSec}초`;
 
+  const charDiet = selectedCharacter
+    ? DIET_BY_CHARACTER[selectedCharacter.id]
+    : null;
+  const durationDiet =
+    elapsedMin >= 30 ? DIET_BY_DURATION.protein : DIET_BY_DURATION.light;
+
+  const handleShowModal = () => {
+    storage.setRecommendedDiet({
+      durationLabel:
+        elapsedMin >= 30
+          ? "⏱ 30분 이상 운동 — 단백질 보충 필요!"
+          : "⏱ 30분 미만 운동 — 가벼운 식단 추천",
+      durationMeals: durationDiet.meals,
+      characterEmoji: selectedCharacter?.emoji,
+      characterName: selectedCharacter?.name,
+      characterMeals: charDiet?.meals,
+      tip: charDiet?.tip,
+    });
+    setShowModal(true);
+  };
+
   const handleStop = () => {
     setState("paused");
-    setShowModal(true);
+    handleShowModal();
   };
 
   // 링 위 캐릭터 위치 계산 (12시 방향에서 시작)
@@ -348,7 +370,7 @@ export default function Workout() {
           )}
           {state === "done" && (
             <button
-              onClick={() => setShowModal(true)}
+              onClick={handleShowModal}
               className="flex-1 py-4 rounded-2xl text-white font-extrabold shadow-md active:scale-95 transition"
               style={{
                 background:
@@ -434,15 +456,7 @@ export default function Workout() {
             </div>
 
             {/* 추천 식단 섹션 */}
-            {(() => {
-              const charDiet = selectedCharacter
-                ? DIET_BY_CHARACTER[selectedCharacter.id]
-                : null;
-              const durationDiet =
-                elapsedMin >= 30
-                  ? DIET_BY_DURATION.protein
-                  : DIET_BY_DURATION.light;
-              return (
+            {(
                 <div className="px-6 pb-2">
                   <div
                     className="rounded-2xl p-4"
@@ -499,8 +513,7 @@ export default function Workout() {
                     )}
                   </div>
                 </div>
-              );
-            })()}
+            )}
 
             {/* 홈으로 가기 버튼 */}
             <div className="px-6 py-4">

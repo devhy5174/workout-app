@@ -7,7 +7,17 @@ const KEYS = {
   LANGUAGE: "language",
   STEPS: "steps",
   POINTS: "points",
+  RECOMMENDED_DIET: "recommended_diet",
 } as const;
+
+export type RecommendedDiet = {
+  durationLabel: string;
+  durationMeals: { emoji: string; name: string }[];
+  characterEmoji?: string;
+  characterName?: string;
+  characterMeals?: { emoji: string; name: string }[];
+  tip?: string;
+};
 
 export const storage = {
   get: (key: keyof typeof KEYS) => localStorage.getItem(KEYS[key]),
@@ -16,4 +26,17 @@ export const storage = {
     localStorage.setItem(KEYS[key], value),
 
   remove: (key: keyof typeof KEYS) => localStorage.removeItem(KEYS[key]),
+
+  getRecommendedDiet: (): RecommendedDiet | null => {
+    const raw = localStorage.getItem(KEYS.RECOMMENDED_DIET);
+    if (!raw) return null;
+    try {
+      return JSON.parse(raw) as RecommendedDiet;
+    } catch {
+      return null;
+    }
+  },
+
+  setRecommendedDiet: (diet: RecommendedDiet) =>
+    localStorage.setItem(KEYS.RECOMMENDED_DIET, JSON.stringify(diet)),
 };

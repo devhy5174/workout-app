@@ -1,7 +1,7 @@
+import { storage, RecommendedDiet } from "../utils/storage";
+
 const todayKcal = 870;
 const kcalGoal = 2000;
-const todaySteps = 6234;
-const characterType = "워커";
 
 const meals = [
   { time: "아침", emoji: "🌄", items: ["오트밀", "바나나", "우유"], kcal: 350 },
@@ -15,35 +15,20 @@ const dinnerRecommend = [
   { name: "그릭요거트", emoji: "🥛", kcal: 100 },
 ];
 
-const stepRecommend = {
-  title: `오늘 ${todaySteps.toLocaleString()}보 걸었어요!`,
-  tag: "단백질 보충 추천",
-  items: ["닭가슴살 샐러드", "두부 된장국", "삶은계란 2개"],
-  emoji: "🏃",
+const DEFAULT_DIET: RecommendedDiet = {
+  durationLabel: "오늘 운동 기록이 없어요",
+  durationMeals: [
+    { emoji: "🥗", name: "채소 샐러드" },
+    { emoji: "🍚", name: "현미밥" },
+    { emoji: "🐟", name: "생선구이" },
+  ],
+  tip: "균형 잡힌 한 끼로 하루를 마무리해요.",
 };
-
-const characterRecommend: Record<string, { desc: string; items: string[]; emoji: string }> = {
-  워커: {
-    desc: "꾸준한 산책엔 가벼운 식단이 딱!",
-    items: ["현미밥 + 나물반찬", "두유 한 잔", "과일 한 조각"],
-    emoji: "🚶",
-  },
-  스프린터: {
-    desc: "고강도 운동 후엔 탄수화물 충전!",
-    items: ["바나나 + 프로틴쉐이크", "현미밥 + 닭가슴살", "초코우유"],
-    emoji: "🏃",
-  },
-  요가마스터: {
-    desc: "몸의 균형을 위한 식단을 추천해요",
-    items: ["그릭요거트 + 견과류", "아보카도 토스트", "그린스무디"],
-    emoji: "🧘",
-  },
-};
-
-const myCharRec = characterRecommend[characterType] ?? characterRecommend["워커"];
 
 export default function Diet() {
   const kcalPct = Math.min((todayKcal / kcalGoal) * 100, 100);
+  const diet = storage.getRecommendedDiet() ?? DEFAULT_DIET;
+  const hasWorkout = storage.getRecommendedDiet() !== null;
 
   return (
     <div className="flex flex-col gap-4 px-4 pt-5 pb-20 h-full overflow-y-auto bg-bg">
@@ -112,47 +97,77 @@ export default function Diet() {
       {/* 운동 후 알림 배너 */}
       <div className="rounded-2xl bg-gradient-to-r from-primary to-secondary p-4 flex items-center gap-3">
         <span className="text-2xl">💪</span>
-        <p className="text-white font-bold text-sm">운동 후 30분 이내 단백질을 섭취하세요!</p>
+        <p className="text-white font-bold text-sm">
+          {hasWorkout
+            ? "운동 후 30분 이내 단백질을 섭취하세요!"
+            : "오늘 운동하고 맞춤 식단을 받아보세요!"}
+        </p>
       </div>
 
-      {/* 운동량 기반 추천 */}
+      {/* 운동 후 추천 식단 */}
       <div className="bg-white rounded-3xl shadow-sm p-5 flex flex-col gap-3">
-        <div className="flex items-center gap-2">
-          <span className="text-xl">{stepRecommend.emoji}</span>
-          <div>
-            <p className="font-bold text-gray-800 text-sm">{stepRecommend.title}</p>
+        <div className="flex items-center justify-between">
+          <p className="font-extrabold text-gray-800 text-sm">
+            {hasWorkout ? "운동 후 추천 식단 🥗" : "기본 추천 식단 🥗"}
+          </p>
+          {hasWorkout && (
             <span className="text-xs font-bold text-primary bg-primary-light rounded-full px-2 py-0.5">
-              {stepRecommend.tag}
+              오늘 운동 기반
             </span>
-          </div>
+          )}
         </div>
-        <div className="flex flex-col gap-1.5">
-          {stepRecommend.items.map((item) => (
-            <div key={item} className="flex items-center gap-2">
-              <div className="w-1.5 h-1.5 rounded-full bg-primary flex-shrink-0" />
-              <p className="text-sm text-gray-600">{item}</p>
-            </div>
-          ))}
-        </div>
-      </div>
 
-      {/* 캐릭터 유형 추천 */}
-      <div className="bg-white rounded-3xl shadow-sm p-5 flex flex-col gap-3">
-        <div className="flex items-center gap-2">
-          <span className="text-xl">{myCharRec.emoji}</span>
-          <div>
-            <p className="text-xs text-gray-400 font-semibold">{characterType} 맞춤 추천</p>
-            <p className="font-bold text-gray-800 text-sm">{myCharRec.desc}</p>
+        {/* 운동 시간 기준 */}
+        <div>
+          <p className="text-[11px] text-gray-400 font-semibold mb-2">
+            {diet.durationLabel}
+          </p>
+          <div className="flex gap-2 flex-wrap">
+            {diet.durationMeals.map((m) => (
+              <span
+                key={m.name}
+                className="flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-bold bg-gray-50 border border-gray-100"
+              >
+                {m.emoji} {m.name}
+              </span>
+            ))}
           </div>
         </div>
-        <div className="flex flex-col gap-1.5">
-          {myCharRec.items.map((item) => (
-            <div key={item} className="flex items-center gap-2">
-              <div className="w-1.5 h-1.5 rounded-full bg-secondary flex-shrink-0" />
-              <p className="text-sm text-gray-600">{item}</p>
+
+        {/* 캐릭터 맞춤 식단 */}
+        {diet.characterMeals && diet.characterName && (
+          <div className="border-t border-gray-50 pt-3">
+            <p className="text-[11px] text-gray-400 font-semibold mb-2">
+              {diet.characterEmoji} {diet.characterName} 맞춤 식단
+            </p>
+            <div className="flex gap-2 flex-wrap mb-2">
+              {diet.characterMeals.map((m) => (
+                <span
+                  key={m.name}
+                  className="flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-bold text-white"
+                  style={{
+                    background:
+                      "linear-gradient(135deg, var(--color-primary), var(--color-secondary))",
+                  }}
+                >
+                  {m.emoji} {m.name}
+                </span>
+              ))}
             </div>
-          ))}
-        </div>
+            {diet.tip && (
+              <p className="text-[11px] text-gray-400 leading-snug">
+                💡 {diet.tip}
+              </p>
+            )}
+          </div>
+        )}
+
+        {/* 기본 식단 tip */}
+        {!hasWorkout && DEFAULT_DIET.tip && (
+          <p className="text-[11px] text-gray-400 leading-snug">
+            💡 {DEFAULT_DIET.tip}
+          </p>
+        )}
       </div>
     </div>
   );
