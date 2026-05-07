@@ -1,4 +1,5 @@
 import { storage, RecommendedDiet } from "../utils/storage";
+import { useCharacter } from "../context/CharacterContext";
 
 const todayKcal = 870;
 const kcalGoal = 2000;
@@ -27,8 +28,10 @@ const DEFAULT_DIET: RecommendedDiet = {
 
 export default function Diet() {
   const kcalPct = Math.min((todayKcal / kcalGoal) * 100, 100);
-  const diet = storage.getRecommendedDiet() ?? DEFAULT_DIET;
-  const hasWorkout = storage.getRecommendedDiet() !== null;
+  const { selectedCharacter } = useCharacter();
+  const savedDiet = storage.getRecommendedDiet();
+  const hasWorkout = savedDiet !== null;
+  const diet = savedDiet ?? DEFAULT_DIET;
 
   return (
     <div className="flex flex-col gap-4 px-4 pt-5 pb-20 h-full overflow-y-auto bg-bg">
@@ -94,36 +97,111 @@ export default function Diet() {
         );
       })}
 
-      {/* 운동 후 알림 배너 */}
+      {/* 배너 */}
       <div className="rounded-2xl bg-gradient-to-r from-primary to-secondary p-4 flex items-center gap-3">
         <span className="text-2xl">💪</span>
         <p className="text-white font-bold text-sm">
           {hasWorkout
             ? "운동 후 30분 이내 단백질을 섭취하세요!"
+            : selectedCharacter
+            ? `${selectedCharacter.emoji} 오늘 운동하면 ${selectedCharacter.name} 맞춤 식단을 받아요!`
             : "오늘 운동하고 맞춤 식단을 받아보세요!"}
         </p>
       </div>
 
-      {/* 운동 후 추천 식단 */}
-      <div className="bg-white rounded-3xl shadow-sm p-5 flex flex-col gap-3">
-        <div className="flex items-center justify-between">
-          <p className="font-extrabold text-gray-800 text-sm">
-            {hasWorkout ? "운동 후 추천 식단 🥗" : "기본 추천 식단 🥗"}
-          </p>
-          {hasWorkout && (
+      {/* 운동 후 추천 식단 (운동 완료 시) */}
+      {hasWorkout && (
+        <div className="bg-white rounded-3xl shadow-sm p-5 flex flex-col gap-3">
+          <div className="flex items-center justify-between">
+            <p className="font-extrabold text-gray-800 text-sm">운동 후 추천 식단 🥗</p>
             <span className="text-xs font-bold text-primary bg-primary-light rounded-full px-2 py-0.5">
               오늘 운동 기반
             </span>
+          </div>
+
+          <div>
+            <p className="text-[11px] text-gray-400 font-semibold mb-2">
+              {diet.durationLabel}
+            </p>
+            <div className="flex gap-2 flex-wrap">
+              {diet.durationMeals.map((m) => (
+                <span
+                  key={m.name}
+                  className="flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-bold bg-gray-50 border border-gray-100"
+                >
+                  {m.emoji} {m.name}
+                </span>
+              ))}
+            </div>
+          </div>
+
+          {diet.characterMeals && diet.characterName && (
+            <div className="border-t border-gray-50 pt-3">
+              <p className="text-[11px] text-gray-400 font-semibold mb-2">
+                {diet.characterEmoji} {diet.characterName} 맞춤 식단
+              </p>
+              <div className="flex gap-2 flex-wrap mb-2">
+                {diet.characterMeals.map((m) => (
+                  <span
+                    key={m.name}
+                    className="flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-bold text-white"
+                    style={{
+                      background:
+                        "linear-gradient(135deg, var(--color-primary), var(--color-secondary))",
+                    }}
+                  >
+                    {m.emoji} {m.name}
+                  </span>
+                ))}
+              </div>
+              {diet.tip && (
+                <p className="text-[11px] text-gray-400 leading-snug">💡 {diet.tip}</p>
+              )}
+            </div>
           )}
         </div>
+      )}
 
-        {/* 운동 시간 기준 */}
-        <div>
-          <p className="text-[11px] text-gray-400 font-semibold mb-2">
-            {diet.durationLabel}
-          </p>
+      {/* 캐릭터 맞춤 식단 (운동 전 / 캐릭터 선택 시) */}
+      {!hasWorkout && selectedCharacter && (
+        <div className="bg-white rounded-3xl shadow-sm p-5 flex flex-col gap-3">
+          <div className="flex items-center gap-2">
+            <span className="text-2xl">{selectedCharacter.emoji}</span>
+            <div>
+              <p className="text-xs text-gray-400 font-semibold">
+                {selectedCharacter.name} 맞춤 추천
+              </p>
+              <p className="font-bold text-gray-800 text-sm">
+                {selectedCharacter.dietProfile.description}
+              </p>
+            </div>
+          </div>
           <div className="flex gap-2 flex-wrap">
-            {diet.durationMeals.map((m) => (
+            {selectedCharacter.dietProfile.recommendedFoods.map((food) => (
+              <span
+                key={food}
+                className="px-3 py-1.5 rounded-full text-xs font-bold text-white"
+                style={{
+                  background:
+                    "linear-gradient(135deg, var(--color-primary), var(--color-secondary))",
+                }}
+              >
+                {food}
+              </span>
+            ))}
+          </div>
+          <p className="text-[11px] text-gray-400 leading-snug">
+            💡 {selectedCharacter.dietProfile.mealTip}
+          </p>
+        </div>
+      )}
+
+      {/* 기본 추천 식단 (운동 없음 + 캐릭터 없음) */}
+      {!hasWorkout && !selectedCharacter && (
+        <div className="bg-white rounded-3xl shadow-sm p-5 flex flex-col gap-3">
+          <p className="font-extrabold text-gray-800 text-sm">기본 추천 식단 🥗</p>
+          <div className="flex gap-2 flex-wrap">
+            {DEFAULT_DIET.durationMeals.map((m) => (
               <span
                 key={m.name}
                 className="flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-bold bg-gray-50 border border-gray-100"
@@ -132,43 +210,11 @@ export default function Diet() {
               </span>
             ))}
           </div>
-        </div>
-
-        {/* 캐릭터 맞춤 식단 */}
-        {diet.characterMeals && diet.characterName && (
-          <div className="border-t border-gray-50 pt-3">
-            <p className="text-[11px] text-gray-400 font-semibold mb-2">
-              {diet.characterEmoji} {diet.characterName} 맞춤 식단
-            </p>
-            <div className="flex gap-2 flex-wrap mb-2">
-              {diet.characterMeals.map((m) => (
-                <span
-                  key={m.name}
-                  className="flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-bold text-white"
-                  style={{
-                    background:
-                      "linear-gradient(135deg, var(--color-primary), var(--color-secondary))",
-                  }}
-                >
-                  {m.emoji} {m.name}
-                </span>
-              ))}
-            </div>
-            {diet.tip && (
-              <p className="text-[11px] text-gray-400 leading-snug">
-                💡 {diet.tip}
-              </p>
-            )}
-          </div>
-        )}
-
-        {/* 기본 식단 tip */}
-        {!hasWorkout && DEFAULT_DIET.tip && (
           <p className="text-[11px] text-gray-400 leading-snug">
             💡 {DEFAULT_DIET.tip}
           </p>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 }
