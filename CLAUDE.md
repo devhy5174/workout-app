@@ -43,3 +43,10 @@ src/
 
 - .env에 Supabase 키 관리 (아직 미연결)
 - SUPABASE_SERVICE_KEY는 절대 프론트에 넣지 말것
+
+## 개발 규칙
+
+- 모든 이미지에 alt 텍스트 필수
+- 버튼에 aria-label 추가
+- 색상 대비 충분히 (밝은 배경에 흰글씨 금지)
+- 터치 영역 최소 44px 이상
