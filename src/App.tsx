@@ -1,9 +1,30 @@
-function App() {
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import Header from "./components/layout/Header";
+import BottomNav from "./components/layout/BottomNav";
+import Home from "./pages/Home";
+import Character from "./pages/Character";
+import Party from "./pages/Party";
+import Goal from "./pages/Goal";
+import Diet from "./pages/Diet";
+import Settings from "./pages/Settings";
+
+export default function App() {
   return (
-    <div className="min-h-screen bg-gray-100">
-      <h1 className="text-3xl font-bold text-center p-8">workout app</h1>
-    </div>
+    <BrowserRouter>
+      <div className="min-h-screen bg-gray-50 flex flex-col max-w-md mx-auto">
+        <Header />
+        <main className="flex-1 overflow-y-auto pb-20">
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/character" element={<Character />} />
+            <Route path="/party" element={<Party />} />
+            <Route path="/goal" element={<Goal />} />
+            <Route path="/diet" element={<Diet />} />
+            <Route path="/settings" element={<Settings />} />
+          </Routes>
+        </main>
+        <BottomNav />
+      </div>
+    </BrowserRouter>
   );
 }
-
-export default App;
