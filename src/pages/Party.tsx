@@ -157,10 +157,15 @@ function PartyCard({
         </div>
         <div className="flex-1 min-w-0">
           <p className="font-extrabold text-gray-800">{party.name}</p>
-          <p className="text-xs text-gray-400 mt-0.5 line-clamp-1">{party.description}</p>
+          <p className="text-xs text-gray-400 mt-0.5 line-clamp-1">
+            {party.description}
+          </p>
           <div className="flex flex-wrap gap-1 mt-2">
             {party.tags.map((t) => (
-              <span key={t} className="text-[10px] bg-gray-100 text-gray-500 rounded-full px-2 py-0.5 font-semibold">
+              <span
+                key={t}
+                className="text-[10px] bg-gray-100 text-gray-500 rounded-full px-2 py-0.5 font-semibold"
+              >
                 #{t}
               </span>
             ))}
@@ -197,7 +202,9 @@ function PartyCard({
           <span className="text-base">👑</span>
           <div>
             <p className="text-[10px] text-gray-400">파티장</p>
-            <p className="text-xs font-bold text-gray-700 truncate">{party.leader}</p>
+            <p className="text-xs font-bold text-gray-700 truncate">
+              {party.leader}
+            </p>
           </div>
         </div>
       </div>
@@ -231,7 +238,13 @@ function PartyCard({
   );
 }
 
-function RankingModal({ party, onClose }: { party: Party; onClose: () => void }) {
+function RankingModal({
+  party,
+  onClose,
+}: {
+  party: Party;
+  onClose: () => void;
+}) {
   return (
     <div
       className="fixed inset-0 bg-black/40 z-50 flex items-end justify-center"
@@ -245,20 +258,29 @@ function RankingModal({ party, onClose }: { party: Party; onClose: () => void })
           <p className="font-extrabold text-gray-800 text-lg">
             {party.emoji} {party.name} 랭킹
           </p>
-          <button onClick={onClose} className="text-gray-400 text-xl font-bold">✕</button>
+          <button onClick={onClose} className="text-gray-400 text-xl font-bold">
+            ✕
+          </button>
         </div>
         <div className="flex flex-col gap-3">
-          {party.topMembers.map((m, i) => (
-            <div key={m.nickname} className="flex items-center gap-3 bg-gray-50 rounded-2xl px-4 py-3">
+          {party.topMembers.map((m) => (
+            <div
+              key={m.nickname}
+              className="flex items-center gap-3 bg-gray-50 rounded-2xl px-4 py-3"
+            >
               <span className="text-2xl w-8 text-center">{m.emoji}</span>
-              <p className="flex-1 font-bold text-gray-700 text-sm">{m.nickname}</p>
+              <p className="flex-1 font-bold text-gray-700 text-sm">
+                {m.nickname}
+              </p>
               <p className="text-xs font-extrabold text-primary">
                 {m.steps.toLocaleString()} 보
               </p>
             </div>
           ))}
         </div>
-        <p className="text-xs text-gray-400 text-center">이번 주 누적 걸음 수 기준</p>
+        <p className="text-xs text-gray-400 text-center">
+          이번 주 누적 걸음 수 기준
+        </p>
       </div>
     </div>
   );
@@ -285,7 +307,12 @@ export default function Party() {
 
       {/* 탭 */}
       <div className="mx-4 flex bg-white rounded-2xl shadow-sm p-1">
-        {([["neighbor", "동네 파티"], ["mine", "내 파티"]] as const).map(([key, label]) => (
+        {(
+          [
+            ["neighbor", "동네 파티"],
+            ["mine", "내 파티"],
+          ] as const
+        ).map(([key, label]) => (
           <button
             key={key}
             onClick={() => setTab(key)}
@@ -325,7 +352,10 @@ export default function Party() {
 
       {/* 랭킹 모달 */}
       {rankingParty && (
-        <RankingModal party={rankingParty} onClose={() => setRankingParty(null)} />
+        <RankingModal
+          party={rankingParty}
+          onClose={() => setRankingParty(null)}
+        />
       )}
     </div>
   );
