@@ -15,7 +15,7 @@ export default function App() {
     <BrowserRouter>
       <div className="h-screen bg-gray-50 flex flex-col max-w-md mx-auto">
         <Header />
-        <main className="flex-1 overflow-hidden">
+        <main className="flex-1 overflow-y-auto">
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/character" element={<Character />} />

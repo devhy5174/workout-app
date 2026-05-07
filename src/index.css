@@ -2,6 +2,15 @@
 @tailwind components;
 @tailwind utilities;
 
+@keyframes border-glow {
+  0%, 100% {
+    box-shadow: 0 0 0 0 transparent;
+  }
+  50% {
+    box-shadow: 0 0 10px 3px var(--color-primary), inset 0 0 6px 0 var(--color-primary-light);
+  }
+}
+
 @layer base {
   * {
     font-family: "Nunito", "Nanum Round Gothic", sans-serif;

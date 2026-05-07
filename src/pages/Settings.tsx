@@ -23,7 +23,9 @@ export default function Settings() {
               key={t.value}
               onClick={() => setTheme(t.value)}
               className={`flex-1 flex flex-col items-center gap-2 rounded-xl py-3 border-2 transition ${
-                theme === t.value ? "border-[var(--color-primary)]" : "border-transparent"
+                theme === t.value
+                  ? "border-[var(--color-primary)]"
+                  : "border-transparent"
               }`}
             >
               <span className={`w-8 h-8 rounded-full ${t.color}`} />
@@ -34,8 +36,18 @@ export default function Settings() {
       </div>
 
       <div className="w-full rounded-2xl bg-white shadow divide-y">
-        {["알림 설정", "언어 설정", "계정 정보", "앱 정보"].map((item) => (
-          <button key={item} className="w-full text-left px-5 py-4 text-gray-700 hover:bg-gray-50 transition">
+        {[
+          "알림 설정",
+          "언어 설정",
+          "계정 정보",
+          "앱 정보",
+          "개인정보 처리방침",
+          "이용약관",
+        ].map((item) => (
+          <button
+            key={item}
+            className="w-full text-left px-5 py-4 text-gray-700 hover:bg-gray-50 transition"
+          >
             {item}
           </button>
         ))}

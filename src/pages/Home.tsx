@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { useCharacter } from "../context/CharacterContext";
 
 const streak = 7;
 const steps = 6234;
@@ -7,6 +8,33 @@ const workoutDays = 3;
 const workoutGoal = 5;
 const points = 234;
 const pointGoal = 500;
+
+const weeklyTop3 = [
+  {
+    rank: 1,
+    name: "번개맨",
+    steps: 18430,
+    medal: "🥇",
+    bgColor: "#fefce8",
+    textColor: "#ca8a04",
+  },
+  {
+    rank: 2,
+    name: "달리기왕",
+    steps: 15220,
+    medal: "🥈",
+    bgColor: "#f9fafb",
+    textColor: "#6b7280",
+  },
+  {
+    rank: 3,
+    name: "산책러",
+    steps: 12870,
+    medal: "🥉",
+    bgColor: "#fff7ed",
+    textColor: "#fb923c",
+  },
+];
 
 const messages = [
   "오늘도 같이 달려보자구! 🔥",
@@ -36,6 +64,10 @@ function ProgressBar({
 }
 
 export default function Home() {
+  const { selectedCharacter } = useCharacter();
+  const characterEmoji = selectedCharacter?.emoji ?? "🏃";
+  const characterName = selectedCharacter?.name ?? null;
+
   return (
     <div className="flex flex-col h-full overflow-y-auto pb-20 bg-bg">
       {/* 상단 Streak */}
@@ -69,8 +101,13 @@ export default function Home() {
         {/* 캐릭터 이미지 */}
         <div className="relative mt-4">
           <div className="w-44 h-44 rounded-full bg-gradient-to-br from-primary to-secondary shadow-xl flex items-center justify-center">
-            <span className="text-8xl select-none">🏃</span>
+            <span className="text-8xl select-none">{characterEmoji}</span>
           </div>
+          {characterName && (
+            <span className="absolute -bottom-6 left-1/2 -translate-x-1/2 text-xs font-bold text-primary whitespace-nowrap">
+              {characterName}
+            </span>
+          )}
           <span className="absolute top-1 right-3 text-xl animate-bounce">
             ✨
           </span>
@@ -80,22 +117,12 @@ export default function Home() {
         </div>
       </div>
 
-      {/* 운동 시작 버튼 */}
-      <Link
-        to="/workout"
-        className="mx-6 mt-5 py-4 rounded-2xl text-white font-extrabold text-center text-base shadow-lg active:scale-95 transition block"
-        style={{ background: "linear-gradient(135deg, var(--color-primary), var(--color-secondary))" }}
-      >
-        🏃 운동 시작하기
-      </Link>
-
       {/* 스탯 카드 */}
       <div className="mx-4 mt-5 flex flex-col gap-4">
         {/* 걸음 수 */}
         <div className="bg-white rounded-3xl shadow-sm p-6 flex flex-col gap-3">
           <div className="flex justify-between items-center">
             <div className="flex items-center gap-2">
-              <span className="text-xl">👟</span>
               <span className="font-bold text-gray-700">걸음 수</span>
             </div>
             <span className="font-extrabold text-primary">
@@ -117,7 +144,6 @@ export default function Home() {
         <div className="bg-white rounded-3xl shadow-sm p-6 flex flex-col gap-3">
           <div className="flex justify-between items-center">
             <div className="flex items-center gap-2">
-              <span className="text-xl">🏋️</span>
               <span className="font-bold text-gray-700">이번주 운동</span>
             </div>
             <span className="font-extrabold text-primary">
@@ -155,7 +181,6 @@ export default function Home() {
         <div className="bg-white rounded-3xl shadow-sm p-6 flex flex-col gap-3">
           <div className="flex justify-between items-center">
             <div className="flex items-center gap-2">
-              <span className="text-xl">💰</span>
               <span className="font-bold text-gray-700">포인트 저금</span>
             </div>
             <span className="font-extrabold text-primary">
@@ -171,6 +196,55 @@ export default function Home() {
             max={pointGoal}
             color="bg-gradient-to-r from-accent to-primary"
           />
+        </div>
+
+        {/* 운동 시작 버튼 */}
+        <Link
+          to="/workout"
+          className="py-3 rounded-2xl font-extrabold text-center text-sm active:scale-95 transition block border-2"
+          style={{
+            color: "var(--color-primary)",
+            borderColor: "var(--color-primary)",
+            backgroundColor: "transparent",
+            animation: "border-glow 2.4s ease-in-out infinite",
+          }}
+        >
+          🏃 운동 시작하기
+        </Link>
+      </div>
+
+      {/* 이번주 TOP 3 */}
+      <div className="mx-4 mt-6 bg-white rounded-3xl shadow-sm">
+        <div className="px-5 py-3 flex items-center gap-2 border-b border-gray-50">
+          <span className="text-lg">🏆</span>
+          <span className="font-extrabold text-gray-700 text-sm">
+            이번주 TOP 3
+          </span>
+        </div>
+        <div className="flex flex-col">
+          {weeklyTop3.map((user) => (
+            <div
+              key={user.rank}
+              className="flex items-center gap-4 px-5 py-3.5"
+              style={{ backgroundColor: user.bgColor }}
+            >
+              <span className="text-2xl w-8 text-center">{user.medal}</span>
+              <div className="flex-1 min-w-0">
+                <p className="font-bold text-gray-800 text-sm truncate">
+                  {user.name}
+                </p>
+                <p
+                  className="text-xs font-semibold"
+                  style={{ color: user.textColor }}
+                >
+                  {user.steps.toLocaleString()} 걸음
+                </p>
+              </div>
+              <span className="text-xs font-extrabold text-gray-300">
+                #{user.rank}
+              </span>
+            </div>
+          ))}
         </div>
       </div>
 

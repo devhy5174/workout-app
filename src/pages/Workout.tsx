@@ -1,5 +1,72 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useCharacter } from "../context/CharacterContext";
+
+// ── 캐릭터별 추천 식단 (더미) ───────────────────
+const DIET_BY_CHARACTER: Record<
+  number,
+  { meals: { emoji: string; name: string }[]; tip: string }
+> = {
+  1: {
+    meals: [
+      { emoji: "🍚", name: "현미밥" },
+      { emoji: "🥬", name: "나물반찬" },
+    ],
+    tip: "산책 후 가볍게 식이섬유를 채워보세요.",
+  },
+  2: {
+    meals: [
+      { emoji: "⚡", name: "에너지바" },
+      { emoji: "🥛", name: "우유" },
+    ],
+    tip: "운동 후 탄수화물+단백질로 빠르게 회복하세요.",
+  },
+  3: {
+    meals: [
+      { emoji: "🥢", name: "두부" },
+      { emoji: "🥦", name: "채소" },
+    ],
+    tip: "소화가 편한 식물성 단백질을 추천해요.",
+  },
+  4: {
+    meals: [
+      { emoji: "🍗", name: "닭가슴살" },
+      { emoji: "🍠", name: "고구마" },
+    ],
+    tip: "운동 직후 30분 이내 단백질을 섭취하세요.",
+  },
+  5: {
+    meals: [
+      { emoji: "🍌", name: "바나나" },
+      { emoji: "🫙", name: "그릭요거트" },
+    ],
+    tip: "전해질 보충과 단백질 회복에 딱이에요.",
+  },
+  6: {
+    meals: [
+      { emoji: "🥜", name: "견과류" },
+      { emoji: "🍎", name: "과일" },
+    ],
+    tip: "활동 후 지속 에너지를 위해 견과류를 드세요.",
+  },
+};
+
+const DIET_BY_DURATION = {
+  light: {
+    label: "가벼운 식단",
+    meals: [
+      { emoji: "🥗", name: "샐러드" },
+      { emoji: "🍓", name: "과일" },
+    ],
+  },
+  protein: {
+    label: "단백질 보충",
+    meals: [
+      { emoji: "🍗", name: "닭가슴살" },
+      { emoji: "🥚", name: "삶은계란" },
+    ],
+  },
+};
 
 // ── Ring constants ──────────────────────────────
 const GOAL_STEPS = 5000;
@@ -13,19 +80,23 @@ const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
 type WorkoutState = "idle" | "running" | "paused" | "done";
 
 const formatTime = (s: number) => {
-  const m = Math.floor(s / 60).toString().padStart(2, "0");
+  const m = Math.floor(s / 60)
+    .toString()
+    .padStart(2, "0");
   const sec = (s % 60).toString().padStart(2, "0");
   return `${m}:${sec}`;
 };
 
 export default function Workout() {
   const navigate = useNavigate();
+  const { selectedCharacter } = useCharacter();
   const [state, setState] = useState<WorkoutState>("idle");
   const [steps, setSteps] = useState(0);
   const [elapsed, setElapsed] = useState(0);
 
   const [showModal, setShowModal] = useState(false);
 
+  const characterEmoji = selectedCharacter?.emoji ?? "🏃";
   const progress = Math.min((steps / GOAL_STEPS) * 100, 100);
   const dashOffset = CIRCUMFERENCE * (1 - progress / 100);
   const distance = (steps * 0.0008).toFixed(2);
@@ -33,7 +104,8 @@ export default function Workout() {
   const pointsEarned = Math.max(Math.floor(parseFloat(distance) * 10), 1);
   const elapsedMin = Math.floor(elapsed / 60);
   const elapsedSec = elapsed % 60;
-  const durationLabel = elapsedMin > 0 ? `${elapsedMin}분 ${elapsedSec}초` : `${elapsedSec}초`;
+  const durationLabel =
+    elapsedMin > 0 ? `${elapsedMin}분 ${elapsedSec}초` : `${elapsedSec}초`;
 
   const handleStop = () => {
     setState("paused");
@@ -77,7 +149,6 @@ export default function Workout() {
 
   return (
     <div className="flex flex-col h-screen bg-bg">
-
       {/* 헤더 */}
       <div className="flex items-center justify-between px-5 pt-10 pb-2">
         <button
@@ -91,7 +162,10 @@ export default function Workout() {
       </div>
 
       {/* 상태 텍스트 */}
-      <p className="text-center text-sm font-semibold mt-1 mb-0" style={{ color: "var(--color-primary)" }}>
+      <p
+        className="text-center text-sm font-semibold mt-1 mb-0"
+        style={{ color: "var(--color-primary)" }}
+      >
         {state === "idle" && "시작 버튼을 눌러보세요!"}
         {state === "running" && "🔥 운동 중이에요!"}
         {state === "paused" && "⏸ 일시정지됨"}
@@ -101,7 +175,6 @@ export default function Workout() {
       {/* 링 + 캐릭터 */}
       <div className="flex-1 flex flex-col items-center justify-center gap-6 px-6">
         <div className="relative" style={{ width: SVG_SIZE, height: SVG_SIZE }}>
-
           <svg width={SVG_SIZE} height={SVG_SIZE}>
             <defs>
               <linearGradient id="ringGrad" x1="1" y1="0" x2="0" y2="1">
@@ -120,7 +193,9 @@ export default function Workout() {
 
             {/* 배경 트랙 */}
             <circle
-              cx={CX} cy={CY} r={RADIUS}
+              cx={CX}
+              cy={CY}
+              r={RADIUS}
               fill="none"
               stroke="#f3f4f6"
               strokeWidth={STROKE_W}
@@ -128,7 +203,9 @@ export default function Workout() {
 
             {/* 진행 아크 */}
             <circle
-              cx={CX} cy={CY} r={RADIUS}
+              cx={CX}
+              cy={CY}
+              r={RADIUS}
               fill="none"
               stroke="url(#ringGrad)"
               strokeWidth={STROKE_W}
@@ -151,7 +228,7 @@ export default function Workout() {
                 transition: "left 0.12s ease, top 0.12s ease",
               }}
             >
-              🏃
+              {characterEmoji}
             </div>
           )}
 
@@ -161,10 +238,15 @@ export default function Workout() {
               <button
                 onClick={() => setState("running")}
                 className="w-24 h-24 rounded-full flex flex-col items-center justify-center shadow-xl active:scale-95 transition-all"
-                style={{ background: "linear-gradient(135deg, var(--color-primary), var(--color-secondary))" }}
+                style={{
+                  background:
+                    "linear-gradient(135deg, var(--color-primary), var(--color-secondary))",
+                }}
               >
                 <span className="text-white text-3xl">▶</span>
-                <span className="text-white font-extrabold text-xs mt-0.5">시작</span>
+                <span className="text-white font-extrabold text-xs mt-0.5">
+                  시작
+                </span>
               </button>
             )}
             {(state === "running" || state === "paused") && (
@@ -173,8 +255,13 @@ export default function Workout() {
                   {Math.floor(progress)}
                   <span className="text-2xl text-gray-400">%</span>
                 </p>
-                <p className="text-xs text-gray-400 mt-1 font-semibold">목표 달성</p>
-                <p className="text-xs font-bold mt-2" style={{ color: "var(--color-primary)" }}>
+                <p className="text-xs text-gray-400 mt-1 font-semibold">
+                  목표 달성
+                </p>
+                <p
+                  className="text-xs font-bold mt-2"
+                  style={{ color: "var(--color-primary)" }}
+                >
                   {(GOAL_STEPS - steps).toLocaleString()}보 남음
                 </p>
               </>
@@ -182,7 +269,12 @@ export default function Workout() {
             {state === "done" && (
               <div className="flex flex-col items-center gap-1">
                 <span className="text-5xl">🎉</span>
-                <p className="font-extrabold text-xl" style={{ color: "var(--color-primary)" }}>완료!</p>
+                <p
+                  className="font-extrabold text-xl"
+                  style={{ color: "var(--color-primary)" }}
+                >
+                  완료!
+                </p>
               </div>
             )}
           </div>
@@ -196,7 +288,9 @@ export default function Workout() {
               className="bg-white rounded-2xl p-3 flex flex-col items-center gap-1 shadow-sm"
             >
               <span className="text-lg">{s.icon}</span>
-              <p className="font-extrabold text-gray-800 text-sm leading-none">{s.value}</p>
+              <p className="font-extrabold text-gray-800 text-sm leading-none">
+                {s.value}
+              </p>
               <p className="text-[10px] text-gray-400">{s.unit || s.label}</p>
             </div>
           ))}
@@ -208,7 +302,10 @@ export default function Workout() {
             <button
               onClick={() => setState("running")}
               className="flex-1 py-4 rounded-2xl text-white font-extrabold shadow-md active:scale-95 transition"
-              style={{ background: "linear-gradient(135deg, var(--color-primary), var(--color-secondary))" }}
+              style={{
+                background:
+                  "linear-gradient(135deg, var(--color-primary), var(--color-secondary))",
+              }}
             >
               🏃 운동 시작
             </button>
@@ -234,7 +331,10 @@ export default function Workout() {
               <button
                 onClick={() => setState("running")}
                 className="flex-1 py-4 rounded-2xl text-white font-extrabold shadow-md active:scale-95 transition"
-                style={{ background: "linear-gradient(135deg, var(--color-primary), var(--color-secondary))" }}
+                style={{
+                  background:
+                    "linear-gradient(135deg, var(--color-primary), var(--color-secondary))",
+                }}
               >
                 ▶ 재개
               </button>
@@ -250,7 +350,10 @@ export default function Workout() {
             <button
               onClick={() => setShowModal(true)}
               className="flex-1 py-4 rounded-2xl text-white font-extrabold shadow-md active:scale-95 transition"
-              style={{ background: "linear-gradient(135deg, var(--color-primary), var(--color-secondary))" }}
+              style={{
+                background:
+                  "linear-gradient(135deg, var(--color-primary), var(--color-secondary))",
+              }}
             >
               🎉 결과 보기
             </button>
@@ -259,18 +362,23 @@ export default function Workout() {
       </div>
       {/* 완료 팝업 */}
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center px-6"
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center px-6"
           style={{ background: "rgba(0,0,0,0.5)" }}
         >
-          <div className="w-full bg-white rounded-3xl overflow-hidden shadow-2xl">
-
+          <div className="w-full bg-white rounded-3xl overflow-hidden shadow-2xl max-h-[90vh] overflow-y-auto">
             {/* 상단 그라디언트 헤더 */}
             <div
               className="flex flex-col items-center py-8 gap-2"
-              style={{ background: "linear-gradient(135deg, var(--color-primary), var(--color-secondary))" }}
+              style={{
+                background:
+                  "linear-gradient(135deg, var(--color-primary), var(--color-secondary))",
+              }}
             >
               <span className="text-5xl">🎉</span>
-              <p className="text-white font-extrabold text-2xl mt-1">운동 완료!</p>
+              <p className="text-white font-extrabold text-2xl mt-1">
+                운동 완료!
+              </p>
               <p className="text-white/70 text-sm">오늘도 정말 잘 했어요 💪</p>
             </div>
 
@@ -278,48 +386,138 @@ export default function Workout() {
             <div className="px-6 py-5 flex flex-col gap-3">
               {[
                 { icon: "📍", label: "거리", value: `${distance} km` },
-                { icon: "👟", label: "걸음 수", value: `${steps.toLocaleString()} 보` },
+                {
+                  icon: "👟",
+                  label: "걸음 수",
+                  value: `${steps.toLocaleString()} 보`,
+                },
                 { icon: "⏱️", label: "운동 시간", value: durationLabel },
                 { icon: "🔥", label: "칼로리", value: `${calories} kcal` },
               ].map((row) => (
-                <div key={row.label} className="flex items-center justify-between py-2 border-b border-gray-50">
+                <div
+                  key={row.label}
+                  className="flex items-center justify-between py-2 border-b border-gray-50"
+                >
                   <div className="flex items-center gap-2">
                     <span className="text-lg">{row.icon}</span>
-                    <span className="text-sm text-gray-500 font-semibold">{row.label}</span>
+                    <span className="text-sm text-gray-500 font-semibold">
+                      {row.label}
+                    </span>
                   </div>
-                  <span className="font-extrabold text-gray-800">{row.value}</span>
+                  <span className="font-extrabold text-gray-800">
+                    {row.value}
+                  </span>
                 </div>
               ))}
 
               {/* 획득 포인트 */}
-              <div className="mt-1 rounded-2xl flex items-center justify-between px-4 py-3"
+              <div
+                className="mt-1 rounded-2xl flex items-center justify-between px-4 py-3"
                 style={{ background: "var(--color-primary-light)" }}
               >
                 <div className="flex items-center gap-2">
                   <span className="text-lg">💰</span>
-                  <span className="text-sm font-bold" style={{ color: "var(--color-primary)" }}>획득 포인트</span>
+                  <span
+                    className="text-sm font-bold"
+                    style={{ color: "var(--color-primary)" }}
+                  >
+                    획득 포인트
+                  </span>
                 </div>
-                <span className="text-xl font-extrabold" style={{ color: "var(--color-primary)" }}>
+                <span
+                  className="text-xl font-extrabold"
+                  style={{ color: "var(--color-primary)" }}
+                >
                   +{pointsEarned} P
                 </span>
               </div>
             </div>
 
+            {/* 추천 식단 섹션 */}
+            {(() => {
+              const charDiet = selectedCharacter
+                ? DIET_BY_CHARACTER[selectedCharacter.id]
+                : null;
+              const durationDiet =
+                elapsedMin >= 30
+                  ? DIET_BY_DURATION.protein
+                  : DIET_BY_DURATION.light;
+              return (
+                <div className="px-6 pb-2">
+                  <div
+                    className="rounded-2xl p-4"
+                    style={{ background: "var(--color-bg, #f9fafb)" }}
+                  >
+                    <p className="font-extrabold text-gray-800 text-sm mb-3">
+                      오늘 추천 식단 🥗
+                    </p>
+
+                    {/* 운동 시간 기준 */}
+                    <div className="mb-3">
+                      <p className="text-[11px] text-gray-400 font-semibold mb-1.5">
+                        {elapsedMin >= 30
+                          ? "⏱ 30분 이상 운동 — 단백질 보충 필요!"
+                          : "⏱ 30분 미만 운동 — 가벼운 식단 추천"}
+                      </p>
+                      <div className="flex gap-2 flex-wrap">
+                        {durationDiet.meals.map((m) => (
+                          <span
+                            key={m.name}
+                            className="flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-bold bg-white shadow-sm border border-gray-100"
+                          >
+                            {m.emoji} {m.name}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* 캐릭터 기준 */}
+                    {charDiet && (
+                      <div>
+                        <p className="text-[11px] text-gray-400 font-semibold mb-1.5">
+                          {selectedCharacter!.emoji} {selectedCharacter!.name}{" "}
+                          맞춤 식단
+                        </p>
+                        <div className="flex gap-2 flex-wrap mb-2">
+                          {charDiet.meals.map((m) => (
+                            <span
+                              key={m.name}
+                              className="flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-bold text-white shadow-sm"
+                              style={{
+                                background:
+                                  "linear-gradient(135deg, var(--color-primary), var(--color-secondary))",
+                              }}
+                            >
+                              {m.emoji} {m.name}
+                            </span>
+                          ))}
+                        </div>
+                        <p className="text-[11px] text-gray-400 leading-snug">
+                          💡 {charDiet.tip}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })()}
+
             {/* 홈으로 가기 버튼 */}
-            <div className="px-6 pb-6">
+            <div className="px-6 py-4">
               <button
                 onClick={() => navigate("/")}
                 className="w-full py-4 rounded-2xl text-white font-extrabold text-base active:scale-95 transition"
-                style={{ background: "linear-gradient(135deg, var(--color-primary), var(--color-secondary))" }}
+                style={{
+                  background:
+                    "linear-gradient(135deg, var(--color-primary), var(--color-secondary))",
+                }}
               >
                 🏠 홈으로 가기
               </button>
             </div>
-
           </div>
         </div>
       )}
-
     </div>
   );
 }
