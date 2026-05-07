@@ -73,7 +73,7 @@ export default function Character() {
   const [selected, setSelected] = useState<number | null>(null);
 
   return (
-    <div className="flex flex-col gap-4 p-5">
+    <div className="flex flex-col gap-4 p-5 h-full overflow-y-auto pb-20">
       <div className="mb-1">
         <h2 className="text-2xl font-extrabold text-[var(--color-primary)]">
           캐릭터 선택

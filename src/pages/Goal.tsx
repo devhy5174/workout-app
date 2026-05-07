@@ -5,7 +5,7 @@ export default function Goal() {
   const pointsEarned = currentKm * 10;
 
   return (
-    <div className="flex flex-col gap-6 p-6">
+    <div className="flex flex-col gap-6 p-6 h-full overflow-y-auto pb-20">
       <h2 className="text-2xl font-bold text-primary">목표 & 저금</h2>
 
       <div className="w-full rounded-2xl bg-white shadow p-6 flex flex-col gap-3">

@@ -12,9 +12,9 @@ import Settings from "./pages/Settings";
 export default function App() {
   return (
     <BrowserRouter>
-      <div className="min-h-screen bg-gray-50 flex flex-col max-w-md mx-auto">
+      <div className="h-screen bg-gray-50 flex flex-col max-w-md mx-auto">
         <Header />
-        <main className="flex-1 overflow-y-auto pb-20">
+        <main className="flex-1 overflow-hidden">
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/character" element={<Character />} />
