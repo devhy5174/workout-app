@@ -10,6 +10,8 @@ const KEYS = {
   RECOMMENDED_DIET: "recommended_diet",
   TODAY_BURNED_KCAL: "today_burned_kcal",
   TODAY_DATE: "today_date",
+  WORKOUT_HISTORY: "workout_history",
+  JOINED_PARTY_IDS: "joined_party_ids",
 } as const;
 
 export type RecommendedDiet = {
@@ -62,5 +64,38 @@ export const storage = {
   setBurnedKcal: (kcal: number) => {
     localStorage.setItem(KEYS.TODAY_DATE, new Date().toDateString());
     localStorage.setItem(KEYS.TODAY_BURNED_KCAL, String(kcal));
+  },
+
+  getWorkoutHistory: (): string[] => {
+    const raw = localStorage.getItem(KEYS.WORKOUT_HISTORY);
+    if (!raw) return [];
+    try {
+      return JSON.parse(raw) as string[];
+    } catch {
+      return [];
+    }
+  },
+
+  getJoinedPartyIds: (): number[] => {
+    const raw = localStorage.getItem(KEYS.JOINED_PARTY_IDS);
+    if (!raw) return [];
+    try {
+      return JSON.parse(raw) as number[];
+    } catch {
+      return [];
+    }
+  },
+
+  setJoinedPartyIds: (ids: number[]) =>
+    localStorage.setItem(KEYS.JOINED_PARTY_IDS, JSON.stringify(ids)),
+
+  addWorkoutToday: () => {
+    const d = new Date();
+    const today = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+    const history = storage.getWorkoutHistory();
+    if (!history.includes(today)) {
+      history.push(today);
+      localStorage.setItem(KEYS.WORKOUT_HISTORY, JSON.stringify(history));
+    }
   },
 };
