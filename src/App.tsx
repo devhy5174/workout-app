@@ -6,6 +6,7 @@ import Character from "./pages/Character";
 import Party from "./pages/Party";
 import Goal from "./pages/Goal";
 import Diet from "./pages/Diet";
+import Points from "./pages/Points";
 import Settings from "./pages/Settings";
 
 export default function App() {
@@ -20,6 +21,7 @@ export default function App() {
             <Route path="/party" element={<Party />} />
             <Route path="/goal" element={<Goal />} />
             <Route path="/diet" element={<Diet />} />
+            <Route path="/points" element={<Points />} />
             <Route path="/settings" element={<Settings />} />
           </Routes>
         </main>

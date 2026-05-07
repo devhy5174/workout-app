@@ -19,6 +19,7 @@
     --color-accent: #ffd93d;
     --color-bg: #fff8f5;
     --color-text: #2d2d2d;
+    --color-primary-light: #fff0ec;
   }
 
   /* 🟢 네이처 테마 */
@@ -28,6 +29,7 @@
     --color-accent: #a8e063;
     --color-bg: #f5fff8;
     --color-text: #2d2d2d;
+    --color-primary-light: #e8faf2;
   }
 
   /* 🔵 코스모 테마 */
@@ -37,5 +39,6 @@
     --color-accent: #818cf8;
     --color-bg: #f5f5ff;
     --color-text: #2d2d2d;
+    --color-primary-light: #eef0fe;
   }
 }

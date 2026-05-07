@@ -1,12 +1,12 @@
 import { Link, useLocation } from "react-router-dom";
-import { HiHome, HiUser, HiUserGroup, HiFlag, HiClipboardList, HiCog } from "react-icons/hi";
+import { HiHome, HiUser, HiUserGroup, HiClipboardList, HiCurrencyDollar, HiCog } from "react-icons/hi";
 
 const navItems = [
   { to: "/", icon: HiHome, label: "홈" },
   { to: "/character", icon: HiUser, label: "캐릭터" },
   { to: "/party", icon: HiUserGroup, label: "파티" },
-  { to: "/goal", icon: HiFlag, label: "목표" },
   { to: "/diet", icon: HiClipboardList, label: "식단" },
+  { to: "/points", icon: HiCurrencyDollar, label: "포인트" },
   { to: "/settings", icon: HiCog, label: "설정" },
 ];
 

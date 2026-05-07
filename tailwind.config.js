@@ -8,6 +8,7 @@ export default {
         secondary: "var(--color-secondary)",
         accent: "var(--color-accent)",
         bg: "var(--color-bg)",
+        "primary-light": "var(--color-primary-light)",
       },
     },
   },
