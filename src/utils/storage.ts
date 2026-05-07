@@ -8,6 +8,8 @@ const KEYS = {
   STEPS: "steps",
   POINTS: "points",
   RECOMMENDED_DIET: "recommended_diet",
+  TODAY_BURNED_KCAL: "today_burned_kcal",
+  TODAY_DATE: "today_date",
 } as const;
 
 export type RecommendedDiet = {
@@ -39,4 +41,26 @@ export const storage = {
 
   setRecommendedDiet: (diet: RecommendedDiet) =>
     localStorage.setItem(KEYS.RECOMMENDED_DIET, JSON.stringify(diet)),
+
+  getBurnedKcal: (): number => {
+    const savedDate = localStorage.getItem(KEYS.TODAY_DATE);
+    const today = new Date().toDateString();
+
+    // 날짜 바뀌면 자동 초기화
+    if (savedDate !== today) {
+      localStorage.setItem(KEYS.TODAY_DATE, today);
+      localStorage.removeItem(KEYS.TODAY_BURNED_KCAL);
+      return 0;
+    }
+
+    const raw = localStorage.getItem(KEYS.TODAY_BURNED_KCAL);
+    if (raw === null) return 0;
+    const n = Number(raw);
+    return isNaN(n) ? 0 : n;
+  },
+
+  setBurnedKcal: (kcal: number) => {
+    localStorage.setItem(KEYS.TODAY_DATE, new Date().toDateString());
+    localStorage.setItem(KEYS.TODAY_BURNED_KCAL, String(kcal));
+  },
 };

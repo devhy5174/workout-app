@@ -101,6 +101,7 @@ export default function Workout() {
   const progress = Math.min((steps / GOAL_STEPS) * 100, 100);
   const dashOffset = CIRCUMFERENCE * (1 - progress / 100);
   const distance = (steps * 0.0008).toFixed(2);
+  // TODO: 유저 프로필(키/몸무게) 연동 시 맞춤 칼로리 계산으로 교체
   const calories = Math.floor(steps * 0.05);
   const pointsEarned = Math.max(Math.floor(parseFloat(distance) * 10), 1);
   const elapsedMin = Math.floor(elapsed / 60);
@@ -114,10 +115,18 @@ export default function Workout() {
   const durationDiet =
     elapsedMin >= 30 ? DIET_BY_DURATION.protein : DIET_BY_DURATION.light;
 
-  const handleShowModal = () => {
+  const handleStop = () => {
+    const currentCalories = calories;
+    const currentElapsed = elapsed;
+    setState("paused");
+
+    const prevKcal = storage.getBurnedKcal() ?? 0;
+    storage.setBurnedKcal(prevKcal + currentCalories);
+
+    // 식단 저장
     storage.setRecommendedDiet({
       durationLabel:
-        elapsedMin >= 30
+        Math.floor(currentElapsed / 60) >= 30
           ? "⏱ 30분 이상 운동 — 단백질 보충 필요!"
           : "⏱ 30분 미만 운동 — 가벼운 식단 추천",
       durationMeals: durationDiet.meals,
@@ -126,12 +135,8 @@ export default function Workout() {
       characterMeals: charDiet?.meals,
       tip: charDiet?.tip,
     });
-    setShowModal(true);
-  };
 
-  const handleStop = () => {
-    setState("paused");
-    handleShowModal();
+    setShowModal(true); // 모달 그대로!
   };
 
   // 링 위 캐릭터 위치 계산 (12시 방향에서 시작)
@@ -370,7 +375,7 @@ export default function Workout() {
           )}
           {state === "done" && (
             <button
-              onClick={handleShowModal}
+              onClick={handleStop}
               className="flex-1 py-4 rounded-2xl text-white font-extrabold shadow-md active:scale-95 transition"
               style={{
                 background:
@@ -456,64 +461,64 @@ export default function Workout() {
             </div>
 
             {/* 추천 식단 섹션 */}
-            {(
-                <div className="px-6 pb-2">
-                  <div
-                    className="rounded-2xl p-4"
-                    style={{ background: "var(--color-bg, #f9fafb)" }}
-                  >
-                    <p className="font-extrabold text-gray-800 text-sm mb-3">
-                      오늘 추천 식단 🥗
-                    </p>
+            {
+              <div className="px-6 pb-2">
+                <div
+                  className="rounded-2xl p-4"
+                  style={{ background: "var(--color-bg, #f9fafb)" }}
+                >
+                  <p className="font-extrabold text-gray-800 text-sm mb-3">
+                    오늘 추천 식단 🥗
+                  </p>
 
-                    {/* 운동 시간 기준 */}
-                    <div className="mb-3">
+                  {/* 운동 시간 기준 */}
+                  <div className="mb-3">
+                    <p className="text-[11px] text-gray-400 font-semibold mb-1.5">
+                      {elapsedMin >= 30
+                        ? "⏱ 30분 이상 운동 — 단백질 보충 필요!"
+                        : "⏱ 30분 미만 운동 — 가벼운 식단 추천"}
+                    </p>
+                    <div className="flex gap-2 flex-wrap">
+                      {durationDiet.meals.map((m) => (
+                        <span
+                          key={m.name}
+                          className="flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-bold bg-white shadow-sm border border-gray-100"
+                        >
+                          {m.emoji} {m.name}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* 캐릭터 기준 */}
+                  {charDiet && (
+                    <div>
                       <p className="text-[11px] text-gray-400 font-semibold mb-1.5">
-                        {elapsedMin >= 30
-                          ? "⏱ 30분 이상 운동 — 단백질 보충 필요!"
-                          : "⏱ 30분 미만 운동 — 가벼운 식단 추천"}
+                        {selectedCharacter!.emoji} {selectedCharacter!.name}{" "}
+                        맞춤 식단
                       </p>
-                      <div className="flex gap-2 flex-wrap">
-                        {durationDiet.meals.map((m) => (
+                      <div className="flex gap-2 flex-wrap mb-2">
+                        {charDiet.meals.map((m) => (
                           <span
                             key={m.name}
-                            className="flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-bold bg-white shadow-sm border border-gray-100"
+                            className="flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-bold text-white shadow-sm"
+                            style={{
+                              background:
+                                "linear-gradient(135deg, var(--color-primary), var(--color-secondary))",
+                            }}
                           >
                             {m.emoji} {m.name}
                           </span>
                         ))}
                       </div>
+                      <p className="text-[11px] text-gray-400 leading-snug">
+                        💡 {charDiet.tip}
+                      </p>
                     </div>
-
-                    {/* 캐릭터 기준 */}
-                    {charDiet && (
-                      <div>
-                        <p className="text-[11px] text-gray-400 font-semibold mb-1.5">
-                          {selectedCharacter!.emoji} {selectedCharacter!.name}{" "}
-                          맞춤 식단
-                        </p>
-                        <div className="flex gap-2 flex-wrap mb-2">
-                          {charDiet.meals.map((m) => (
-                            <span
-                              key={m.name}
-                              className="flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-bold text-white shadow-sm"
-                              style={{
-                                background:
-                                  "linear-gradient(135deg, var(--color-primary), var(--color-secondary))",
-                              }}
-                            >
-                              {m.emoji} {m.name}
-                            </span>
-                          ))}
-                        </div>
-                        <p className="text-[11px] text-gray-400 leading-snug">
-                          💡 {charDiet.tip}
-                        </p>
-                      </div>
-                    )}
-                  </div>
+                  )}
                 </div>
-            )}
+              </div>
+            }
 
             {/* 홈으로 가기 버튼 */}
             <div className="px-6 py-4">
