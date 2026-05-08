@@ -16,8 +16,7 @@ export default function Auth() {
   const [mode, setMode] = useState<Mode>("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [nickname, setNickname] = useState("");
-  const [error, setError] = useState<string | null>(null);
+const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [signupDone, setSignupDone] = useState(false);
 
@@ -47,10 +46,6 @@ export default function Auth() {
 
   const handleSignup = async () => {
     setError(null);
-    if (!nickname.trim()) {
-      setError("닉네임을 입력해주세요.");
-      return;
-    }
     setIsSubmitting(true);
     const { data, error } = await supabase.auth.signUp({ email, password });
     if (error) {
@@ -59,10 +54,7 @@ export default function Auth() {
       return;
     }
     if (data.user) {
-      await supabase.from("users").insert({
-        id: data.user.id,
-        nickname: nickname.trim(),
-      });
+      await supabase.from("users").insert({ id: data.user.id });
     }
     setIsSubmitting(false);
     setSignupDone(true);
@@ -131,16 +123,6 @@ export default function Auth() {
 
         {/* 폼 */}
         <form onSubmit={handleSubmit} className="w-full space-y-3">
-          {mode === "signup" && (
-            <input
-              type="text"
-              placeholder="닉네임"
-              value={nickname}
-              onChange={(e) => setNickname(e.target.value)}
-              className="w-full px-5 py-4 rounded-2xl bg-white text-gray-800 text-sm placeholder-gray-400 focus:outline-none shadow-sm"
-              required
-            />
-          )}
           <input
             type="email"
             placeholder="이메일"

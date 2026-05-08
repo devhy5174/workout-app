@@ -10,20 +10,32 @@ import Points from "./pages/Points";
 import Settings from "./pages/Settings";
 import Workout from "./pages/Workout";
 import Auth from "./pages/Auth";
+import Onboarding from "./pages/Onboarding";
 import { useUser } from "./context/UserContext";
 
-function ProtectedLayout() {
+function LoadingScreen() {
+  return (
+    <div className="h-screen flex items-center justify-center bg-gray-50">
+      <div className="text-4xl animate-bounce">🏃</div>
+    </div>
+  );
+}
+
+// 로그인만 필요 (온보딩 미완료 허용)
+function AuthGuard({ children }: { children: React.ReactNode }) {
   const { user, isLoading } = useUser();
-
-  if (isLoading) {
-    return (
-      <div className="h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-4xl animate-bounce">🏃</div>
-      </div>
-    );
-  }
-
+  if (isLoading) return <LoadingScreen />;
   if (!user) return <Navigate to="/auth" replace />;
+  return <>{children}</>;
+}
+
+// 로그인 + 온보딩 완료 필요
+function ProtectedLayout() {
+  const { user, userProfile, isLoading } = useUser();
+
+  if (isLoading) return <LoadingScreen />;
+  if (!user) return <Navigate to="/auth" replace />;
+  if (!userProfile?.nickname) return <Navigate to="/onboarding" replace />;
 
   return (
     <div className="h-screen bg-gray-50 flex flex-col max-w-md mx-auto">
@@ -40,6 +52,14 @@ export default function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/auth" element={<Auth />} />
+        <Route
+          path="/onboarding"
+          element={
+            <AuthGuard>
+              <Onboarding />
+            </AuthGuard>
+          }
+        />
         <Route element={<ProtectedLayout />}>
           <Route path="/" element={<Home />} />
           <Route path="/character" element={<Character />} />

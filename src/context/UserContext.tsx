@@ -11,6 +11,7 @@ import { supabase } from "../lib/supabase";
 export type UserProfile = {
   id: string;
   nickname: string | null;
+  gender: string | null;
   character_id: number | null;
   created_at: string;
 };
@@ -50,10 +51,11 @@ export function UserProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
       setUser(session?.user ?? null);
       if (session?.user) {
-        fetchProfile(session.user.id).then(setUserProfile);
+        const profile = await fetchProfile(session.user.id);
+        setUserProfile(profile);
       }
       setIsLoading(false);
     });
