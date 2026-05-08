@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useCharacter } from "../context/CharacterContext";
 import { storage } from "../utils/storage";
+import { POINT_RULES } from "../data/points";
+import { calculateStreak, isWeekend } from "../utils/streak";
 
 // ── 캐릭터별 추천 식단 (더미) ───────────────────
 const DIET_BY_CHARACTER: Record<
@@ -96,6 +98,7 @@ export default function Workout() {
   const [elapsed, setElapsed] = useState(0);
 
   const [showModal, setShowModal] = useState(false);
+  const [earnedPoints, setEarnedPoints] = useState(0);
 
   const characterEmoji = selectedCharacter?.emoji ?? "🏃";
   const progress = Math.min((steps / GOAL_STEPS) * 100, 100);
@@ -103,7 +106,7 @@ export default function Workout() {
   const distance = (steps * 0.0008).toFixed(2);
   // TODO: 유저 프로필(키/몸무게) 연동 시 맞춤 칼로리 계산으로 교체
   const calories = Math.floor(steps * 0.05);
-  const pointsEarned = Math.max(Math.floor(parseFloat(distance) * 10), 1);
+  const pointsEarned = Math.max(Math.floor(parseFloat(distance) * POINT_RULES.PER_KM), 1);
   const elapsedMin = Math.floor(elapsed / 60);
   const elapsedSec = elapsed % 60;
   const durationLabel =
@@ -137,7 +140,47 @@ export default function Workout() {
       tip: charDiet?.tip,
     });
 
-    setShowModal(true); // 모달 그대로!
+    // ── 포인트 계산 ──────────────────────────────
+    const today = new Date();
+    const pad = (n: number) => String(n).padStart(2, "0");
+    const todayStr = `${today.getFullYear()}.${pad(today.getMonth() + 1)}.${pad(today.getDate())}`;
+
+    // 오늘 이미 받은 보너스 목록 (중복 방지)
+    const todayHistory = storage.getPointsHistory().filter(e => e.date === todayStr);
+    const hasBonus = (icon: string) => todayHistory.some(e => e.icon === icon);
+
+    let earned = 0;
+
+    // km당 포인트 (매 운동마다 적립)
+    storage.addPoints(pointsEarned);
+    storage.addPointsHistory({ date: todayStr, desc: `${distance}km 운동 완료`, points: pointsEarned, icon: "🏃" });
+    earned += pointsEarned;
+
+    // 목표 달성 보너스 (오늘 첫 달성 시)
+    if (steps >= GOAL_STEPS && !hasBonus("🎯")) {
+      storage.addPoints(POINT_RULES.GOAL_BONUS);
+      storage.addPointsHistory({ date: todayStr, desc: "걸음 수 목표 달성", points: POINT_RULES.GOAL_BONUS, icon: "🎯" });
+      earned += POINT_RULES.GOAL_BONUS;
+    }
+
+    // 7일 연속 보너스 (오늘 첫 수령 시)
+    const freshHistory = storage.getWorkoutHistory();
+    const currentStreak = calculateStreak(freshHistory);
+    if (currentStreak > 0 && currentStreak % 7 === 0 && !hasBonus("🔥")) {
+      storage.addPoints(POINT_RULES.STREAK_7_BONUS);
+      storage.addPointsHistory({ date: todayStr, desc: `${currentStreak}일 연속 운동 보너스`, points: POINT_RULES.STREAK_7_BONUS, icon: "🔥" });
+      earned += POINT_RULES.STREAK_7_BONUS;
+    }
+
+    // 주말 보너스 (오늘 첫 수령 시)
+    if (isWeekend(today) && !hasBonus("⭐")) {
+      storage.addPoints(POINT_RULES.WEEKEND_BONUS);
+      storage.addPointsHistory({ date: todayStr, desc: "주말 운동 보너스", points: POINT_RULES.WEEKEND_BONUS, icon: "⭐" });
+      earned += POINT_RULES.WEEKEND_BONUS;
+    }
+
+    setEarnedPoints(earned);
+    setShowModal(true);
   };
 
   // 링 위 캐릭터 위치 계산 (12시 방향에서 시작)
@@ -456,7 +499,7 @@ export default function Workout() {
                   className="text-xl font-extrabold"
                   style={{ color: "var(--color-primary)" }}
                 >
-                  +{pointsEarned} P
+                  +{earnedPoints} P
                 </span>
               </div>
             </div>

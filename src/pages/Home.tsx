@@ -6,7 +6,6 @@ import { calculateStreak, getThisWeekWorkouts } from "../utils/streak";
 const steps = 6234;
 const stepGoal = 10000;
 const workoutGoal = 7;
-const points = 234;
 const pointGoal = 500;
 
 const weeklyTop3 = [
@@ -68,6 +67,7 @@ export default function Home() {
 
   const history = storage.getWorkoutHistory();
   const streak = calculateStreak(history);
+  const points = storage.getPoints();
   const weekWorkouts = getThisWeekWorkouts(history);
   const workoutDays = weekWorkouts.filter(Boolean).length;
   const bubbleMsg = messages[streak % messages.length];
@@ -188,8 +188,8 @@ export default function Home() {
                       didWorkout && !isWeekendDay
                         ? "bg-primary text-white shadow-sm"
                         : didWorkout && isWeekendDay
-                        ? "border-2 border-yellow-300 bg-yellow-50"
-                        : "border-2 border-gray-100 text-gray-300"
+                          ? "border-2 border-yellow-300 bg-yellow-50"
+                          : "border-2 border-gray-100 text-gray-300"
                     }`}
                   >
                     {didWorkout && isWeekendDay ? "⭐" : day}

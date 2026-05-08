@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { TAGS } from "../data/tags";
 import { storage } from "../utils/storage";
+import { POINT_RULES } from "../data/points";
 
 type TimeSlot = "새벽" | "아침" | "저녁" | "주말";
 type DistanceOption = "3km" | "5km" | "10km";
@@ -493,6 +494,9 @@ function JoinConfirmModal({
           <span className="font-bold text-gray-600">"{partyName}"</span> 파티에
           참가해요
         </p>
+        <p className="text-sm font-bold text-center" style={{ color: "var(--color-primary)" }}>
+          +{POINT_RULES.PARTY_JOIN}P 적립!
+        </p>
         <div className="flex gap-3 w-full">
           <button
             onClick={onCancel}
@@ -556,7 +560,7 @@ function JoinToast() {
     <div className="fixed top-6 left-1/2 -translate-x-1/2 z-50 pointer-events-none">
       <div className="bg-gray-800 text-white text-sm font-bold px-5 py-3 rounded-2xl shadow-xl flex items-center gap-2 animate-fade-in-down">
         <span>🎉</span>
-        <span>파티에 참가했어요!</span>
+        <span>파티에 참가했어요! +{POINT_RULES.PARTY_JOIN}P 적립</span>
       </div>
     </div>
   );
@@ -636,6 +640,14 @@ export default function Party() {
     newIds.add(joinTarget.id);
     setJoinedIds(newIds);
     storage.setJoinedPartyIds([...newIds]);
+
+    // 파티 참가 포인트 적립
+    const today = new Date();
+    const pad = (n: number) => String(n).padStart(2, "0");
+    const todayStr = `${today.getFullYear()}.${pad(today.getMonth() + 1)}.${pad(today.getDate())}`;
+    storage.addPoints(POINT_RULES.PARTY_JOIN);
+    storage.addPointsHistory({ date: todayStr, desc: `${joinTarget.name} 파티 참가`, points: POINT_RULES.PARTY_JOIN, icon: "🎉" });
+
     setJoinTarget(null);
     setShowJoinToast(true);
     setTimeout(() => setShowJoinToast(false), 2500);

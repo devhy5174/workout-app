@@ -1,79 +1,7 @@
 import { useState } from "react";
+import { POINT_RULES, POINT_EXCHANGE } from "../data/points";
+import { storage } from "../utils/storage";
 
-const myPoints = 1234;
-
-const history = [
-  {
-    id: 1,
-    date: "2026.05.07",
-    desc: "걸음 수 목표 달성",
-    points: +50,
-    icon: "👟",
-  },
-  {
-    id: 2,
-    date: "2026.05.07",
-    desc: "7일 연속 운동 보너스",
-    points: +200,
-    icon: "🔥",
-  },
-  {
-    id: 3,
-    date: "2026.05.06",
-    desc: "걸음 수 목표 달성",
-    points: +50,
-    icon: "👟",
-  },
-  {
-    id: 4,
-    date: "2026.05.06",
-    desc: "파티 참여 완료",
-    points: +30,
-    icon: "🎉",
-  },
-  {
-    id: 5,
-    date: "2026.05.05",
-    desc: "걸음 수 목표 달성",
-    points: +50,
-    icon: "👟",
-  },
-  {
-    id: 6,
-    date: "2026.05.04",
-    desc: "주간 목표 달성",
-    points: +150,
-    icon: "🏆",
-  },
-  {
-    id: 7,
-    date: "2026.05.04",
-    desc: "걸음 수 목표 달성",
-    points: +50,
-    icon: "👟",
-  },
-  {
-    id: 8,
-    date: "2026.05.03",
-    desc: "친구에게 선물",
-    points: -100,
-    icon: "🎁",
-  },
-  {
-    id: 9,
-    date: "2026.05.02",
-    desc: "걸음 수 목표 달성",
-    points: +50,
-    icon: "👟",
-  },
-  {
-    id: 10,
-    date: "2026.05.01",
-    desc: "첫 운동 보너스",
-    points: +100,
-    icon: "✨",
-  },
-];
 
 const friends = [
   { id: 1, name: "김철수", emoji: "🧑", level: "스프린터 Lv.4" },
@@ -83,22 +11,11 @@ const friends = [
   { id: 5, name: "정도현", emoji: "👦", level: "파워리프터 Lv.1" },
 ];
 
-const cafeItems = [
-  {
-    id: 1,
-    name: "스타벅스 아메리카노",
-    brand: "스타벅스",
-    points: 3000,
-    emoji: "☕",
-  },
-  {
-    id: 2,
-    name: "이디야 카페라떼",
-    brand: "이디야커피",
-    points: 2000,
-    emoji: "🥛",
-  },
-];
+const exchangeMeta: Record<string, { brand: string; emoji: string }> = {
+  "스타벅스 아메리카노": { brand: "스타벅스", emoji: "☕" },
+  "이디야 카페라떼": { brand: "이디야커피", emoji: "🥛" },
+  "편의점 상품권": { brand: "편의점", emoji: "🏪" },
+};
 
 const brandItems = [
   {
@@ -124,6 +41,9 @@ export default function Points() {
   const [selectedFriend, setSelectedFriend] = useState<number | null>(null);
   const [giftAmount, setGiftAmount] = useState("");
 
+  const myPoints = storage.getPoints();
+  const history = storage.getPointsHistory();
+
   const tabs: { key: Tab; label: string }[] = [
     { key: "history", label: "적립내역" },
     { key: "gift", label: "선물하기" },
@@ -140,7 +60,7 @@ export default function Points() {
           <span className="text-2xl ml-1 font-bold opacity-80">P</span>
         </p>
         <p className="text-white/70 text-xs mt-3">
-          1km 달성 시 10P · 목표 달성 시 보너스 지급
+          1km 달성 시 {POINT_RULES.PER_KM}P · 목표 달성 시 보너스 지급
         </p>
       </div>
 
@@ -163,27 +83,35 @@ export default function Points() {
         {/* ── 적립내역 ── */}
         {tab === "history" && (
           <>
-            {history.map((item) => (
-              <div
-                key={item.id}
-                className="bg-white rounded-2xl shadow-sm px-5 py-4 flex items-center gap-4"
-              >
-                <div className="w-10 h-10 rounded-full bg-primary-light flex items-center justify-center text-xl flex-shrink-0">
-                  {item.icon}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-gray-800 text-sm">
-                    {item.desc}
-                  </p>
-                  <p className="text-xs text-gray-400 mt-0.5">{item.date}</p>
-                </div>
-                <span
-                  className={`font-extrabold text-base flex-shrink-0 ${item.points > 0 ? "text-primary" : "text-gray-400"}`}
-                >
-                  {item.points > 0 ? `+${item.points}` : item.points} P
-                </span>
+            {history.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-20 gap-3 text-gray-300">
+                <span className="text-5xl">🏃</span>
+                <p className="font-bold text-sm">아직 적립 내역이 없어요</p>
+                <p className="text-xs">운동을 완료하면 포인트가 쌓여요!</p>
               </div>
-            ))}
+            ) : (
+              history.map((item, idx) => (
+                <div
+                  key={idx}
+                  className="bg-white rounded-2xl shadow-sm px-5 py-4 flex items-center gap-4"
+                >
+                  <div className="w-10 h-10 rounded-full bg-primary-light flex items-center justify-center text-xl flex-shrink-0">
+                    {item.icon}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold text-gray-800 text-sm">
+                      {item.desc}
+                    </p>
+                    <p className="text-xs text-gray-400 mt-0.5">{item.date}</p>
+                  </div>
+                  <span
+                    className={`font-extrabold text-base flex-shrink-0 ${item.points > 0 ? "text-primary" : "text-gray-400"}`}
+                  >
+                    {item.points > 0 ? `+${item.points}` : item.points} P
+                  </span>
+                </div>
+              ))
+            )}
           </>
         )}
 
@@ -275,28 +203,31 @@ export default function Points() {
               </p>
             </div>
 
-            {/* 카페 섹션 */}
-            <p className="text-xs font-bold text-gray-400 px-1 mt-1">☕ 카페</p>
-            {cafeItems.map((item) => (
-              <div
-                key={item.id}
-                className="bg-white rounded-2xl shadow-sm px-5 py-4 flex items-center gap-4 opacity-60"
-              >
-                <div className="w-12 h-12 rounded-2xl bg-gray-100 flex items-center justify-center text-2xl flex-shrink-0">
-                  {item.emoji}
+            {/* 카페 & 편의점 섹션 */}
+            <p className="text-xs font-bold text-gray-400 px-1 mt-1">☕ 카페 & 편의점</p>
+            {POINT_EXCHANGE.map((item) => {
+              const meta = exchangeMeta[item.name] ?? { brand: "", emoji: "🎁" };
+              return (
+                <div
+                  key={item.name}
+                  className="bg-white rounded-2xl shadow-sm px-5 py-4 flex items-center gap-4 opacity-60"
+                >
+                  <div className="w-12 h-12 rounded-2xl bg-gray-100 flex items-center justify-center text-2xl flex-shrink-0">
+                    {meta.emoji}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-bold text-gray-800 text-sm">{item.name}</p>
+                    <p className="text-xs text-gray-400 mt-0.5">{meta.brand}</p>
+                    <p className="text-sm font-extrabold text-primary mt-1">
+                      {item.points.toLocaleString()} P
+                    </p>
+                  </div>
+                  <span className="flex-shrink-0 bg-gray-100 text-gray-400 text-xs font-bold px-3 py-2 rounded-full">
+                    준비중
+                  </span>
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p className="font-bold text-gray-800 text-sm">{item.name}</p>
-                  <p className="text-xs text-gray-400 mt-0.5">{item.brand}</p>
-                  <p className="text-sm font-extrabold text-primary mt-1">
-                    {item.points.toLocaleString()} P
-                  </p>
-                </div>
-                <span className="flex-shrink-0 bg-gray-100 text-gray-400 text-xs font-bold px-3 py-2 rounded-full">
-                  준비중
-                </span>
-              </div>
-            ))}
+              );
+            })}
 
             {/* 제휴브랜드 섹션 */}
             <p className="text-xs font-bold text-gray-400 px-1 mt-3">

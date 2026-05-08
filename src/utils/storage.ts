@@ -7,12 +7,20 @@ const KEYS = {
   LANGUAGE: "language",
   STEPS: "steps",
   POINTS: "points",
+  POINTS_HISTORY: "points_history",
   RECOMMENDED_DIET: "recommended_diet",
   TODAY_BURNED_KCAL: "today_burned_kcal",
   TODAY_DATE: "today_date",
   WORKOUT_HISTORY: "workout_history",
   JOINED_PARTY_IDS: "joined_party_ids",
 } as const;
+
+export type PointHistoryEntry = {
+  date: string;
+  desc: string;
+  points: number;
+  icon: string;
+};
 
 export type RecommendedDiet = {
   durationLabel: string;
@@ -88,6 +96,35 @@ export const storage = {
 
   setJoinedPartyIds: (ids: number[]) =>
     localStorage.setItem(KEYS.JOINED_PARTY_IDS, JSON.stringify(ids)),
+
+  getPoints: (): number => {
+    const raw = localStorage.getItem(KEYS.POINTS);
+    if (!raw) return 0;
+    const n = Number(raw);
+    return isNaN(n) ? 0 : n;
+  },
+
+  addPoints: (amount: number): number => {
+    const next = storage.getPoints() + amount;
+    localStorage.setItem(KEYS.POINTS, String(next));
+    return next;
+  },
+
+  getPointsHistory: (): PointHistoryEntry[] => {
+    const raw = localStorage.getItem(KEYS.POINTS_HISTORY);
+    if (!raw) return [];
+    try {
+      return JSON.parse(raw) as PointHistoryEntry[];
+    } catch {
+      return [];
+    }
+  },
+
+  addPointsHistory: (entry: PointHistoryEntry) => {
+    const hist = storage.getPointsHistory();
+    hist.unshift(entry);
+    localStorage.setItem(KEYS.POINTS_HISTORY, JSON.stringify(hist));
+  },
 
   addWorkoutToday: () => {
     const d = new Date();
