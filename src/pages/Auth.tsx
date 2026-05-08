@@ -6,7 +6,8 @@ import { supabase } from "../lib/supabase";
 type Mode = "login" | "signup";
 
 const gradientStyle = {
-  background: "linear-gradient(160deg, var(--color-primary) 0%, var(--color-secondary) 100%)",
+  background:
+    "linear-gradient(160deg, var(--color-primary) 0%, var(--color-secondary) 100%)",
 };
 
 export default function Auth() {
@@ -16,19 +17,27 @@ export default function Auth() {
   const [mode, setMode] = useState<Mode>("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [signupDone, setSignupDone] = useState(false);
 
   const toKorean = (msg: string): string => {
-    if (msg.includes("Invalid login credentials")) return "이메일 또는 비밀번호가 틀렸어요.";
-    if (msg.includes("Email not confirmed")) return "이메일 인증을 완료해주세요. 받은 메일함을 확인하세요.";
-    if (msg.includes("User already registered")) return "이미 가입된 이메일이에요.";
-    if (msg.includes("Password should be at least")) return "비밀번호는 6자 이상이어야 해요.";
-    if (msg.includes("Unable to validate email")) return "올바른 이메일 형식이 아니에요.";
-    if (msg.includes("Email rate limit exceeded")) return "잠시 후 다시 시도해주세요.";
-    if (msg.includes("over_email_send_rate_limit")) return "이메일 전송 한도를 초과했어요. 잠시 후 다시 시도해주세요.";
-    if (msg.includes("network") || msg.includes("fetch")) return "네트워크 연결을 확인해주세요.";
+    if (msg.includes("Invalid login credentials"))
+      return "이메일 또는 비밀번호가 틀렸어요.";
+    if (msg.includes("Email not confirmed"))
+      return "이메일 인증을 완료해주세요. 받은 메일함을 확인하세요.";
+    if (msg.includes("User already registered"))
+      return "이미 가입된 이메일이에요.";
+    if (msg.includes("Password should be at least"))
+      return "비밀번호는 6자 이상이어야 해요.";
+    if (msg.includes("Unable to validate email"))
+      return "올바른 이메일 형식이 아니에요.";
+    if (msg.includes("Email rate limit exceeded"))
+      return "잠시 후 다시 시도해주세요.";
+    if (msg.includes("over_email_send_rate_limit"))
+      return "이메일 전송 한도를 초과했어요. 잠시 후 다시 시도해주세요.";
+    if (msg.includes("network") || msg.includes("fetch"))
+      return "네트워크 연결을 확인해주세요.";
     return "오류가 발생했어요. 다시 시도해주세요.";
   };
 
@@ -68,16 +77,24 @@ const [error, setError] = useState<string | null>(null);
 
   if (signupDone) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-6" style={gradientStyle}>
+      <div
+        className="min-h-screen flex items-center justify-center p-6"
+        style={gradientStyle}
+      >
         <div className="text-center max-w-sm w-full">
           <div className="text-7xl mb-6">📧</div>
-          <h2 className="text-2xl font-black text-white mb-3">이메일을 확인해주세요</h2>
+          <h2 className="text-2xl font-black text-white mb-3">
+            이메일을 확인해주세요
+          </h2>
           <p className="text-white/70 text-sm leading-relaxed mb-8">
             <span className="text-white font-semibold">{email}</span>로<br />
             인증 메일을 보냈어요. 확인 후 로그인해주세요.
           </p>
           <button
-            onClick={() => { setMode("login"); setSignupDone(false); }}
+            onClick={() => {
+              setMode("login");
+              setSignupDone(false);
+            }}
             aria-label="로그인으로 이동"
             className="w-full py-4 rounded-2xl font-bold text-sm"
             style={{ background: "white", color: "var(--color-primary)" }}
@@ -90,14 +107,18 @@ const [error, setError] = useState<string | null>(null);
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-6" style={gradientStyle}>
+    <div
+      className="min-h-screen flex flex-col items-center justify-center p-6"
+      style={gradientStyle}
+    >
       <div className="w-full max-w-sm flex flex-col items-center">
-
         {/* 헤더 */}
         <div className="text-center mb-10">
           <div className="text-8xl mb-4 drop-shadow-lg">🏃</div>
-          <h1 className="text-3xl font-black text-white tracking-tight">Workout</h1>
-          <p className="text-white/60 text-sm mt-2">함께 운동하고 포인트를 모아요</p>
+          <h1 className="text-3xl font-black text-white tracking-tight">
+            Workout
+          </h1>
+          <p className="text-white/60 text-sm mt-2">혼자지만 함께하는 운동</p>
         </div>
 
         {/* 탭 전환 */}
@@ -108,7 +129,10 @@ const [error, setError] = useState<string | null>(null);
           {(["login", "signup"] as Mode[]).map((m) => (
             <button
               key={m}
-              onClick={() => { setMode(m); setError(null); }}
+              onClick={() => {
+                setMode(m);
+                setError(null);
+              }}
               className="flex-1 py-2.5 rounded-xl text-sm font-bold transition-all"
               style={
                 mode === m
@@ -154,7 +178,11 @@ const [error, setError] = useState<string | null>(null);
             className="w-full py-4 rounded-2xl font-black text-sm mt-2 disabled:opacity-50 transition-opacity shadow-sm"
             style={{ background: "white", color: "var(--color-primary)" }}
           >
-            {isSubmitting ? "처리 중..." : mode === "login" ? "로그인" : "회원가입"}
+            {isSubmitting
+              ? "처리 중..."
+              : mode === "login"
+                ? "로그인"
+                : "회원가입"}
           </button>
         </form>
       </div>
