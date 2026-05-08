@@ -67,6 +67,17 @@ async function deletePartyIfEmpty(partyId: string): Promise<void> {
   }
 }
 
+export async function getPartyById(partyId: string): Promise<Party | null> {
+  const { data, error } = await supabase
+    .from("parties")
+    .select("*, party_members(count)")
+    .eq("id", partyId)
+    .single();
+  if (error || !data) return null;
+  const [result] = await withLeaderNicknames([data]);
+  return result ?? null;
+}
+
 export async function getParties(): Promise<Party[]> {
   const { data, error } = await supabase
     .from("parties")

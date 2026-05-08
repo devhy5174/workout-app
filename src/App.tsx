@@ -17,6 +17,7 @@ import Workout from "./pages/Workout";
 import Auth from "./pages/Auth";
 import Onboarding from "./pages/Onboarding";
 import Community from "./pages/Community";
+import PartyDetail from "./pages/PartyDetail";
 import MyPage from "./pages/MyPage";
 import { useUser } from "./context/UserContext";
 import LoadingScreen from "./components/ui/LoadingScreen";
@@ -65,6 +66,7 @@ export default function App() {
           <Route path="/community" element={<Community />} />
           <Route path="/character" element={<Character />} />
           <Route path="/party" element={<Party />} />
+          <Route path="/party/:id" element={<PartyDetail />} />
           <Route path="/goal" element={<Goal />} />
           <Route path="/diet" element={<Diet />} />
           <Route path="/points" element={<Points />} />

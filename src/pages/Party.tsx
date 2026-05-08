@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { TAGS } from "../data/tags";
 import { POINT_RULES } from "../data/points";
 import { storage } from "../utils/storage";
@@ -32,6 +33,7 @@ function PartyCard({
   onJoin,
   onLeave,
   onDelete,
+  onNavigate,
 }: {
   party: PartyData;
   joined: boolean;
@@ -41,6 +43,7 @@ function PartyCard({
   onJoin?: (p: PartyData) => void;
   onLeave?: (p: PartyData) => void;
   onDelete?: (p: PartyData) => void;
+  onNavigate: (partyId: string) => void;
 }) {
   const slotFull = party.member_count >= party.max_members;
   const [todayStats, setTodayStats] = useState<PartyTodayStats | null>(null);
@@ -57,12 +60,15 @@ function PartyCard({
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between gap-2">
-            <p className="font-extrabold text-gray-800 truncate">
+            <p
+              className="font-extrabold text-gray-800 truncate cursor-pointer active:opacity-70"
+              onClick={() => onNavigate(party.id)}
+            >
               {party.name}
             </p>
             {isLeader && onDelete && (
               <button
-                onClick={() => onDelete(party)}
+                onClick={(e) => { e.stopPropagation(); onDelete(party); }}
                 aria-label="파티 삭제"
                 className="flex-shrink-0 w-7 h-7 rounded-full bg-red-50 text-red-400 text-xs font-bold flex items-center justify-center hover:bg-red-100 transition"
               >
@@ -70,10 +76,16 @@ function PartyCard({
               </button>
             )}
           </div>
-          <p className="text-xs text-gray-400 mt-0.5 line-clamp-1">
+          <p
+            className="text-xs text-gray-400 mt-0.5 line-clamp-1 cursor-pointer"
+            onClick={() => onNavigate(party.id)}
+          >
             {party.description}
           </p>
-          <div className="flex flex-wrap gap-1 mt-2">
+          <div
+            className="flex flex-wrap gap-1 mt-2 cursor-pointer"
+            onClick={() => onNavigate(party.id)}
+          >
             {party.tags.map((t) => (
               <span
                 key={t}
@@ -87,7 +99,10 @@ function PartyCard({
       </div>
 
       <div className="grid grid-cols-2 gap-2">
-        <div className="bg-gray-50 rounded-2xl px-3 py-2 flex items-center gap-2">
+        <button
+          onClick={() => onMembers(party)}
+          className="bg-gray-50 rounded-2xl px-3 py-2 flex items-center gap-2 text-left active:bg-gray-100 transition"
+        >
           <span className="text-base">👥</span>
           <div>
             <p className="text-[10px] text-gray-400">멤버</p>
@@ -95,7 +110,7 @@ function PartyCard({
               {party.member_count} / {party.max_members}명
             </p>
           </div>
-        </div>
+        </button>
         <div className="bg-gray-50 rounded-2xl px-3 py-2 flex items-center gap-2">
           <span className="text-base">📍</span>
           <div>
@@ -180,14 +195,6 @@ function PartyCard({
             </button>
           )}
         </div>
-        {joined && (
-          <button
-            onClick={() => onMembers(party)}
-            className="w-full py-2.5 rounded-xl border border-gray-200 text-xs font-bold text-gray-500 hover:bg-gray-50 transition"
-          >
-            👥 멤버 목록 보기
-          </button>
-        )}
       </div>
     </div>
   );
@@ -798,6 +805,7 @@ function Toast({ message, icon = "🎉" }: { message: string; icon?: string }) {
 type Tab = "neighbor" | "mine";
 
 export default function Party() {
+  const navigate = useNavigate();
   const { user } = useUser();
   const {
     parties,
@@ -1022,6 +1030,7 @@ export default function Party() {
               onJoin={setJoinTarget}
               onLeave={handleLeaveAttempt}
               onDelete={setDeleteTarget}
+              onNavigate={(partyId) => navigate(`/party/${partyId}`)}
             />
           ))
         )}
