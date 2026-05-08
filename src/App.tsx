@@ -19,14 +19,7 @@ import Onboarding from "./pages/Onboarding";
 import Community from "./pages/Community";
 import MyPage from "./pages/MyPage";
 import { useUser } from "./context/UserContext";
-
-function LoadingScreen() {
-  return (
-    <div className="h-screen flex items-center justify-center bg-gray-50">
-      <div className="text-4xl animate-bounce">🏃</div>
-    </div>
-  );
-}
+import LoadingScreen from "./components/ui/LoadingScreen";
 
 // 로그인만 필요 (온보딩 미완료 허용)
 function AuthGuard({ children }: { children: React.ReactNode }) {

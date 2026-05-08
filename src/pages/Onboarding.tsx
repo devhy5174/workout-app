@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useUser } from "../context/UserContext";
+import { useCharacter } from "../context/CharacterContext";
 import { characters, type Character } from "../data/characters";
 
 type Gender = "male" | "female";
@@ -315,6 +316,7 @@ const TOTAL_STEPS = 4;
 
 export default function Onboarding() {
   const { updateProfile } = useUser();
+  const { selectCharacter } = useCharacter();
   const navigate = useNavigate();
 
   const [step, setStep] = useState(1);
@@ -359,6 +361,7 @@ export default function Onboarding() {
       bmi: bmiValue,
       character_id: characterId,
     });
+    if (characterId !== null) selectCharacter(characterId);
     setIsSubmitting(false);
     navigate("/", { replace: true });
   };

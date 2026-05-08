@@ -1,6 +1,7 @@
-import { createContext, useContext, useState } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
 import { storage } from "../utils/storage";
 import { type Character, characters } from "../data/characters";
+import { useUser } from "./UserContext";
 
 type CharacterContextValue = {
   selectedId: number | null;
@@ -15,17 +16,24 @@ const CharacterContext = createContext<CharacterContextValue>({
 });
 
 export function CharacterProvider({ children }: { children: React.ReactNode }) {
+  const { userProfile } = useUser();
   const [selectedId, setSelectedId] = useState<number | null>(() => {
-    // TODO: Supabase - user_profiles 테이블에서 character_id 조회로 교체
     const saved = storage.get("CHARACTER");
     return saved ? Number(saved) : null;
   });
+
+  // userProfile.character_id에서 자동 동기화 (로그인, 다른 기기, 온보딩 직후)
+  useEffect(() => {
+    if (selectedId === null && userProfile?.character_id) {
+      setSelectedId(userProfile.character_id);
+      storage.set("CHARACTER", String(userProfile.character_id));
+    }
+  }, [userProfile?.character_id, selectedId]);
 
   const selectedCharacter = characters.find((c) => c.id === selectedId) ?? null;
 
   const selectCharacter = (id: number) => {
     setSelectedId(id);
-    // TODO: Supabase - user_profiles 테이블 upsert({ character_id: id })로 교체
     storage.set("CHARACTER", String(id));
   };
 

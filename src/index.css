@@ -17,6 +17,16 @@
   animation: fade-in-down 0.25s ease-out forwards;
 }
 
+@keyframes bubble-fade {
+  0%, 100% { opacity: 0.45; }
+  50% { opacity: 1; }
+}
+
+@keyframes dot-pulse {
+  0%, 100% { opacity: 0.2; transform: scale(0.8); }
+  50% { opacity: 1; transform: scale(1.1); }
+}
+
 @keyframes border-glow {
   0%, 100% {
     box-shadow: 0 0 0 0 transparent;
