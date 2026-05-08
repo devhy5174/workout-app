@@ -9,12 +9,12 @@ import {
 import { HiChatBubbleLeftRight } from "react-icons/hi2";
 
 const navItems = [
-  { to: "/",          icon: HiHome,                label: "홈" },
-  { to: "/community", icon: HiChatBubbleLeftRight,  label: "커뮤니티" },
-  { to: "/party",     icon: HiUserGroup,            label: "파티" },
-  { to: "/points",    icon: HiCurrencyDollar,       label: "포인트" },
-  { to: "/mypage",    icon: HiUser,                 label: "마이페이지" },
-  { to: "/settings",  icon: HiCog,                  label: "설정" },
+  { to: "/", icon: HiHome, label: "홈" },
+  { to: "/community", icon: HiChatBubbleLeftRight, label: "커뮤니티" },
+  { to: "/party", icon: HiUserGroup, label: "파티" },
+  { to: "/mypage", icon: HiUser, label: "마이페이지" },
+  { to: "/points", icon: HiCurrencyDollar, label: "포인트" },
+  { to: "/settings", icon: HiCog, label: "설정" },
 ];
 
 export default function BottomNav() {
