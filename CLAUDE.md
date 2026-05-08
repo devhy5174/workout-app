@@ -50,3 +50,22 @@ src/
 - 버튼에 aria-label 추가
 - 색상 대비 충분히 (밝은 배경에 흰글씨 금지)
 - 터치 영역 최소 44px 이상
+
+## 코드 구조 규칙
+
+- Supabase 통신은 항상 src/lib/[기능]Service.ts 에서
+- 상태 관리는 항상 src/hooks/use[기능].ts 훅으로 분리
+- 페이지 컴포넌트는 훅에서 데이터 받아서 UI만 담당
+- 새 기능 추가시:
+  1. [기능]Service.ts 에 Supabase 함수 작성
+  2. use[기능].ts 훅에서 isLoading/error 상태 관리
+  3. 페이지에서 훅 import해서 사용
+
+## 폴더 구조 규칙
+
+- src/lib/ → Supabase 서비스 파일
+- src/hooks/ → 커스텀 훅
+- src/pages/ → 페이지 컴포넌트 (UI만)
+- src/components/ → 재사용 컴포넌트
+- src/data/ → 고정 데이터 (Supabase 교체 불필요)
+- src/utils/ → 유틸 함수

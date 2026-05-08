@@ -161,6 +161,47 @@ export default function Home() {
           운동 시작하기
         </Link>
 
+        {/* 이번주 운동 */}
+        <div className="bg-white rounded-3xl shadow-sm p-6 flex flex-col gap-3">
+          <div className="flex justify-between items-center">
+            <div className="flex items-center gap-2">
+              <span className="font-bold text-gray-700">이번주 운동</span>
+            </div>
+            <span className="font-extrabold text-primary">
+              {workoutDays}일
+              <span className="text-gray-300 font-normal text-sm">
+                {" "}
+                / {workoutGoal}일
+              </span>
+            </span>
+          </div>
+          <ProgressBar
+            value={workoutDays}
+            max={workoutGoal}
+            color="bg-gradient-to-r from-secondary to-primary"
+          />
+          <div className="flex justify-between pt-1">
+            {["월", "화", "수", "목", "금", "토", "일"].map((day, i) => {
+              const isWeekendDay = i >= 5;
+              const didWorkout = weekWorkouts[i];
+              return (
+                <div key={day} className="flex flex-col items-center gap-1.5">
+                  <div
+                    className={`w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold transition-colors ${
+                      didWorkout && !isWeekendDay
+                        ? "bg-primary text-white shadow-sm"
+                        : didWorkout && isWeekendDay
+                          ? "border-2 border-yellow-300 bg-yellow-50"
+                          : "border-2 border-gray-100 text-gray-300"
+                    }`}
+                  >
+                    {didWorkout && isWeekendDay ? "⭐" : day}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
         {/* 오늘 목표 / 칼로리 */}
         {userGoal ? (
           <div className="bg-white rounded-3xl shadow-sm p-6 flex flex-col gap-3">
@@ -228,48 +269,6 @@ export default function Home() {
             </Link>
           </div>
         )}
-
-        {/* 이번주 운동 */}
-        <div className="bg-white rounded-3xl shadow-sm p-6 flex flex-col gap-3">
-          <div className="flex justify-between items-center">
-            <div className="flex items-center gap-2">
-              <span className="font-bold text-gray-700">이번주 운동</span>
-            </div>
-            <span className="font-extrabold text-primary">
-              {workoutDays}일
-              <span className="text-gray-300 font-normal text-sm">
-                {" "}
-                / {workoutGoal}일
-              </span>
-            </span>
-          </div>
-          <ProgressBar
-            value={workoutDays}
-            max={workoutGoal}
-            color="bg-gradient-to-r from-secondary to-primary"
-          />
-          <div className="flex justify-between pt-1">
-            {["월", "화", "수", "목", "금", "토", "일"].map((day, i) => {
-              const isWeekendDay = i >= 5;
-              const didWorkout = weekWorkouts[i];
-              return (
-                <div key={day} className="flex flex-col items-center gap-1.5">
-                  <div
-                    className={`w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold transition-colors ${
-                      didWorkout && !isWeekendDay
-                        ? "bg-primary text-white shadow-sm"
-                        : didWorkout && isWeekendDay
-                          ? "border-2 border-yellow-300 bg-yellow-50"
-                          : "border-2 border-gray-100 text-gray-300"
-                    }`}
-                  >
-                    {didWorkout && isWeekendDay ? "⭐" : day}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
 
         {/* 포인트 */}
         <div className="bg-white rounded-3xl shadow-sm p-6 flex flex-col gap-3">

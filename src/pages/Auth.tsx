@@ -118,7 +118,7 @@ export default function Auth() {
           <h1 className="text-3xl font-black text-white tracking-tight">
             Workout
           </h1>
-          <p className="text-white/60 text-sm mt-2">함께하는 운동</p>
+          <p className="text-white/60 text-sm mt-2">우리 함께 운동해요</p>
         </div>
 
         {/* 탭 전환 */}

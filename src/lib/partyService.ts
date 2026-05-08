@@ -1,4 +1,5 @@
 import { supabase } from "./supabase";
+import { getCharacterById } from "../data/characters";
 
 export type TimeSlot = "새벽" | "아침" | "저녁" | "주말";
 
@@ -22,6 +23,7 @@ export type PartyMember = {
   user_id: string;
   party_id: string;
   nickname: string;
+  character_emoji: string;
   weekly_steps: number;
   joined_at: string;
 };
@@ -41,7 +43,7 @@ async function withLeaderNicknames(rows: any[]): Promise<Party[]> {
   if (rows.length === 0) return [];
   const leaderIds = [...new Set(rows.map((p) => p.created_by))];
   const { data: leaders } = await supabase
-    .from("users")
+    .from("public_profiles")
     .select("id, nickname")
     .in("id", leaderIds);
   const leaderMap = new Map(
@@ -53,6 +55,16 @@ async function withLeaderNicknames(rows: any[]): Promise<Party[]> {
     leader_nickname: leaderMap.get(p.created_by) ?? "알 수 없음",
     member_count: p.party_members?.[0]?.count ?? 0,
   }));
+}
+
+async function deletePartyIfEmpty(partyId: string): Promise<void> {
+  const { count } = await supabase
+    .from("party_members")
+    .select("*", { count: "exact", head: true })
+    .eq("party_id", partyId);
+  if (count === 0) {
+    await supabase.from("parties").delete().eq("id", partyId);
+  }
 }
 
 export async function getParties(): Promise<Party[]> {
@@ -137,7 +149,9 @@ export async function leaveParty(
     .delete()
     .eq("party_id", partyId)
     .eq("user_id", userId);
-  return { error: error?.message ?? null };
+  if (error) return { error: error.message };
+  await deletePartyIfEmpty(partyId);
+  return { error: null };
 }
 
 export async function kickMember(
@@ -149,7 +163,9 @@ export async function kickMember(
     .delete()
     .eq("party_id", partyId)
     .eq("user_id", targetUserId);
-  return { error: error?.message ?? null };
+  if (error) return { error: error.message };
+  await deletePartyIfEmpty(partyId);
+  return { error: null };
 }
 
 export async function deleteParty(
@@ -159,10 +175,65 @@ export async function deleteParty(
   return { error: error?.message ?? null };
 }
 
+export type PartyTodayStats = {
+  totalSteps: number;
+  topMember: { nickname: string; steps: number } | null;
+};
+
+export async function getPartyTodayStats(
+  partyId: string,
+): Promise<PartyTodayStats> {
+  const { data: members } = await supabase
+    .from("party_members")
+    .select("user_id, public_profiles(nickname)")
+    .eq("party_id", partyId);
+
+  if (!members || members.length === 0)
+    return { totalSteps: 0, topMember: null };
+
+  const userIds = members.map((m: any) => m.user_id);
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
+
+  const { data: workouts } = await supabase
+    .from("workout_history")
+    .select("user_id, steps")
+    .in("user_id", userIds)
+    .gte("created_at", todayStart.toISOString());
+
+  if (!workouts || workouts.length === 0)
+    return { totalSteps: 0, topMember: null };
+
+  const stepsMap = new Map<string, number>();
+  workouts.forEach((w: any) => {
+    stepsMap.set(w.user_id, (stepsMap.get(w.user_id) ?? 0) + w.steps);
+  });
+
+  let totalSteps = 0;
+  let topUserId = "";
+  let topSteps = 0;
+
+  stepsMap.forEach((steps, userId) => {
+    totalSteps += steps;
+    if (steps > topSteps) {
+      topSteps = steps;
+      topUserId = userId;
+    }
+  });
+
+  if (totalSteps === 0) return { totalSteps: 0, topMember: null };
+
+  const topMemberRow = members.find((m: any) => m.user_id === topUserId);
+  const topNickname =
+    (topMemberRow?.public_profiles as any)?.nickname ?? "알 수 없음";
+
+  return { totalSteps, topMember: { nickname: topNickname, steps: topSteps } };
+}
+
 export async function getPartyMembers(partyId: string): Promise<PartyMember[]> {
   const { data: members, error } = await supabase
     .from("party_members")
-    .select("user_id, party_id, joined_at, users(nickname)")
+    .select("user_id, party_id, joined_at, public_profiles(nickname, character_id)")
     .eq("party_id", partyId);
 
   if (error || !members) return [];
@@ -183,11 +254,19 @@ export async function getPartyMembers(partyId: string): Promise<PartyMember[]> {
     stepsMap.set(w.user_id, (stepsMap.get(w.user_id) ?? 0) + w.steps);
   });
 
-  return members.map((m: any) => ({
-    user_id: m.user_id,
-    party_id: m.party_id,
-    nickname: (m.users as any)?.nickname ?? "알 수 없음",
-    weekly_steps: stepsMap.get(m.user_id) ?? 0,
-    joined_at: m.joined_at,
-  }));
+  return members.map((m: any) => {
+    const profile = m.public_profiles as any;
+    const characterEmoji =
+      profile?.character_id != null
+        ? (getCharacterById(profile.character_id)?.emoji ?? "🏃")
+        : "🏃";
+    return {
+      user_id: m.user_id,
+      party_id: m.party_id,
+      nickname: profile?.nickname ?? "알 수 없음",
+      character_emoji: characterEmoji,
+      weekly_steps: stepsMap.get(m.user_id) ?? 0,
+      joined_at: m.joined_at,
+    };
+  });
 }

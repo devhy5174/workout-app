@@ -4,10 +4,11 @@ import { POINT_RULES } from "../data/points";
 import { storage } from "../utils/storage";
 import { useUser } from "../context/UserContext";
 import { useParty } from "../hooks/useParty";
-import { getPartyMembers } from "../lib/partyService";
+import { getPartyMembers, getPartyTodayStats } from "../lib/partyService";
 import type {
   Party as PartyData,
   PartyMember,
+  PartyTodayStats,
   CreatePartyInput,
 } from "../lib/partyService";
 
@@ -27,6 +28,7 @@ function PartyCard({
   joined,
   isLeader,
   onRanking,
+  onMembers,
   onJoin,
   onLeave,
   onDelete,
@@ -35,11 +37,17 @@ function PartyCard({
   joined: boolean;
   isLeader: boolean;
   onRanking: (p: PartyData) => void;
+  onMembers: (p: PartyData) => void;
   onJoin?: (p: PartyData) => void;
   onLeave?: (p: PartyData) => void;
   onDelete?: (p: PartyData) => void;
 }) {
   const slotFull = party.member_count >= party.max_members;
+  const [todayStats, setTodayStats] = useState<PartyTodayStats | null>(null);
+
+  useEffect(() => {
+    getPartyTodayStats(party.id).then(setTodayStats);
+  }, [party.id]);
 
   return (
     <div className="bg-white rounded-3xl shadow-sm p-5 flex flex-col gap-4">
@@ -93,7 +101,7 @@ function PartyCard({
           <div>
             <p className="text-[10px] text-gray-400">목표 거리</p>
             <p className="text-xs font-bold text-gray-700">
-              {party.target_distance}
+              {party.target_distance}km
             </p>
           </div>
         </div>
@@ -119,31 +127,65 @@ function PartyCard({
         </div>
       </div>
 
-      <div className="flex gap-2">
-        <button
-          onClick={() => onRanking(party)}
-          className="flex-1 py-2.5 rounded-xl border border-gray-200 text-xs font-bold text-gray-500 hover:bg-gray-50 transition"
-        >
-          🏆 랭킹 보기
-        </button>
-        {joined ? (
-          <button
-            onClick={() => onLeave?.(party)}
-            className="flex-1 py-2.5 rounded-xl bg-green-100 text-xs font-bold text-green-600 active:scale-95 transition"
-          >
-            ✓ 참여중
-          </button>
+      <div className="bg-orange-50 rounded-2xl px-4 py-3 flex flex-col gap-1">
+        <p className="text-xs font-extrabold text-orange-400">
+          🔥 오늘 파티 현황
+        </p>
+        {todayStats === null ? (
+          <p className="text-xs text-gray-300 animate-pulse">불러오는 중...</p>
+        ) : todayStats.totalSteps === 0 ? (
+          <p className="text-xs text-gray-400">아직 오늘 운동 기록이 없어요</p>
         ) : (
+          <p className="text-xs font-bold text-gray-700">
+            총 걸음수{" "}
+            <span className="text-orange-500">
+              {todayStats.totalSteps.toLocaleString()} 보
+            </span>
+          </p>
+        )}
+      </div>
+
+      <div className="flex flex-col gap-2">
+        <div className="flex gap-2">
           <button
-            disabled={slotFull}
-            onClick={() => !slotFull && onJoin?.(party)}
-            className={`flex-1 py-2.5 rounded-xl text-xs font-bold transition ${
-              slotFull
-                ? "bg-gray-100 text-gray-300 cursor-not-allowed"
-                : "bg-primary text-white active:scale-95"
-            }`}
+            onClick={() => onRanking(party)}
+            className="flex-1 py-2.5 rounded-xl border border-gray-200 text-xs font-bold text-gray-500 hover:bg-gray-50 transition"
           >
-            {slotFull ? "모집 마감" : "참가하기"}
+            🏆 랭킹 보기
+          </button>
+          {joined ? (
+            isLeader ? (
+              <div className="flex-1 py-2.5 rounded-xl bg-yellow-50 text-xs font-bold text-yellow-600 flex items-center justify-center gap-1">
+                👑 방장
+              </div>
+            ) : (
+              <button
+                onClick={() => onLeave?.(party)}
+                className="flex-1 py-2.5 rounded-xl bg-green-100 text-xs font-bold text-green-600 active:scale-95 transition"
+              >
+                ✓ 참여중
+              </button>
+            )
+          ) : (
+            <button
+              disabled={slotFull}
+              onClick={() => !slotFull && onJoin?.(party)}
+              className={`flex-1 py-2.5 rounded-xl text-xs font-bold transition ${
+                slotFull
+                  ? "bg-gray-100 text-gray-300 cursor-not-allowed"
+                  : "bg-primary text-white active:scale-95"
+              }`}
+            >
+              {slotFull ? "모집 마감" : "참가하기"}
+            </button>
+          )}
+        </div>
+        {joined && (
+          <button
+            onClick={() => onMembers(party)}
+            className="w-full py-2.5 rounded-xl border border-gray-200 text-xs font-bold text-gray-500 hover:bg-gray-50 transition"
+          >
+            👥 멤버 목록 보기
           </button>
         )}
       </div>
@@ -165,11 +207,11 @@ function KickConfirmModal({
       <div className="w-full max-w-sm bg-white rounded-3xl p-7 flex flex-col items-center gap-4 shadow-xl">
         <span className="text-5xl">⚠️</span>
         <p className="font-extrabold text-gray-800 text-lg text-center">
-          멤버를 강퇴할까요?
+          정말 퇴장시킬까요?
         </p>
         <p className="text-sm text-gray-400 text-center">
           <span className="font-bold text-gray-600">"{nickname}"</span> 님을
-          파티에서 강퇴해요
+          파티에서 퇴장시켜요
         </p>
         <div className="flex gap-3 w-full">
           <button
@@ -182,11 +224,124 @@ function KickConfirmModal({
             onClick={onConfirm}
             className="flex-1 py-3 rounded-2xl bg-red-500 text-white text-sm font-extrabold active:scale-95 transition"
           >
-            강퇴
+            퇴장
           </button>
         </div>
       </div>
     </div>
+  );
+}
+
+function MembersBottomSheet({
+  party,
+  isLeader,
+  currentUserId,
+  onKick,
+  onClose,
+}: {
+  party: PartyData;
+  isLeader: boolean;
+  currentUserId: string | undefined;
+  onKick: (
+    partyId: string,
+    userId: string,
+  ) => Promise<{ error: string | null }>;
+  onClose: () => void;
+}) {
+  const [members, setMembers] = useState<PartyMember[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [kickTarget, setKickTarget] = useState<PartyMember | null>(null);
+
+  useEffect(() => {
+    getPartyMembers(party.id).then((data) => {
+      setMembers(data);
+      setLoading(false);
+    });
+  }, [party.id]);
+
+  const handleKickConfirm = async () => {
+    if (!kickTarget) return;
+    await onKick(party.id, kickTarget.user_id);
+    const updated = await getPartyMembers(party.id);
+    setMembers(updated);
+    setKickTarget(null);
+  };
+
+  return (
+    <>
+      <div
+        className="fixed inset-0 bg-black/40 z-50 flex items-end justify-center"
+        onClick={onClose}
+      >
+        <div
+          className="w-full max-w-md bg-white rounded-t-3xl p-6 pb-10 flex flex-col gap-4"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="flex items-center justify-between">
+            <p className="font-extrabold text-gray-800 text-lg">
+              {party.emoji} {party.name} 멤버
+            </p>
+            <button
+              onClick={onClose}
+              className="text-gray-400 text-xl font-bold"
+              aria-label="닫기"
+            >
+              ✕
+            </button>
+          </div>
+
+          {loading ? (
+            <div className="py-10 flex items-center justify-center">
+              <span className="text-gray-300 text-sm animate-pulse">
+                불러오는 중...
+              </span>
+            </div>
+          ) : members.length === 0 ? (
+            <div className="py-10 flex items-center justify-center">
+              <span className="text-gray-300 text-sm">멤버가 없어요</span>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-3 max-h-[60vh] overflow-y-auto">
+              {members.map((m) => (
+                <div
+                  key={m.user_id}
+                  className="flex items-center gap-3 bg-gray-50 rounded-2xl px-4 py-3"
+                >
+                  <span className="text-2xl w-8 text-center flex-shrink-0">
+                    {m.character_emoji}
+                  </span>
+                  <p className="flex-1 font-bold text-gray-700 text-sm truncate">
+                    {m.nickname}
+                    {m.user_id === currentUserId && (
+                      <span className="ml-1 text-[10px] text-primary">
+                        (나)
+                      </span>
+                    )}
+                  </p>
+                  {isLeader && m.user_id !== currentUserId && (
+                    <button
+                      onClick={() => setKickTarget(m)}
+                      aria-label={`${m.nickname} 퇴장`}
+                      className="flex-shrink-0 text-[10px] font-bold text-red-400 bg-red-50 px-2 py-1 rounded-full hover:bg-red-100 transition"
+                    >
+                      퇴장
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {kickTarget && (
+        <KickConfirmModal
+          nickname={kickTarget.nickname}
+          onConfirm={handleKickConfirm}
+          onCancel={() => setKickTarget(null)}
+        />
+      )}
+    </>
   );
 }
 
@@ -270,6 +425,9 @@ function RankingModal({
                   <span className="text-2xl w-8 text-center flex-shrink-0">
                     {rankEmojis[i] ?? `${i + 1}`}
                   </span>
+                  <span className="text-xl flex-shrink-0">
+                    {m.character_emoji}
+                  </span>
                   <p className="flex-1 font-bold text-gray-700 text-sm truncate">
                     {m.nickname}
                     {m.user_id === currentUserId && (
@@ -284,10 +442,10 @@ function RankingModal({
                   {isLeader && m.user_id !== currentUserId && (
                     <button
                       onClick={() => setKickTarget(m)}
-                      aria-label={`${m.nickname} 강퇴`}
+                      aria-label={`${m.nickname} 퇴장`}
                       className="flex-shrink-0 text-[10px] font-bold text-red-400 bg-red-50 px-2 py-1 rounded-full hover:bg-red-100 transition"
                     >
-                      강퇴
+                      퇴장
                     </button>
                   )}
                 </div>
@@ -626,12 +784,12 @@ function DeleteConfirmModal({
   );
 }
 
-function JoinToast() {
+function Toast({ message, icon = "🎉" }: { message: string; icon?: string }) {
   return (
     <div className="fixed top-6 left-1/2 -translate-x-1/2 z-50 pointer-events-none">
       <div className="bg-gray-800 text-white text-sm font-bold px-5 py-3 rounded-2xl shadow-xl flex items-center gap-2 animate-fade-in-down">
-        <span>🎉</span>
-        <span>파티에 참가했어요! +{POINT_RULES.PARTY_JOIN}P 적립</span>
+        <span>{icon}</span>
+        <span>{message}</span>
       </div>
     </div>
   );
@@ -656,14 +814,22 @@ export default function Party() {
 
   const [tab, setTab] = useState<Tab>("neighbor");
   const [rankingParty, setRankingParty] = useState<PartyData | null>(null);
+  const [membersParty, setMembersParty] = useState<PartyData | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<PartyData | null>(null);
   const [joinTarget, setJoinTarget] = useState<PartyData | null>(null);
   const [leaveTarget, setLeaveTarget] = useState<PartyData | null>(null);
-  const [showJoinToast, setShowJoinToast] = useState(false);
+  const [toast, setToast] = useState<{ message: string; icon?: string } | null>(
+    null,
+  );
   const [filterTagId, setFilterTagId] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+
+  const showToast = (message: string, icon?: string) => {
+    setToast({ message, icon });
+    setTimeout(() => setToast(null), 2500);
+  };
 
   const handleCreate = async (input: CreatePartyInput) => {
     const { error } = await createParty(input);
@@ -687,10 +853,17 @@ export default function Party() {
         points: POINT_RULES.PARTY_JOIN,
         icon: "🎉",
       });
-      setShowJoinToast(true);
-      setTimeout(() => setShowJoinToast(false), 2500);
+      showToast(`파티에 참가했어요! +${POINT_RULES.PARTY_JOIN}P 적립`, "🎉");
     }
     setJoinTarget(null);
+  };
+
+  const handleLeaveAttempt = (p: PartyData) => {
+    if (isLeader(p)) {
+      showToast("방장은 탈퇴할 수 없어요. 파티를 삭제해주세요.", "👑");
+      return;
+    }
+    setLeaveTarget(p);
   };
 
   const handleLeaveConfirm = async () => {
@@ -845,8 +1018,9 @@ export default function Party() {
               joined={isJoined(p.id)}
               isLeader={isLeader(p)}
               onRanking={setRankingParty}
+              onMembers={setMembersParty}
               onJoin={setJoinTarget}
-              onLeave={setLeaveTarget}
+              onLeave={handleLeaveAttempt}
               onDelete={setDeleteTarget}
             />
           ))
@@ -860,6 +1034,15 @@ export default function Party() {
           currentUserId={user?.id}
           onKick={kickMember}
           onClose={() => setRankingParty(null)}
+        />
+      )}
+      {membersParty && (
+        <MembersBottomSheet
+          party={membersParty}
+          isLeader={isLeader(membersParty)}
+          currentUserId={user?.id}
+          onKick={kickMember}
+          onClose={() => setMembersParty(null)}
         />
       )}
       {showCreateModal && (
@@ -892,7 +1075,7 @@ export default function Party() {
           onCancel={() => setLeaveTarget(null)}
         />
       )}
-      {showJoinToast && <JoinToast />}
+      {toast && <Toast message={toast.message} icon={toast.icon} />}
     </div>
   );
 }

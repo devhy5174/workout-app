@@ -39,6 +39,16 @@ export function useParty(userId: string | null) {
     refresh();
   }, [refresh]);
 
+  useEffect(() => {
+    const handleVisibility = () => {
+      if (document.visibilityState === "visible") {
+        refresh();
+      }
+    };
+    document.addEventListener("visibilitychange", handleVisibility);
+    return () => document.removeEventListener("visibilitychange", handleVisibility);
+  }, [refresh]);
+
   const handleCreate = async (input: CreatePartyInput) => {
     if (!userId) return { error: "로그인이 필요합니다." };
     const { error } = await createParty(input, userId);

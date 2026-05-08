@@ -145,3 +145,7 @@ export const characters: Character[] = [
 export const getCharacterByType = (
   type: CharacterType,
 ): Character | undefined => characters.find((c) => c.type === type);
+
+export const getCharacterById = (
+  id: number,
+): Character | undefined => characters.find((c) => c.id === id);
