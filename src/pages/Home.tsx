@@ -8,9 +8,30 @@ const workoutGoal = 7;
 const pointGoal = 500;
 
 const weeklyTop3 = [
-  { rank: 1, name: "번개맨",  steps: 18430, medal: "🥇", bgColor: "#fefce8", textColor: "#ca8a04" },
-  { rank: 2, name: "달리기왕", steps: 15220, medal: "🥈", bgColor: "#f9fafb", textColor: "#6b7280" },
-  { rank: 3, name: "산책러",  steps: 12870, medal: "🥉", bgColor: "#fff7ed", textColor: "#fb923c" },
+  {
+    rank: 1,
+    name: "번개맨",
+    steps: 18430,
+    medal: "🥇",
+    bgColor: "#fefce8",
+    textColor: "#ca8a04",
+  },
+  {
+    rank: 2,
+    name: "달리기왕",
+    steps: 15220,
+    medal: "🥈",
+    bgColor: "#f9fafb",
+    textColor: "#6b7280",
+  },
+  {
+    rank: 3,
+    name: "산책러",
+    steps: 12870,
+    medal: "🥉",
+    bgColor: "#fff7ed",
+    textColor: "#fb923c",
+  },
 ];
 
 const messages = [
@@ -31,7 +52,15 @@ const GOAL_TYPE_ICON = {
   calories: "🔥",
 };
 
-function ProgressBar({ value, max, color }: { value: number; max: number; color: string }) {
+function ProgressBar({
+  value,
+  max,
+  color,
+}: {
+  value: number;
+  max: number;
+  color: string;
+}) {
   const pct = Math.min((value / max) * 100, 100);
   return (
     <div className="w-full h-3 bg-gray-100 rounded-full overflow-hidden">
@@ -66,9 +95,11 @@ export default function Home() {
   const todayDistance = todayRecords.reduce((s, r) => s + r.distance, 0);
 
   const todayGoalValue =
-    userGoal?.goal_type === "steps" ? todaySteps :
-    userGoal?.goal_type === "distance" ? todayDistance :
-    todayCalories;
+    userGoal?.goal_type === "steps"
+      ? todaySteps
+      : userGoal?.goal_type === "distance"
+        ? todayDistance
+        : todayCalories;
 
   const goalPct = userGoal
     ? Math.min(Math.round((todayGoalValue / userGoal.goal_value) * 100), 100)
@@ -92,7 +123,9 @@ export default function Home() {
       {/* 캐릭터 + 말풍선 */}
       <div className="flex flex-col items-center px-6 pt-4 pb-2">
         <div className="relative bg-white rounded-2xl px-5 py-3 shadow-md mb-2">
-          <p className="text-sm font-bold text-gray-700 text-center">{bubbleMsg}</p>
+          <p className="text-sm font-bold text-gray-700 text-center">
+            {bubbleMsg}
+          </p>
           <div
             className="absolute -bottom-3 left-1/2 -translate-x-1/2 w-0 h-0
             border-l-[10px] border-l-transparent
@@ -109,8 +142,12 @@ export default function Home() {
               {characterName}
             </span>
           )}
-          <span className="absolute top-1 right-3 text-xl animate-bounce">✨</span>
-          <span className="absolute bottom-4 left-0 text-lg animate-bounce delay-150">⚡</span>
+          <span className="absolute top-1 right-3 text-xl animate-bounce">
+            ✨
+          </span>
+          <span className="absolute bottom-4 left-0 text-lg animate-bounce delay-150">
+            ⚡
+          </span>
         </div>
       </div>
 
@@ -135,7 +172,6 @@ export default function Home() {
           <div className="bg-white rounded-3xl shadow-sm p-6 flex flex-col gap-3">
             <div className="flex justify-between items-center">
               <div className="flex items-center gap-2">
-                <span className="text-lg">{GOAL_TYPE_ICON[userGoal.goal_type]}</span>
                 <span className="font-bold text-gray-700">오늘 목표</span>
               </div>
               <div className="flex items-center gap-1">
@@ -146,7 +182,8 @@ export default function Home() {
                   {GOAL_TYPE_UNIT[userGoal.goal_type]}
                 </span>
                 <span className="text-gray-300 font-normal text-sm">
-                  {" "}/ {userGoal.goal_value.toLocaleString()}
+                  {" "}
+                  / {userGoal.goal_value.toLocaleString()}
                   {GOAL_TYPE_UNIT[userGoal.goal_type]}
                 </span>
               </div>
@@ -161,8 +198,10 @@ export default function Home() {
                 달성률 {goalPct}%
               </span>
               {goalPct >= 100 && (
-                <span className="text-xs font-bold text-white px-2 py-0.5 rounded-full"
-                  style={{ background: "var(--color-primary)" }}>
+                <span
+                  className="text-xs font-bold text-white px-2 py-0.5 rounded-full"
+                  style={{ background: "var(--color-primary)" }}
+                >
                   🏆 달성!
                 </span>
               )}
@@ -173,9 +212,13 @@ export default function Home() {
             <div className="flex justify-between items-center">
               <div className="flex items-center gap-2">
                 <span className="text-lg">🔥</span>
-                <span className="font-bold text-gray-700">오늘 소모 칼로리</span>
+                <span className="font-bold text-gray-700">
+                  오늘 소모 칼로리
+                </span>
               </div>
-              <span className="font-extrabold text-primary">{burnedKcal} kcal</span>
+              <span className="font-extrabold text-primary">
+                {burnedKcal} kcal
+              </span>
             </div>
             <ProgressBar
               value={burnedKcal}
@@ -200,7 +243,10 @@ export default function Home() {
             </div>
             <span className="font-extrabold text-primary">
               {workoutDays}일
-              <span className="text-gray-300 font-normal text-sm"> / {workoutGoal}일</span>
+              <span className="text-gray-300 font-normal text-sm">
+                {" "}
+                / {workoutGoal}일
+              </span>
             </span>
           </div>
           <ProgressBar
@@ -239,7 +285,10 @@ export default function Home() {
             </div>
             <span className="font-extrabold text-primary">
               {points} P
-              <span className="text-gray-300 font-normal text-sm"> / {pointGoal} P</span>
+              <span className="text-gray-300 font-normal text-sm">
+                {" "}
+                / {pointGoal} P
+              </span>
             </span>
           </div>
           <ProgressBar
@@ -254,7 +303,9 @@ export default function Home() {
       <div className="mx-4 mt-6 bg-white rounded-3xl shadow-sm">
         <div className="px-5 py-3 flex items-center gap-2 border-b border-gray-50">
           <span className="text-lg">🏆</span>
-          <span className="font-extrabold text-gray-700 text-sm">이번주 TOP 3</span>
+          <span className="font-extrabold text-gray-700 text-sm">
+            이번주 TOP 3
+          </span>
         </div>
         <div className="flex flex-col">
           {weeklyTop3.map((user) => (
@@ -265,12 +316,19 @@ export default function Home() {
             >
               <span className="text-2xl w-8 text-center">{user.medal}</span>
               <div className="flex-1 min-w-0">
-                <p className="font-bold text-gray-800 text-sm truncate">{user.name}</p>
-                <p className="text-xs font-semibold" style={{ color: user.textColor }}>
+                <p className="font-bold text-gray-800 text-sm truncate">
+                  {user.name}
+                </p>
+                <p
+                  className="text-xs font-semibold"
+                  style={{ color: user.textColor }}
+                >
                   {user.steps.toLocaleString()} 걸음
                 </p>
               </div>
-              <span className="text-xs font-extrabold text-gray-300">#{user.rank}</span>
+              <span className="text-xs font-extrabold text-gray-300">
+                #{user.rank}
+              </span>
             </div>
           ))}
         </div>
@@ -287,12 +345,18 @@ export default function Home() {
                   ? "오늘 목표 달성! 최고야 🏆"
                   : `목표까지 ${100 - goalPct}% 남았어!`}
               </p>
-              <p className="text-white/70 text-xs mt-0.5">지금 바로 나가서 달성해보자 💨</p>
+              <p className="text-white/70 text-xs mt-0.5">
+                지금 바로 나가서 달성해보자 💨
+              </p>
             </>
           ) : (
             <>
-              <p className="text-white font-extrabold text-sm">목표를 설정해보세요!</p>
-              <p className="text-white/70 text-xs mt-0.5">칼로리·걸음수·거리 목표를 정할 수 있어요</p>
+              <p className="text-white font-extrabold text-sm">
+                목표를 설정해보세요!
+              </p>
+              <p className="text-white/70 text-xs mt-0.5">
+                칼로리·걸음수·거리 목표를 정할 수 있어요
+              </p>
             </>
           )}
         </div>

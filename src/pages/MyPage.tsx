@@ -267,7 +267,7 @@ function InfoTab() {
   }
 
   return (
-    <div className="flex flex-col gap-4 px-4 pt-5 pb-20 overflow-y-auto">
+    <div className="flex flex-col gap-4 px-4 pt-5 pb-20 h-full overflow-y-auto">
       {/* 캐릭터 & 닉네임 */}
       <div className="bg-white rounded-3xl shadow-sm p-6 flex flex-col items-center gap-3">
         <div
@@ -458,7 +458,7 @@ function WorkoutTab() {
   }
 
   return (
-    <div className="flex flex-col gap-4 px-4 pt-5 pb-20 overflow-y-auto">
+    <div className="flex flex-col gap-4 px-4 pt-5 pb-20 h-full overflow-y-auto">
       {/* 요약 카드 */}
       <div
         className="rounded-2xl px-5 py-4 grid grid-cols-3 gap-2"

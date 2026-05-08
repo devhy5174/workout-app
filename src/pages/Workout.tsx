@@ -610,7 +610,7 @@ export default function Workout() {
               <p className="text-white/70 text-sm">
                 {goalProgress >= 100
                   ? "목표 달성! 정말 잘 했어요 🏆"
-                  : "오늘도 정말 잘 했어요 💪"}
+                  : "오늘도 정말 잘 했어요"}
               </p>
             </div>
 
