@@ -2,11 +2,7 @@
 // Types
 // ─────────────────────────────────────────────
 
-export type CharacterType =
-  | "walker"
-  | "power_walker"
-  | "runner"
-  | "hiker";
+export type CharacterType = "walker" | "power_walker" | "runner" | "hiker";
 
 export interface DietMacros {
   protein: number; // 목표 비율 (%)
@@ -105,7 +101,13 @@ export const characters: Character[] = [
       dailyKcalTarget: 2400,
       macros: { protein: 30, carbs: 50, fat: 20 },
       focus: ["고탄수화물", "빠른 에너지", "근육 회복"],
-      recommendedFoods: ["오트밀", "닭가슴살", "고구마", "프로틴쉐이크", "바나나"],
+      recommendedFoods: [
+        "오트밀",
+        "닭가슴살",
+        "고구마",
+        "프로틴쉐이크",
+        "바나나",
+      ],
       avoidFoods: ["기름진 음식", "술", "무거운 음식"],
       mealTip: "달리기 직후 30분 이내에 단백질+탄수화물을 함께 섭취하세요.",
     },
@@ -127,12 +129,19 @@ export const characters: Character[] = [
       dailyKcalTarget: 2500,
       macros: { protein: 25, carbs: 50, fat: 25 },
       focus: ["지속 에너지", "휴대 간편", "전해질"],
-      recommendedFoods: ["에너지바", "견과류", "건과일", "닭가슴살 도시락", "고구마"],
+      recommendedFoods: [
+        "에너지바",
+        "견과류",
+        "건과일",
+        "닭가슴살 도시락",
+        "고구마",
+      ],
       avoidFoods: ["무거운 음식", "빠른 소화 당류", "가공스낵"],
       mealTip: "등산 전날 탄수화물을 충분히 섭취해 글리코겐을 채우세요.",
     },
   },
 ];
 
-export const getCharacterByType = (type: CharacterType): Character | undefined =>
-  characters.find((c) => c.type === type);
+export const getCharacterByType = (
+  type: CharacterType,
+): Character | undefined => characters.find((c) => c.type === type);

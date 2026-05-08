@@ -1,5 +1,10 @@
-import { BrowserRouter, Routes, Route, Navigate, Outlet } from "react-router-dom";
-import Header from "./components/layout/Header";
+import {
+  BrowserRouter,
+  Routes,
+  Route,
+  Navigate,
+  Outlet,
+} from "react-router-dom";
 import BottomNav from "./components/layout/BottomNav";
 import Home from "./pages/Home";
 import Character from "./pages/Character";
