@@ -6,16 +6,52 @@ import { type UserGoal } from "../lib/workoutService";
 import Diet from "./Diet";
 
 const WORKOUT_TYPE_LABEL: Record<string, { label: string; emoji: string }> = {
-  walker:       { label: "걷기",     emoji: "🚶" },
+  walker: { label: "걷기", emoji: "🚶" },
   power_walker: { label: "파워워킹", emoji: "🚶‍♂️" },
-  runner:       { label: "달리기",   emoji: "🏃" },
-  hiker:        { label: "등산",     emoji: "🏔️" },
+  runner: { label: "달리기", emoji: "🏃" },
+  hiker: { label: "등산", emoji: "🏔️" },
 };
 
-const GOAL_OPTIONS: { type: UserGoal["goal_type"]; label: string; icon: string; placeholder: string; unit: string; min: number; max: number; step: number }[] = [
-  { type: "steps",    label: "걸음수",   icon: "👟", placeholder: "예: 8000",  unit: "보",   min: 1000,  max: 50000, step: 500 },
-  { type: "distance", label: "거리",     icon: "📍", placeholder: "예: 3",     unit: "km",   min: 0.5,   max: 100,   step: 0.5 },
-  { type: "calories", label: "칼로리",   icon: "🔥", placeholder: "예: 300",   unit: "kcal", min: 50,    max: 5000,  step: 50  },
+const GOAL_OPTIONS: {
+  type: UserGoal["goal_type"];
+  label: string;
+  icon: string;
+  placeholder: string;
+  unit: string;
+  min: number;
+  max: number;
+  step: number;
+}[] = [
+  {
+    type: "steps",
+    label: "걸음수",
+    icon: "👟",
+    placeholder: "예: 8000",
+    unit: "보",
+    min: 1000,
+    max: 50000,
+    step: 500,
+  },
+  {
+    type: "distance",
+    label: "거리",
+    icon: "📍",
+    placeholder: "예: 3",
+    unit: "km",
+    min: 0.5,
+    max: 100,
+    step: 0.5,
+  },
+  {
+    type: "calories",
+    label: "칼로리",
+    icon: "🔥",
+    placeholder: "예: 300",
+    unit: "kcal",
+    min: 50,
+    max: 5000,
+    step: 50,
+  },
 ];
 
 function formatDate(dateStr: string) {
@@ -36,10 +72,10 @@ function formatDuration(seconds: number) {
 function GoalSetModal({ onClose }: { onClose: () => void }) {
   const { userGoal, saveGoal } = useUser();
   const [selectedType, setSelectedType] = useState<UserGoal["goal_type"]>(
-    userGoal?.goal_type ?? "steps"
+    userGoal?.goal_type ?? "steps",
   );
   const [value, setValue] = useState<string>(
-    userGoal ? String(userGoal.goal_value) : ""
+    userGoal ? String(userGoal.goal_value) : "",
   );
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -72,7 +108,9 @@ function GoalSetModal({ onClose }: { onClose: () => void }) {
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between mb-1">
-          <h3 className="text-lg font-extrabold text-gray-800">목표 설정하기</h3>
+          <h3 className="text-lg font-extrabold text-gray-800">
+            목표 설정하기
+          </h3>
           <button
             onClick={onClose}
             className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 font-bold"
@@ -81,7 +119,9 @@ function GoalSetModal({ onClose }: { onClose: () => void }) {
             ✕
           </button>
         </div>
-        <p className="text-sm text-gray-400 mb-5">달성하고 싶은 목표 유형을 선택하세요</p>
+        <p className="text-sm text-gray-400 mb-5">
+          달성하고 싶은 목표 유형을 선택하세요
+        </p>
 
         {/* 목표 유형 선택 */}
         <div className="flex gap-2 mb-5">
@@ -90,7 +130,11 @@ function GoalSetModal({ onClose }: { onClose: () => void }) {
             return (
               <button
                 key={opt.type}
-                onClick={() => { setSelectedType(opt.type); setValue(""); setError(null); }}
+                onClick={() => {
+                  setSelectedType(opt.type);
+                  setValue("");
+                  setError(null);
+                }}
                 className={`flex-1 flex flex-col items-center gap-1 py-3 rounded-2xl border-2 transition-all ${
                   isActive
                     ? "border-[var(--color-primary)] bg-[var(--color-primary)]/10"
@@ -114,22 +158,36 @@ function GoalSetModal({ onClose }: { onClose: () => void }) {
           <input
             type="number"
             value={value}
-            onChange={(e) => { setValue(e.target.value); setError(null); }}
+            onChange={(e) => {
+              setValue(e.target.value);
+              setError(null);
+            }}
             placeholder={selectedOption.placeholder}
             min={selectedOption.min}
             max={selectedOption.max}
             step={selectedOption.step}
             className="flex-1 bg-transparent text-lg font-extrabold text-gray-800 outline-none placeholder:text-gray-300"
           />
-          <span className="text-sm font-bold text-gray-400">{selectedOption.unit}</span>
+          <span className="text-sm font-bold text-gray-400">
+            {selectedOption.unit}
+          </span>
         </div>
         {error && <p className="text-xs text-red-500 mb-2 px-1">{error}</p>}
 
         {userGoal && (
           <p className="text-xs text-gray-400 mb-4 px-1">
-            현재 목표: {userGoal.goal_type === "steps" ? "걸음수" : userGoal.goal_type === "distance" ? "거리" : "칼로리"}{" "}
+            현재 목표:{" "}
+            {userGoal.goal_type === "steps"
+              ? "걸음수"
+              : userGoal.goal_type === "distance"
+                ? "거리"
+                : "칼로리"}{" "}
             {userGoal.goal_value.toLocaleString()}
-            {userGoal.goal_type === "steps" ? "보" : userGoal.goal_type === "distance" ? "km" : "kcal"}
+            {userGoal.goal_type === "steps"
+              ? "보"
+              : userGoal.goal_type === "distance"
+                ? "km"
+                : "kcal"}
           </p>
         )}
 
@@ -172,14 +230,19 @@ function CharacterSheet({ onClose }: { onClose: () => void }) {
             ✕
           </button>
         </div>
-        <p className="text-sm text-gray-400 mb-4">나에게 맞는 운동 스타일을 골라봐!</p>
+        <p className="text-sm text-gray-400 mb-4">
+          나에게 맞는 운동 스타일을 골라봐!
+        </p>
         <div className="flex flex-col gap-3">
           {characters.map((c) => {
             const isSelected = selectedId === c.id;
             return (
               <button
                 key={c.id}
-                onClick={() => { selectCharacter(c.id); onClose(); }}
+                onClick={() => {
+                  selectCharacter(c.id);
+                  onClose();
+                }}
                 className={`w-full rounded-3xl p-4 text-left transition-all duration-200 border-2 ${
                   isSelected
                     ? `${c.bg} ${c.border} shadow-md scale-[1.01]`
@@ -194,7 +257,9 @@ function CharacterSheet({ onClose }: { onClose: () => void }) {
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <span className="font-extrabold text-gray-800 text-sm">{c.name}</span>
+                      <span className="font-extrabold text-gray-800 text-sm">
+                        {c.name}
+                      </span>
                       {isSelected && (
                         <span className="text-[10px] font-bold text-white bg-[var(--color-primary)] rounded-full px-2 py-0.5">
                           선택됨
@@ -204,7 +269,9 @@ function CharacterSheet({ onClose }: { onClose: () => void }) {
                     <p className="text-xs text-gray-500 mt-0.5">{c.style}</p>
                     <div className="flex items-center gap-1 mt-1">
                       <span className="text-xs">{c.bonusIcon}</span>
-                      <span className="text-[11px] font-semibold text-gray-500">{c.bonus}</span>
+                      <span className="text-[11px] font-semibold text-gray-500">
+                        {c.bonus}
+                      </span>
                     </div>
                   </div>
                   <div
@@ -214,7 +281,11 @@ function CharacterSheet({ onClose }: { onClose: () => void }) {
                         : "border-gray-200"
                     }`}
                   >
-                    {isSelected && <span className="text-white text-[10px] font-bold">✓</span>}
+                    {isSelected && (
+                      <span className="text-white text-[10px] font-bold">
+                        ✓
+                      </span>
+                    )}
                   </div>
                 </div>
               </button>
@@ -235,21 +306,28 @@ function InfoTab() {
   const [deleteConfirm, setDeleteConfirm] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  const [height, setHeight] = useState<string>(() => userProfile?.height?.toString() ?? "");
-  const [weight, setWeight] = useState<string>(() => userProfile?.weight?.toString() ?? "");
+  const [height, setHeight] = useState<string>(
+    () => userProfile?.height?.toString() ?? "",
+  );
+  const [weight, setWeight] = useState<string>(
+    () => userProfile?.weight?.toString() ?? "",
+  );
   const [editing, setEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
   const h = parseFloat(height);
   const w = parseFloat(weight);
-  const bmiCalc = h > 0 && w > 0 ? parseFloat((w / ((h / 100) ** 2)).toFixed(1)) : null;
-  const bmi = editing ? (bmiCalc?.toFixed(1) ?? null) : (userProfile?.bmi?.toFixed(1) ?? null);
+  const bmiCalc =
+    h > 0 && w > 0 ? parseFloat((w / (h / 100) ** 2).toFixed(1)) : null;
+  const bmi = editing
+    ? (bmiCalc?.toFixed(1) ?? null)
+    : (userProfile?.bmi?.toFixed(1) ?? null);
 
   function getBmiLabel(bmi: number) {
     if (bmi < 18.5) return { label: "저체중", color: "text-blue-500" };
-    if (bmi < 23)   return { label: "정상",   color: "text-green-500" };
-    if (bmi < 25)   return { label: "과체중", color: "text-yellow-500" };
-    return             { label: "비만",   color: "text-red-500" };
+    if (bmi < 23) return { label: "정상", color: "text-green-500" };
+    if (bmi < 25) return { label: "과체중", color: "text-yellow-500" };
+    return { label: "비만", color: "text-red-500" };
   }
 
   async function handleSave() {
@@ -282,14 +360,17 @@ function InfoTab() {
             {userProfile?.nickname ?? "닉네임 없음"}
           </p>
           {selectedCharacter && (
-            <p className="text-sm text-gray-400 mt-0.5">{selectedCharacter.name}</p>
+            <p className="text-sm text-gray-400 mt-0.5">
+              {selectedCharacter.name}
+            </p>
           )}
         </div>
         <button
           onClick={() => setShowSheet(true)}
           className="mt-1 px-5 py-2 rounded-2xl text-sm font-bold text-white shadow-sm active:scale-95 transition-all"
           style={{
-            background: "linear-gradient(135deg, var(--color-primary), var(--color-secondary))",
+            background:
+              "linear-gradient(135deg, var(--color-primary), var(--color-secondary))",
           }}
           aria-label="캐릭터 변경하기"
         >
@@ -312,21 +393,36 @@ function InfoTab() {
           <div className="flex flex-col gap-2">
             <div className="flex items-center gap-3 bg-gray-50 rounded-2xl px-4 py-3">
               <span className="text-2xl">
-                {userGoal.goal_type === "steps" ? "👟" : userGoal.goal_type === "distance" ? "📍" : "🔥"}
+                {userGoal.goal_type === "steps"
+                  ? "👟"
+                  : userGoal.goal_type === "distance"
+                    ? "📍"
+                    : "🔥"}
               </span>
               <div className="flex-1">
                 <p className="text-xs text-gray-400 font-semibold">
-                  {userGoal.goal_type === "steps" ? "걸음수" : userGoal.goal_type === "distance" ? "거리" : "칼로리"} 목표
+                  {userGoal.goal_type === "steps"
+                    ? "걸음수"
+                    : userGoal.goal_type === "distance"
+                      ? "거리"
+                      : "칼로리"}{" "}
+                  목표
                 </p>
                 <p className="font-extrabold text-gray-800">
                   {userGoal.goal_value.toLocaleString()}
-                  {userGoal.goal_type === "steps" ? "보" : userGoal.goal_type === "distance" ? "km" : "kcal"}
+                  {userGoal.goal_type === "steps"
+                    ? "보"
+                    : userGoal.goal_type === "distance"
+                      ? "km"
+                      : "kcal"}
                 </p>
               </div>
             </div>
             {deleteConfirm ? (
               <div className="flex items-center gap-2 px-1">
-                <p className="text-xs text-gray-500 flex-1">정말 목표를 삭제할까요?</p>
+                <p className="text-xs text-gray-500 flex-1">
+                  정말 목표를 삭제할까요?
+                </p>
                 <button
                   onClick={handleDeleteGoal}
                   disabled={isDeleting}
@@ -414,7 +510,9 @@ function InfoTab() {
             {bmi ? (
               <>
                 <p className="text-sm font-extrabold text-gray-800">{bmi}</p>
-                <p className={`text-[10px] font-bold ${getBmiLabel(parseFloat(bmi)).color}`}>
+                <p
+                  className={`text-[10px] font-bold ${getBmiLabel(parseFloat(bmi)).color}`}
+                >
                   {getBmiLabel(parseFloat(bmi)).label}
                 </p>
               </>
@@ -426,7 +524,9 @@ function InfoTab() {
       </div>
 
       {showSheet && <CharacterSheet onClose={() => setShowSheet(false)} />}
-      {showGoalModal && <GoalSetModal onClose={() => setShowGoalModal(false)} />}
+      {showGoalModal && (
+        <GoalSetModal onClose={() => setShowGoalModal(false)} />
+      )}
     </div>
   );
 }
@@ -449,7 +549,9 @@ function WorkoutTab() {
     return (
       <div className="flex flex-col items-center justify-center gap-4 px-4 pt-16 pb-20">
         <span className="text-6xl">🏃</span>
-        <p className="font-extrabold text-gray-700 text-lg">운동 기록이 없어요</p>
+        <p className="font-extrabold text-gray-700 text-lg">
+          운동 기록이 없어요
+        </p>
         <p className="text-sm text-gray-400 text-center">
           운동을 완료하면 여기에 기록이 쌓여요!
         </p>
@@ -463,20 +565,33 @@ function WorkoutTab() {
       <div
         className="rounded-2xl px-5 py-4 grid grid-cols-3 gap-2"
         style={{
-          background: "linear-gradient(135deg, var(--color-primary), var(--color-secondary))",
+          background:
+            "linear-gradient(135deg, var(--color-primary), var(--color-secondary))",
         }}
       >
         <div className="flex flex-col items-center gap-0.5">
-          <span className="text-white/70 text-[10px] font-semibold">총 운동</span>
-          <span className="text-white font-extrabold text-lg">{workoutRecords.length}회</span>
+          <span className="text-white/70 text-[10px] font-semibold">
+            총 운동
+          </span>
+          <span className="text-white font-extrabold text-lg">
+            {workoutRecords.length}회
+          </span>
         </div>
         <div className="flex flex-col items-center gap-0.5">
-          <span className="text-white/70 text-[10px] font-semibold">소모 칼로리</span>
-          <span className="text-white font-extrabold text-lg">{totalKcal.toLocaleString()}</span>
+          <span className="text-white/70 text-[10px] font-semibold">
+            소모 칼로리
+          </span>
+          <span className="text-white font-extrabold text-lg">
+            {totalKcal.toLocaleString()}
+          </span>
         </div>
         <div className="flex flex-col items-center gap-0.5">
-          <span className="text-white/70 text-[10px] font-semibold">획득 포인트</span>
-          <span className="text-white font-extrabold text-lg">{totalPoints.toLocaleString()}</span>
+          <span className="text-white/70 text-[10px] font-semibold">
+            획득 포인트
+          </span>
+          <span className="text-white font-extrabold text-lg">
+            {totalPoints.toLocaleString()}
+          </span>
         </div>
       </div>
 
@@ -492,7 +607,10 @@ function WorkoutTab() {
       {/* 기록 목록 */}
       <div className="flex flex-col gap-3">
         {workoutRecords.map((record) => {
-          const typeInfo = WORKOUT_TYPE_LABEL[record.workout_type] ?? { label: record.workout_type, emoji: "🏃" };
+          const typeInfo = WORKOUT_TYPE_LABEL[record.workout_type] ?? {
+            label: record.workout_type,
+            emoji: "🏃",
+          };
           return (
             <div
               key={record.id ?? record.created_at}
@@ -501,7 +619,8 @@ function WorkoutTab() {
               <div
                 className="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 text-2xl"
                 style={{
-                  background: "linear-gradient(135deg, var(--color-primary)22, var(--color-secondary)22)",
+                  background:
+                    "linear-gradient(135deg, var(--color-primary)22, var(--color-secondary)22)",
                 }}
               >
                 {typeInfo.emoji}
@@ -509,10 +628,14 @@ function WorkoutTab() {
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-1.5">
-                    <p className="font-extrabold text-gray-800 text-sm">{typeInfo.label}</p>
+                    <p className="font-extrabold text-gray-800 text-sm">
+                      {typeInfo.label}
+                    </p>
                     {record.goal_achieved && (
-                      <span className="text-[10px] font-bold text-white px-1.5 py-0.5 rounded-full"
-                        style={{ background: "var(--color-primary)" }}>
+                      <span
+                        className="text-[10px] font-bold text-white px-1.5 py-0.5 rounded-full"
+                        style={{ background: "var(--color-primary)" }}
+                      >
                         🏆 달성
                       </span>
                     )}
@@ -521,7 +644,9 @@ function WorkoutTab() {
                     +{record.points_earned}P
                   </span>
                 </div>
-                <p className="text-xs text-gray-400 mt-0.5">{formatDate(record.date)}</p>
+                <p className="text-xs text-gray-400 mt-0.5">
+                  {formatDate(record.date)}
+                </p>
                 <div className="flex items-center gap-3 mt-1.5">
                   <span className="text-[11px] text-gray-500 font-semibold">
                     🕐 {formatDuration(record.duration)}
@@ -546,8 +671,8 @@ function WorkoutTab() {
 type Tab = "info" | "diet" | "workout";
 
 const tabs: { id: Tab; label: string }[] = [
-  { id: "info",    label: "내정보" },
-  { id: "diet",    label: "식단" },
+  { id: "info", label: "내정보" },
+  { id: "diet", label: "식단" },
   { id: "workout", label: "운동기록" },
 ];
 
@@ -573,8 +698,8 @@ export default function MyPage() {
       </div>
 
       <div className="flex-1 overflow-hidden">
-        {activeTab === "info"    && <InfoTab />}
-        {activeTab === "diet"    && <Diet />}
+        {activeTab === "info" && <InfoTab />}
+        {activeTab === "diet" && <Diet />}
         {activeTab === "workout" && <WorkoutTab />}
       </div>
     </div>

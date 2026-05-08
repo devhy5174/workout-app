@@ -3,6 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { useUser } from "../context/UserContext";
 import { useCharacter } from "../context/CharacterContext";
 import { characters, type Character } from "../data/characters";
+import male from "../assets/images/basic_m.png";
+import female from "../assets/images/basic_w.png";
 
 type Gender = "male" | "female";
 
@@ -54,9 +56,17 @@ function StepGender({
   gender: Gender | null;
   setGender: (v: Gender) => void;
 }) {
-  const options: { value: Gender; emoji: string; label: string }[] = [
-    { value: "male", emoji: "🙋‍♂️", label: "남성" },
-    { value: "female", emoji: "🙋‍♀️", label: "여성" },
+  const options: { value: Gender; image: string; label: string }[] = [
+    {
+      value: "male",
+      image: male,
+      label: "남성",
+    },
+    {
+      value: "female",
+      image: female,
+      label: "여성",
+    },
   ];
 
   return (
@@ -67,7 +77,7 @@ function StepGender({
       </h2>
       <p className="text-gray-400 text-sm mb-10">맞춤 운동 추천에 활용돼요.</p>
       <div className="flex gap-4 w-full">
-        {options.map(({ value, emoji, label }) => {
+        {options.map(({ value, image, label }) => {
           const selected = gender === value;
           return (
             <button
@@ -82,7 +92,11 @@ function StepGender({
                 color: selected ? "var(--color-primary)" : "#9ca3af",
               }}
             >
-              <span className="text-5xl">{emoji}</span>
+              <img
+                src={image}
+                alt={label}
+                className="w-100% h-100% object-contain"
+              />
               {label}
             </button>
           );
