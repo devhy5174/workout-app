@@ -46,12 +46,6 @@ const GOAL_TYPE_UNIT = {
   calories: "kcal",
 };
 
-const GOAL_TYPE_ICON = {
-  steps: "👟",
-  distance: "📍",
-  calories: "🔥",
-};
-
 function ProgressBar({
   value,
   max,
