@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useCharacter } from "../context/CharacterContext";
+import { useUser } from "../context/UserContext";
+import { characters } from "../data/characters";
 import { storage } from "../utils/storage";
 import { POINT_RULES } from "../data/points";
 import { calculateStreak, isWeekend } from "../utils/streak";
 
-// ── 캐릭터별 추천 식단 (더미) ───────────────────
 const DIET_BY_CHARACTER: Record<
   number,
   { meals: { emoji: string; name: string }[]; tip: string }
@@ -26,26 +27,12 @@ const DIET_BY_CHARACTER: Record<
   },
   3: {
     meals: [
-      { emoji: "🥢", name: "두부" },
-      { emoji: "🥦", name: "채소" },
+      { emoji: "🍌", name: "바나나" },
+      { emoji: "🍗", name: "닭가슴살" },
     ],
-    tip: "소화가 편한 식물성 단백질을 추천해요.",
+    tip: "달리기 직후 단백질+탄수화물로 빠르게 회복하세요.",
   },
   4: {
-    meals: [
-      { emoji: "🍗", name: "닭가슴살" },
-      { emoji: "🍠", name: "고구마" },
-    ],
-    tip: "운동 직후 30분 이내 단백질을 섭취하세요.",
-  },
-  5: {
-    meals: [
-      { emoji: "🍌", name: "바나나" },
-      { emoji: "🫙", name: "그릭요거트" },
-    ],
-    tip: "전해질 보충과 단백질 회복에 딱이에요.",
-  },
-  6: {
     meals: [
       { emoji: "🥜", name: "견과류" },
       { emoji: "🍎", name: "과일" },
@@ -71,8 +58,12 @@ const DIET_BY_DURATION = {
   },
 };
 
-// ── Ring constants ──────────────────────────────
-const GOAL_STEPS = 5000;
+const GOAL_TYPE_LABEL = {
+  steps: "걸음수",
+  distance: "거리",
+  calories: "칼로리",
+};
+
 const SVG_SIZE = 280;
 const CX = SVG_SIZE / 2;
 const CY = SVG_SIZE / 2;
@@ -92,25 +83,55 @@ const formatTime = (s: number) => {
 
 export default function Workout() {
   const navigate = useNavigate();
-  const { selectedCharacter } = useCharacter();
+  const { selectedCharacter, selectedId, selectCharacter } = useCharacter();
+  const { userGoal, saveWorkout } = useUser();
+
   const [state, setState] = useState<WorkoutState>("idle");
   const [steps, setSteps] = useState(0);
   const [elapsed, setElapsed] = useState(0);
-
+  const [showStartModal, setShowStartModal] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [earnedPoints, setEarnedPoints] = useState(0);
+  const [pendingId, setPendingId] = useState<number>(() => selectedId ?? 1);
 
   const characterEmoji = selectedCharacter?.emoji ?? "🏃";
-  const progress = Math.min((steps / GOAL_STEPS) * 100, 100);
-  const dashOffset = CIRCUMFERENCE * (1 - progress / 100);
-  const distance = (steps * 0.0008).toFixed(2);
-  // TODO: 유저 프로필(키/몸무게) 연동 시 맞춤 칼로리 계산으로 교체
-  const calories = Math.floor(steps * 0.05);
-  const pointsEarned = Math.max(Math.floor(parseFloat(distance) * POINT_RULES.PER_KM), 1);
+  const kcalPerMin = selectedCharacter?.kcalPerMin ?? 4;
+  const distance = parseFloat((steps * 0.0008).toFixed(2));
+  const calories = Math.floor(kcalPerMin * (elapsed / 60));
+  const pointsEarned = Math.max(Math.floor(distance * POINT_RULES.PER_KM), 1);
   const elapsedMin = Math.floor(elapsed / 60);
   const elapsedSec = elapsed % 60;
   const durationLabel =
     elapsedMin > 0 ? `${elapsedMin}분 ${elapsedSec}초` : `${elapsedSec}초`;
+
+  // ── 목표 기반 게이지 ─────────────────────────────────
+  const goalType = userGoal?.goal_type ?? "steps";
+  const goalValue = userGoal?.goal_value ?? 5000;
+
+  const currentGoalValue =
+    goalType === "steps"
+      ? steps
+      : goalType === "distance"
+        ? distance
+        : calories;
+
+  const goalProgress = Math.min((currentGoalValue / goalValue) * 100, 100);
+
+  const remainingText =
+    goalType === "steps"
+      ? `${Math.max(0, Math.ceil(goalValue - steps)).toLocaleString()}보 남음`
+      : goalType === "distance"
+        ? `${Math.max(0, goalValue - distance).toFixed(2)}km 남음`
+        : `${Math.max(0, Math.ceil(goalValue - calories))}kcal 남음`;
+
+  const goalLabelText = userGoal
+    ? `목표 ${goalType === "steps" ? `${goalValue.toLocaleString()}보` : goalType === "distance" ? `${goalValue}km` : `${goalValue}kcal`}`
+    : "목표 5,000보";
+
+  const dashOffset = CIRCUMFERENCE * (1 - goalProgress / 100);
+  const angle = (goalProgress / 100) * 2 * Math.PI - Math.PI / 2;
+  const emojiX = CX + RADIUS * Math.cos(angle);
+  const emojiY = CY + RADIUS * Math.sin(angle);
 
   const charDiet = selectedCharacter
     ? DIET_BY_CHARACTER[selectedCharacter.id]
@@ -118,7 +139,14 @@ export default function Workout() {
   const durationDiet =
     elapsedMin >= 30 ? DIET_BY_DURATION.protein : DIET_BY_DURATION.light;
 
-  const handleStop = () => {
+  // 목표 달성 시 자동 완료
+  useEffect(() => {
+    if (state === "running" && goalProgress >= 100) {
+      setState("done");
+    }
+  }, [state, goalProgress]);
+
+  const handleStop = async () => {
     const currentCalories = calories;
     const currentElapsed = elapsed;
     setState("paused");
@@ -127,7 +155,6 @@ export default function Workout() {
     storage.setBurnedKcal(prevKcal + currentCalories);
     storage.addWorkoutToday();
 
-    // 식단 저장
     storage.setRecommendedDiet({
       durationLabel:
         Math.floor(currentElapsed / 60) >= 30
@@ -140,67 +167,90 @@ export default function Workout() {
       tip: charDiet?.tip,
     });
 
-    // ── 포인트 계산 ──────────────────────────────
+    // ── 포인트 계산 ──────────────────────────────────
     const today = new Date();
     const pad = (n: number) => String(n).padStart(2, "0");
     const todayStr = `${today.getFullYear()}.${pad(today.getMonth() + 1)}.${pad(today.getDate())}`;
+    const todayIso = `${today.getFullYear()}-${pad(today.getMonth() + 1)}-${pad(today.getDate())}`;
 
-    // 오늘 이미 받은 보너스 목록 (중복 방지)
-    const todayHistory = storage.getPointsHistory().filter(e => e.date === todayStr);
-    const hasBonus = (icon: string) => todayHistory.some(e => e.icon === icon);
+    const todayHistory = storage
+      .getPointsHistory()
+      .filter((e) => e.date === todayStr);
+    const hasBonus = (icon: string) =>
+      todayHistory.some((e) => e.icon === icon);
 
     let earned = 0;
 
-    // km당 포인트 (매 운동마다 적립)
     storage.addPoints(pointsEarned);
-    storage.addPointsHistory({ date: todayStr, desc: `${distance}km 운동 완료`, points: pointsEarned, icon: "🏃" });
+    storage.addPointsHistory({
+      date: todayStr,
+      desc: `${distance}km 운동 완료`,
+      points: pointsEarned,
+      icon: "🏃",
+    });
     earned += pointsEarned;
 
-    // 목표 달성 보너스 (오늘 첫 달성 시)
-    if (steps >= GOAL_STEPS && !hasBonus("🎯")) {
+    if (
+      steps >= (userGoal?.goal_type === "steps" ? goalValue : 5000) &&
+      !hasBonus("🎯")
+    ) {
       storage.addPoints(POINT_RULES.GOAL_BONUS);
-      storage.addPointsHistory({ date: todayStr, desc: "걸음 수 목표 달성", points: POINT_RULES.GOAL_BONUS, icon: "🎯" });
+      storage.addPointsHistory({
+        date: todayStr,
+        desc: "걸음 수 목표 달성",
+        points: POINT_RULES.GOAL_BONUS,
+        icon: "🎯",
+      });
       earned += POINT_RULES.GOAL_BONUS;
     }
 
-    // 7일 연속 보너스 (오늘 첫 수령 시)
     const freshHistory = storage.getWorkoutHistory();
     const currentStreak = calculateStreak(freshHistory);
     if (currentStreak > 0 && currentStreak % 7 === 0 && !hasBonus("🔥")) {
       storage.addPoints(POINT_RULES.STREAK_7_BONUS);
-      storage.addPointsHistory({ date: todayStr, desc: `${currentStreak}일 연속 운동 보너스`, points: POINT_RULES.STREAK_7_BONUS, icon: "🔥" });
+      storage.addPointsHistory({
+        date: todayStr,
+        desc: `${currentStreak}일 연속 운동 보너스`,
+        points: POINT_RULES.STREAK_7_BONUS,
+        icon: "🔥",
+      });
       earned += POINT_RULES.STREAK_7_BONUS;
     }
 
-    // 주말 보너스 (오늘 첫 수령 시)
     if (isWeekend(today) && !hasBonus("⭐")) {
       storage.addPoints(POINT_RULES.WEEKEND_BONUS);
-      storage.addPointsHistory({ date: todayStr, desc: "주말 운동 보너스", points: POINT_RULES.WEEKEND_BONUS, icon: "⭐" });
+      storage.addPointsHistory({
+        date: todayStr,
+        desc: "주말 운동 보너스",
+        points: POINT_RULES.WEEKEND_BONUS,
+        icon: "⭐",
+      });
       earned += POINT_RULES.WEEKEND_BONUS;
     }
 
     setEarnedPoints(earned);
+
+    // ── Supabase 저장 ──────────────────────────────
+    await saveWorkout({
+      date: todayIso,
+      duration: currentElapsed,
+      distance,
+      steps,
+      calories: currentCalories,
+      points_earned: earned,
+      workout_type: selectedCharacter?.type ?? "walker",
+      goal_achieved: goalProgress >= 100,
+    });
+
     setShowModal(true);
   };
 
-  // 링 위 캐릭터 위치 계산 (12시 방향에서 시작)
-  const angle = (progress / 100) * 2 * Math.PI - Math.PI / 2;
-  const emojiX = CX + RADIUS * Math.cos(angle);
-  const emojiY = CY + RADIUS * Math.sin(angle);
-
-  // 걸음 수 증가 (100ms마다, 데모용 가속)
+  // 걸음 수 증가 (현실적: 분당 100보 기준)
   useEffect(() => {
     if (state !== "running") return;
     const id = setInterval(() => {
-      setSteps((prev) => {
-        const next = prev + Math.floor(Math.random() * 8 + 7);
-        if (next >= GOAL_STEPS) {
-          setState("done");
-          return GOAL_STEPS;
-        }
-        return next;
-      });
-    }, 100);
+      setSteps((prev) => prev + 1);
+    }, 600); // 0.6초마다 1보 = 분당 100보
     return () => clearInterval(id);
   }, [state]);
 
@@ -212,7 +262,7 @@ export default function Workout() {
   }, [state]);
 
   const stats = [
-    { label: "거리", value: distance, unit: "km", icon: "📍" },
+    { label: "거리", value: distance.toFixed(2), unit: "km", icon: "📍" },
     { label: "걸음수", value: steps.toLocaleString(), unit: "보", icon: "👟" },
     { label: "시간", value: formatTime(elapsed), unit: "", icon: "⏱️" },
     { label: "칼로리", value: String(calories), unit: "kcal", icon: "🔥" },
@@ -228,8 +278,41 @@ export default function Workout() {
         >
           ←
         </button>
-        <h1 className="font-extrabold text-gray-800">운동 트래킹</h1>
+        <div className="flex flex-col items-center gap-0.5">
+          <h1 className="font-extrabold text-gray-800">운동 트래킹</h1>
+          {selectedCharacter && (
+            <span
+              className="text-xs font-bold px-2.5 py-0.5 rounded-full text-white"
+              style={{
+                background:
+                  "linear-gradient(135deg, var(--color-primary), var(--color-secondary))",
+              }}
+            >
+              {selectedCharacter.emoji} {selectedCharacter.name} · {kcalPerMin}
+              kcal/분
+            </span>
+          )}
+        </div>
         <div className="w-10" />
+      </div>
+
+      {/* 목표 뱃지 */}
+      <div className="flex justify-center mt-1 mb-0">
+        {userGoal ? (
+          <span className="text-xs font-bold px-3 py-1 rounded-full bg-white shadow-sm text-gray-500">
+            🎯 {GOAL_TYPE_LABEL[userGoal.goal_type]} 목표 ·{" "}
+            {goalValue.toLocaleString()}
+            {userGoal.goal_type === "steps"
+              ? "보"
+              : userGoal.goal_type === "distance"
+                ? "km"
+                : "kcal"}
+          </span>
+        ) : (
+          <span className="text-xs text-gray-400">
+            목표 없음 · 기본 5,000보
+          </span>
+        )}
       </div>
 
       {/* 상태 텍스트 */}
@@ -252,7 +335,6 @@ export default function Workout() {
                 <stop offset="0%" stopColor="var(--color-primary)" />
                 <stop offset="100%" stopColor="var(--color-secondary)" />
               </linearGradient>
-              {/* 발광 효과 */}
               <filter id="glow">
                 <feGaussianBlur stdDeviation="3" result="coloredBlur" />
                 <feMerge>
@@ -262,7 +344,6 @@ export default function Workout() {
               </filter>
             </defs>
 
-            {/* 배경 트랙 */}
             <circle
               cx={CX}
               cy={CY}
@@ -271,8 +352,6 @@ export default function Workout() {
               stroke="#f3f4f6"
               strokeWidth={STROKE_W}
             />
-
-            {/* 진행 아크 */}
             <circle
               cx={CX}
               cy={CY}
@@ -289,7 +368,6 @@ export default function Workout() {
             />
           </svg>
 
-          {/* 링 위 캐릭터 이모지 */}
           {state !== "idle" && (
             <div
               className="absolute w-10 h-10 rounded-full bg-white shadow-lg flex items-center justify-center text-xl z-10"
@@ -303,11 +381,13 @@ export default function Workout() {
             </div>
           )}
 
-          {/* 링 중앙 */}
           <div className="absolute inset-0 flex flex-col items-center justify-center select-none">
             {state === "idle" && (
               <button
-                onClick={() => setState("running")}
+                onClick={() => {
+                  setPendingId(selectedId ?? 1);
+                  setShowStartModal(true);
+                }}
                 className="w-24 h-24 rounded-full flex flex-col items-center justify-center shadow-xl active:scale-95 transition-all"
                 style={{
                   background:
@@ -323,17 +403,17 @@ export default function Workout() {
             {(state === "running" || state === "paused") && (
               <>
                 <p className="text-5xl font-extrabold text-gray-800 leading-none">
-                  {Math.floor(progress)}
+                  {Math.floor(goalProgress)}
                   <span className="text-2xl text-gray-400">%</span>
                 </p>
                 <p className="text-xs text-gray-400 mt-1 font-semibold">
-                  목표 달성
+                  {goalLabelText}
                 </p>
                 <p
                   className="text-xs font-bold mt-2"
                   style={{ color: "var(--color-primary)" }}
                 >
-                  {(GOAL_STEPS - steps).toLocaleString()}보 남음
+                  {remainingText}
                 </p>
               </>
             )}
@@ -371,7 +451,10 @@ export default function Workout() {
         <div className="flex gap-3 w-full pb-10">
           {state === "idle" && (
             <button
-              onClick={() => setState("running")}
+              onClick={() => {
+                setPendingId(selectedId ?? 1);
+                setShowStartModal(true);
+              }}
               className="flex-1 py-4 rounded-2xl text-white font-extrabold shadow-md active:scale-95 transition"
               style={{
                 background:
@@ -431,6 +514,79 @@ export default function Workout() {
           )}
         </div>
       </div>
+
+      {/* 운동 시작 팝업 */}
+      {showStartModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-end justify-center"
+          style={{ background: "rgba(0,0,0,0.45)" }}
+        >
+          <div className="w-full bg-white rounded-t-3xl p-6 pb-10 shadow-2xl">
+            <p className="font-extrabold text-gray-800 text-lg mb-1">
+              운동 유형 선택
+            </p>
+            <p className="text-xs text-gray-400 mb-4">
+              선택한 유형으로 칼로리가 계산돼요
+            </p>
+            <div className="flex flex-col gap-3 mb-5">
+              {characters.map((c) => {
+                const isActive = pendingId === c.id;
+                return (
+                  <button
+                    key={c.id}
+                    onClick={() => setPendingId(c.id)}
+                    className={`flex items-center gap-3 p-4 rounded-2xl border-2 transition-all text-left ${
+                      isActive
+                        ? `${c.bg} ${c.border}`
+                        : "bg-gray-50 border-transparent"
+                    }`}
+                  >
+                    <div
+                      className={`w-11 h-11 rounded-xl bg-gradient-to-br ${c.gradient} flex items-center justify-center text-2xl flex-shrink-0`}
+                    >
+                      {c.emoji}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-extrabold text-gray-800 text-sm">
+                        {c.name}
+                      </p>
+                      <p className="text-xs text-gray-400">{c.style}</p>
+                    </div>
+                    <div className="text-right flex-shrink-0">
+                      <p
+                        className="font-extrabold text-sm"
+                        style={{
+                          color: isActive ? "var(--color-primary)" : "#9ca3af",
+                        }}
+                      >
+                        {c.kcalPerMin}kcal/분
+                      </p>
+                      <p className="text-[10px] text-gray-400">
+                        {c.bonusIcon} {c.bonus}
+                      </p>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+            <button
+              onClick={() => {
+                selectCharacter(pendingId);
+                setShowStartModal(false);
+                setState("running");
+              }}
+              className="w-full py-4 rounded-2xl text-white font-extrabold text-base active:scale-95 transition shadow-md"
+              style={{
+                background:
+                  "linear-gradient(135deg, var(--color-primary), var(--color-secondary))",
+              }}
+            >
+              시작하기
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* 완료 팝업 */}
       {showModal && (
         <div
@@ -438,7 +594,6 @@ export default function Workout() {
           style={{ background: "rgba(0,0,0,0.5)" }}
         >
           <div className="w-full bg-white rounded-3xl overflow-hidden shadow-2xl max-h-[90vh] overflow-y-auto">
-            {/* 상단 그라디언트 헤더 */}
             <div
               className="flex flex-col items-center py-8 gap-2"
               style={{
@@ -446,17 +601,41 @@ export default function Workout() {
                   "linear-gradient(135deg, var(--color-primary), var(--color-secondary))",
               }}
             >
-              <span className="text-5xl">🎉</span>
+              <span className="text-5xl">
+                {goalProgress >= 100 ? "🎉" : "💪"}
+              </span>
               <p className="text-white font-extrabold text-2xl mt-1">
                 운동 완료!
               </p>
-              <p className="text-white/70 text-sm">오늘도 정말 잘 했어요 💪</p>
+              <p className="text-white/70 text-sm">
+                {goalProgress >= 100
+                  ? "목표 달성! 정말 잘 했어요 🏆"
+                  : "오늘도 정말 잘 했어요 💪"}
+              </p>
             </div>
 
-            {/* 스탯 목록 */}
+            {goalProgress >= 100 && (
+              <div
+                className="mx-5 mt-4 px-4 py-3 rounded-2xl flex items-center gap-2"
+                style={{ background: "var(--color-primary-light)" }}
+              >
+                <span className="text-lg">🏆</span>
+                <span
+                  className="text-sm font-bold"
+                  style={{ color: "var(--color-primary)" }}
+                >
+                  목표 달성 완료!
+                </span>
+              </div>
+            )}
+
             <div className="px-6 py-5 flex flex-col gap-3">
               {[
-                { icon: "📍", label: "거리", value: `${distance} km` },
+                {
+                  icon: "📍",
+                  label: "거리",
+                  value: `${distance.toFixed(2)} km`,
+                },
                 {
                   icon: "👟",
                   label: "걸음 수",
@@ -481,7 +660,6 @@ export default function Workout() {
                 </div>
               ))}
 
-              {/* 획득 포인트 */}
               <div
                 className="mt-1 rounded-2xl flex items-center justify-between px-4 py-3"
                 style={{ background: "var(--color-primary-light)" }}
@@ -504,67 +682,59 @@ export default function Workout() {
               </div>
             </div>
 
-            {/* 추천 식단 섹션 */}
-            {
-              <div className="px-6 pb-2">
-                <div
-                  className="rounded-2xl p-4"
-                  style={{ background: "var(--color-bg, #f9fafb)" }}
-                >
-                  <p className="font-extrabold text-gray-800 text-sm mb-3">
-                    오늘 추천 식단 🥗
+            <div className="px-6 pb-2">
+              <div
+                className="rounded-2xl p-4"
+                style={{ background: "var(--color-bg, #f9fafb)" }}
+              >
+                <p className="font-extrabold text-gray-800 text-sm mb-3">
+                  오늘 추천 식단 🥗
+                </p>
+                <div className="mb-3">
+                  <p className="text-[11px] text-gray-400 font-semibold mb-1.5">
+                    {elapsedMin >= 30
+                      ? "⏱ 30분 이상 운동 — 단백질 보충 필요!"
+                      : "⏱ 30분 미만 운동 — 가벼운 식단 추천"}
                   </p>
-
-                  {/* 운동 시간 기준 */}
-                  <div className="mb-3">
+                  <div className="flex gap-2 flex-wrap">
+                    {durationDiet.meals.map((m) => (
+                      <span
+                        key={m.name}
+                        className="flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-bold bg-white shadow-sm border border-gray-100"
+                      >
+                        {m.emoji} {m.name}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+                {charDiet && (
+                  <div>
                     <p className="text-[11px] text-gray-400 font-semibold mb-1.5">
-                      {elapsedMin >= 30
-                        ? "⏱ 30분 이상 운동 — 단백질 보충 필요!"
-                        : "⏱ 30분 미만 운동 — 가벼운 식단 추천"}
+                      {selectedCharacter!.emoji} {selectedCharacter!.name} 맞춤
+                      식단
                     </p>
-                    <div className="flex gap-2 flex-wrap">
-                      {durationDiet.meals.map((m) => (
+                    <div className="flex gap-2 flex-wrap mb-2">
+                      {charDiet.meals.map((m) => (
                         <span
                           key={m.name}
-                          className="flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-bold bg-white shadow-sm border border-gray-100"
+                          className="flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-bold text-white shadow-sm"
+                          style={{
+                            background:
+                              "linear-gradient(135deg, var(--color-primary), var(--color-secondary))",
+                          }}
                         >
                           {m.emoji} {m.name}
                         </span>
                       ))}
                     </div>
+                    <p className="text-[11px] text-gray-400 leading-snug">
+                      💡 {charDiet.tip}
+                    </p>
                   </div>
-
-                  {/* 캐릭터 기준 */}
-                  {charDiet && (
-                    <div>
-                      <p className="text-[11px] text-gray-400 font-semibold mb-1.5">
-                        {selectedCharacter!.emoji} {selectedCharacter!.name}{" "}
-                        맞춤 식단
-                      </p>
-                      <div className="flex gap-2 flex-wrap mb-2">
-                        {charDiet.meals.map((m) => (
-                          <span
-                            key={m.name}
-                            className="flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-bold text-white shadow-sm"
-                            style={{
-                              background:
-                                "linear-gradient(135deg, var(--color-primary), var(--color-secondary))",
-                            }}
-                          >
-                            {m.emoji} {m.name}
-                          </span>
-                        ))}
-                      </div>
-                      <p className="text-[11px] text-gray-400 leading-snug">
-                        💡 {charDiet.tip}
-                      </p>
-                    </div>
-                  )}
-                </div>
+                )}
               </div>
-            }
+            </div>
 
-            {/* 홈으로 가기 버튼 */}
             <div className="px-6 py-4">
               <button
                 onClick={() => navigate("/")}
