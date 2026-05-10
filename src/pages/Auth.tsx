@@ -42,16 +42,45 @@ export default function Auth() {
   };
 
   const handleLogin = async () => {
-    setError(null);
-    setIsSubmitting(true);
-    const { error } = await login(email, password);
+  setError(null);
+  setIsSubmitting(true);
+
+  const { error } = await login(email, password);
+
+  if (error) {
     setIsSubmitting(false);
-    if (error) {
-      setError(toKorean(error));
-    } else {
-      navigate("/", { replace: true });
-    }
-  };
+    setError(toKorean(error));
+    return;
+  }
+
+  // ✅ 현재 로그인 유저 가져오기
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    setIsSubmitting(false);
+    setError("유저 정보를 불러올 수 없어요.");
+    return;
+  }
+
+  // ✅ users 테이블에서 닉네임 확인
+  const { data: profile } = await supabase
+    .from("users")
+    .select("nickname")
+    .eq("id", user.id)
+    .single();
+
+  setIsSubmitting(false);
+
+  // ✅ 닉네임 있으면 홈
+  if (profile?.nickname) {
+    navigate("/", { replace: true });
+  } else {
+    // ✅ 없으면 온보딩
+    navigate("/onboarding", { replace: true });
+  }
+};
 
   const handleSignup = async () => {
     setError(null);
