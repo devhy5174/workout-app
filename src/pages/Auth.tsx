@@ -67,7 +67,7 @@ export default function Auth() {
       return;
     }
     if (data.user) {
-      await supabase.from("users").insert({
+      await supabase.from("app_users").insert({
         id: data.user.id,
         nickname: nickname.trim(),
       });
