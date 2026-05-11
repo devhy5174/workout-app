@@ -88,24 +88,20 @@ export function UserProvider({ children }: { children: ReactNode }) {
   }
 
   useEffect(() => {
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        await loadUserData(session.user.id);
-      }
-      setIsLoading(false);
-    });
-
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      
       async (_event, session) => {
         setUser(session?.user ?? null);
         if (session?.user) {
+           console.log('🔥 Auth event:', event);
+      console.log('🔥 Session:', session);
           await loadUserData(session.user.id);
         } else {
           setUserProfile(null);
           setUserGoal(null);
           setWorkoutRecords([]);
         }
+        setIsLoading(false);
       }
     );
 
