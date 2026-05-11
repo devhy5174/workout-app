@@ -17,7 +17,7 @@ import {
   type WorkoutRecord,
 } from "../lib/workoutService";
 
-export type UserProfile = {
+export type AppUser = {
   id: string;
   nickname: string | null;
   gender: string | null;
@@ -31,13 +31,13 @@ export type UserProfile = {
 
 type UserContextValue = {
   user: User | null;
-  userProfile: UserProfile | null;
+  userProfile: AppUser | null;
   isLoading: boolean;
   userGoal: UserGoal | null;
   workoutRecords: WorkoutRecord[];
   login: (email: string, password: string) => Promise<{ error: string | null }>;
   logout: () => Promise<void>;
-  updateProfile: (updates: Partial<Omit<UserProfile, "id" | "created_at">>) => Promise<{ error: string | null }>;
+  updateProfile: (updates: Partial<Omit<AppUser, "id" | "created_at">>) => Promise<{ error: string | null }>;
   saveGoal: (type: UserGoal["goal_type"], value: number) => Promise<{ error: string | null }>;
   deleteGoal: () => Promise<{ error: string | null }>;
   saveWorkout: (record: Omit<WorkoutRecord, "id" | "user_id" | "created_at">) => Promise<{ error: string | null }>;
@@ -59,19 +59,21 @@ const UserContext = createContext<UserContextValue>({
   refreshWorkoutHistory: async () => {},
 });
 
-async function fetchProfile(userId: string): Promise<UserProfile | null> {
+async function fetchProfile(userId: string): Promise<AppUser | null> {
   const { data, error } = await supabase
-    .from("users")
+    .from("app_users")
     .select("*")
     .eq("id", userId)
     .single();
+
+    console.log("[fetchProfile]", { data, error });
   if (error) return null;
-  return data as UserProfile;
+  return data as AppUser;
 }
 
 export function UserProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
-  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [userProfile, setUserProfile] = useState<AppUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [userGoal, setUserGoal] = useState<UserGoal | null>(null);
   const [workoutRecords, setWorkoutRecords] = useState<WorkoutRecord[]>([]);
@@ -93,8 +95,8 @@ export function UserProvider({ children }: { children: ReactNode }) {
       async (_event, session) => {
         setUser(session?.user ?? null);
         if (session?.user) {
-           console.log('🔥 Auth event:', event);
-      console.log('🔥 Session:', session);
+          console.log('🔥 Auth event:', _event);
+          console.log('🔥 Session:', session);
           await loadUserData(session.user.id);
         } else {
           setUserProfile(null);
@@ -118,15 +120,26 @@ export function UserProvider({ children }: { children: ReactNode }) {
   };
 
   const updateProfile = async (
-    updates: Partial<Omit<UserProfile, "id" | "created_at">>
+    updates: Partial<Omit<AppUser, "id" | "created_at">>
   ) => {
     if (!user) return { error: "로그인이 필요합니다." };
-    const { error } = await supabase
-      .from("users")
-      .update(updates)
-      .eq("id", user.id);
+    const { data, error } = await supabase
+      .from("app_users")
+    .upsert({
+
+  id: user.id,
+
+  ...updates,
+
+})
+      .select()
+      .single();
+    console.log("[updateProfile] updates:", updates);
+    console.log("[updateProfile] result:", { data, error: error?.message });
     if (!error) {
-      setUserProfile((prev) => (prev ? { ...prev, ...updates } : prev));
+      const fresh = await fetchProfile(user.id);
+      console.log("[updateProfile] fetched profile:", fresh);
+      setUserProfile(fresh);
     }
     return { error: error?.message ?? null };
   };

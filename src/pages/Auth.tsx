@@ -64,9 +64,9 @@ export default function Auth() {
     return;
   }
 
-  // ✅ users 테이블에서 닉네임 확인
+  // ✅ app_users 테이블에서 닉네임 확인
   const { data: profile } = await supabase
-    .from("users")
+    .from("app_users")
     .select("nickname")
     .eq("id", user.id)
     .single();
@@ -92,7 +92,7 @@ export default function Auth() {
       return;
     }
     if (data.user) {
-      await supabase.from("users").insert({ id: data.user.id });
+      await supabase.from("app_users").insert({ id: data.user.id });
     }
     setIsSubmitting(false);
     setSignupDone(true);
