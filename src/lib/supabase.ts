@@ -9,3 +9,5 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     storage: window.localStorage,
   }
 });
+
+console.log("SUPABASE URL:", import.meta.env.VITE_SUPABASE_URL)
