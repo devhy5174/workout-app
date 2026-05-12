@@ -1,5 +1,6 @@
 import { supabase } from "./supabase";
 import { getCharacterById } from "../data/activityTypes";
+import { getAvatarCharacterById } from "../data/avatarCharacters";
 
 export type TimeSlot = "새벽" | "아침" | "저녁" | "주말";
 
@@ -24,6 +25,7 @@ export type PartyMember = {
   party_id: string;
   nickname: string;
   character_emoji: string;
+  character_image: string | null;
   weekly_steps: number;
   joined_at: string;
 };
@@ -244,7 +246,7 @@ export async function getPartyTodayStats(
 export async function getPartyMembers(partyId: string): Promise<PartyMember[]> {
   const { data: members, error } = await supabase
     .from("party_members")
-    .select("user_id, party_id, joined_at, public_profiles(nickname, activity_type_id)")
+    .select("user_id, party_id, joined_at, public_profiles(nickname, character_id, activity_type_id)")
     .eq("party_id", partyId);
 
   if (error || !members) return [];
@@ -271,11 +273,13 @@ export async function getPartyMembers(partyId: string): Promise<PartyMember[]> {
       profile?.activity_type_id != null
         ? (getCharacterById(profile.activity_type_id)?.emoji ?? "🏃")
         : "🏃";
+    const characterImage = getAvatarCharacterById(profile?.character_id)?.image ?? null;
     return {
       user_id: m.user_id,
       party_id: m.party_id,
       nickname: profile?.nickname ?? "알 수 없음",
       character_emoji: characterEmoji,
+      character_image: characterImage,
       weekly_steps: stepsMap.get(m.user_id) ?? 0,
       joined_at: m.joined_at,
     };

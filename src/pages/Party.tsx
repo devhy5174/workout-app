@@ -24,6 +24,36 @@ const timeSlotEmoji: Record<TimeSlot, string> = {
   주말: "🏖️",
 };
 
+function MemberAvatar({
+  image,
+  fallback,
+  size = "md",
+}: {
+  image: string | null;
+  fallback: string;
+  size?: "sm" | "md";
+}) {
+  const boxClass = size === "sm" ? "w-8 h-8" : "w-9 h-9";
+  const imageClass = size === "sm" ? "w-9 h-9" : "w-10 h-10";
+
+  return (
+    <span
+      className={`${boxClass} rounded-full bg-white border border-gray-100 shadow-sm flex items-center justify-center overflow-hidden flex-shrink-0`}
+    >
+      {image ? (
+        <img
+          src={image}
+          alt=""
+          className={`${imageClass} object-contain`}
+          draggable={false}
+        />
+      ) : (
+        <span className="text-xl">{fallback}</span>
+      )}
+    </span>
+  );
+}
+
 function PartyCard({
   party,
   joined,
@@ -314,9 +344,11 @@ function MembersBottomSheet({
                   key={m.user_id}
                   className="flex items-center gap-3 bg-gray-50 rounded-2xl px-4 py-3"
                 >
-                  <span className="text-2xl w-8 text-center flex-shrink-0">
-                    {m.character_emoji}
-                  </span>
+                  <MemberAvatar
+                    image={m.character_image}
+                    fallback={m.character_emoji}
+                    size="sm"
+                  />
                   <p className="flex-1 font-bold text-gray-700 text-sm truncate">
                     {m.nickname}
                     {m.user_id === currentUserId && (
@@ -432,9 +464,10 @@ function RankingModal({
                   <span className="text-2xl w-8 text-center flex-shrink-0">
                     {rankEmojis[i] ?? `${i + 1}`}
                   </span>
-                  <span className="text-xl flex-shrink-0">
-                    {m.character_emoji}
-                  </span>
+                  <MemberAvatar
+                    image={m.character_image}
+                    fallback={m.character_emoji}
+                  />
                   <p className="flex-1 font-bold text-gray-700 text-sm truncate">
                     {m.nickname}
                     {m.user_id === currentUserId && (

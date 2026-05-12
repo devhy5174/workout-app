@@ -24,6 +24,29 @@ const timeSlotEmoji: Record<string, string> = {
 
 const rankEmojis = ["🥇", "🥈", "🥉"];
 
+function MemberAvatar({
+  image,
+  fallback,
+}: {
+  image: string | null;
+  fallback: string;
+}) {
+  return (
+    <span className="w-9 h-9 rounded-full bg-white border border-gray-100 shadow-sm flex items-center justify-center overflow-hidden flex-shrink-0">
+      {image ? (
+        <img
+          src={image}
+          alt=""
+          className="w-9 h-9 object-contain"
+          draggable={false}
+        />
+      ) : (
+        <span className="text-xl">{fallback}</span>
+      )}
+    </span>
+  );
+}
+
 function KickConfirmModal({
   nickname,
   onConfirm,
@@ -397,7 +420,10 @@ export default function PartyDetail() {
                   <span className="text-xl w-7 text-center flex-shrink-0">
                     {rankEmojis[i] ?? `${i + 1}`}
                   </span>
-                  <span className="text-xl flex-shrink-0">{m.character_emoji}</span>
+                  <MemberAvatar
+                    image={m.character_image}
+                    fallback={m.character_emoji}
+                  />
                   <p className="flex-1 font-bold text-gray-700 text-sm truncate">
                     {m.nickname}
                     {m.user_id === user?.id && (
