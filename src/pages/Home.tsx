@@ -1,12 +1,31 @@
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useActivityType } from "../context/ActivityTypeContext";
 import { useCharacter } from "../context/CharacterContext";
 import { useUser } from "../context/UserContext";
 import { storage } from "../utils/storage";
 import { calculateStreak, getThisWeekWorkouts } from "../utils/streak";
+import { getRandomMessage } from "../data/characterMessages";
 
 const workoutGoal = 7;
 const pointGoal = 500;
+
+function useTypingEffect(text: string, speed = 40) {
+  const [displayed, setDisplayed] = useState("");
+
+  useEffect(() => {
+    setDisplayed("");
+    let i = 0;
+    const timer = setInterval(() => {
+      i++;
+      setDisplayed(text.slice(0, i));
+      if (i >= text.length) clearInterval(timer);
+    }, speed);
+    return () => clearInterval(timer);
+  }, [text, speed]);
+
+  return displayed;
+}
 
 const weeklyTop3 = [
   {
@@ -33,12 +52,6 @@ const weeklyTop3 = [
     bgColor: "#fff7ed",
     textColor: "#fb923c",
   },
-];
-
-const messages = [
-  "오늘도 같이 달려보자구! 🔥",
-  "넌 할 수 있어, 믿어! 💪",
-  "조금만 더! 거의 다 왔어 ✨",
 ];
 
 const GOAL_TYPE_UNIT = {
@@ -80,7 +93,15 @@ export default function Home() {
   const weekWorkouts = getThisWeekWorkouts(history);
   const workoutDays = weekWorkouts.filter(Boolean).length;
   const burnedKcal = storage.getBurnedKcal();
-  const bubbleMsg = messages[streak % messages.length];
+
+  // 페이지 로드마다 캐릭터에 맞는 랜덤 메시지
+  const activityType = selectedActivityType?.type ?? "walker";
+  const [bubbleMsg, setBubbleMsg] = useState(() => getRandomMessage(activityType));
+  const displayedText = useTypingEffect(bubbleMsg);
+
+  const handleCharacterTap = () => {
+    setBubbleMsg(getRandomMessage(activityType));
+  };
 
   // 오늘 목표 진행률
   const today = new Date().toISOString().split("T")[0];
@@ -117,9 +138,14 @@ export default function Home() {
 
       {/* 캐릭터 + 말풍선 */}
       <div className="flex flex-col items-center px-6 pt-4 pb-2">
-        <div className="relative bg-white rounded-2xl px-5 py-3 shadow-md mb-2">
+        <div className="relative bg-white rounded-2xl px-5 py-3 shadow-md mb-2 min-w-[180px]">
           <p className="text-sm font-bold text-gray-700 text-center">
-            {bubbleMsg}
+            {displayedText}
+            <span
+              className={`inline-block w-[2px] h-[1em] bg-gray-500 align-middle ml-[1px] transition-opacity duration-300 ${
+                displayedText.length < bubbleMsg.length ? "animate-pulse" : "opacity-0"
+              }`}
+            />
           </p>
           <div
             className="absolute -bottom-3 left-1/2 -translate-x-1/2 w-0 h-0
@@ -129,7 +155,10 @@ export default function Home() {
           />
         </div>
         <div className="relative mt-4">
-          <div className="w-56 h-56 rounded-full bg-white shadow-xl flex items-center justify-center overflow-hidden border border-white/80">
+          <div
+            onClick={handleCharacterTap}
+            className="w-56 h-56 rounded-full bg-white shadow-xl flex items-center justify-center overflow-hidden border border-white/80 cursor-pointer active:scale-95 transition-transform duration-150"
+          >
             {selectedCharacter ? (
               <img
                 src={selectedCharacter.image}
