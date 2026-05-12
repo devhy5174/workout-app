@@ -1,6 +1,8 @@
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTheme } from "../context/ThemeContext";
 import { useUser } from "../context/UserContext";
+import Modal from "../components/ui/Modal";
 
 type Theme = "energy" | "nature" | "cosmo";
 
@@ -14,6 +16,7 @@ export default function Settings() {
   const { theme, setTheme } = useTheme();
   const { logout } = useUser();
   const navigate = useNavigate();
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
 
   const handleLogout = async () => {
     await logout();
@@ -63,12 +66,20 @@ export default function Settings() {
       </div>
 
       <button
-        onClick={handleLogout}
+        onClick={() => setShowLogoutModal(true)}
         aria-label="로그아웃"
         className="w-full py-4 rounded-2xl font-bold text-sm text-red-500 bg-white shadow hover:bg-red-50 transition"
       >
         로그아웃
       </button>
+
+      <Modal
+        isOpen={showLogoutModal}
+        title="로그아웃"
+        message="정말 로그아웃 하시겠어요?"
+        onConfirm={handleLogout}
+        onClose={() => setShowLogoutModal(false)}
+      />
     </div>
   );
 }
