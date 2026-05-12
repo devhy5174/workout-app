@@ -2,6 +2,7 @@ import {
   createContext,
   useContext,
   useEffect,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
@@ -69,16 +70,20 @@ async function fetchProfile(userId: string): Promise<AppUser | null> {
     .select("*")
     .eq("id", userId)
     .single();
+
+    console.log("fetchProfile 결과", { data, error });
   if (error) return null;
   return data as AppUser;
 }
 
 async function loadUserData(userId: string) {
-  const [profile, workouts, goal] = await Promise.all([
-    fetchProfile(userId),
-    fetchWorkoutHistory(userId),
-    fetchActiveGoal(userId),
-  ]);
+  console.log("1. loadUserData 시작");
+  const profile = await fetchProfile(userId);
+  console.log("2. fetchProfile 완료", profile);
+  const workouts = await fetchWorkoutHistory(userId);
+  console.log("3. fetchWorkoutHistory 완료", workouts);
+  const goal = await fetchActiveGoal(userId);
+  console.log("4. fetchActiveGoal 완료", goal);
   return { profile, workouts, goal };
 }
 
@@ -89,35 +94,120 @@ export function UserProvider({ children }: { children: ReactNode }) {
   const [workoutRecords, setWorkoutRecords] = useState<WorkoutRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
+  // ref로 stale closure 없이 현재 profile 여부 확인
+  const userRef = useRef<User | null>(null);
+  const userProfileRef = useRef<AppUser | null>(null);
+
+// 앱 시작 시 세션 복구 + 유저 데이터 로드
+useEffect(() => {
+  // 언마운트 이후 state 업데이트 방지용
+  let mounted = true;
+
+  // 초기 세션 확인 함수
+  async function initSession() {
+    console.log("0. 초기 세션 확인");
+
+    // localStorage에 저장된 세션 가져오기
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
+    // 이미 컴포넌트 종료됐으면 중단
+    if (!mounted) return;
+
+    // 현재 로그인 유저 저장
+    const currentUser = session?.user ?? null;
+    setUser(currentUser);
+
+    // 로그인 안된 상태면 로딩 종료
+    if (!currentUser) {
+      console.log("유저 없음");
+      setIsLoading(false);
+      return;
+    }
+
+    console.log("1. loadUserData 시작");
+
+    // 유저 데이터 불러오는 동안 로딩 표시
+    setIsLoading(true);
+
+    try {
+      // 프로필 / 운동기록 / 목표 불러오기
+      const { profile, workouts, goal } = await loadUserData(
+        currentUser.id
+      );
+
+      // 언마운트됐으면 중단
+      if (!mounted) return;
+
+      console.log("2. fetchProfile 완료", profile);
+      console.log("3. fetchWorkoutHistory 완료", workouts);
+      console.log("4. fetchActiveGoal 완료", goal);
+
+      // 상태 저장
+      setUserProfile(profile);
+      setWorkoutRecords(workouts);
+      setUserGoalState(goal);
+    } catch (e) {
+      console.error("loadUserData 에러", e);
+    } finally {
+      // 항상 로딩 종료
+      if (mounted) {
+        console.log("5. isLoading false 설정");
+        setIsLoading(false);
+      }
+    }
+  }
+
+  // 앱 시작 시 1회 실행
+  initSession();
+
+  // 로그인 / 로그아웃 상태 변화 감지
+  const {
+    data: { subscription },
+  } = supabase.auth.onAuthStateChange((event, session) => {
+    console.log("Auth event:", event);
+
+    // 로그아웃 시 상태 초기화
+    if (event === "SIGNED_OUT") {
+      setUser(null);
+      setUserProfile(null);
+      setWorkoutRecords([]);
+      setUserGoalState(null);
+      setIsLoading(false);
+      return;
+    }
+
+    // 로그인 성공 시 user만 갱신
+    // 실제 데이터 fetch는 initSession에서만 처리
+    if (event === "SIGNED_IN") {
       setUser(session?.user ?? null);
-      if (session?.user) {
-        const { profile, workouts, goal } = await loadUserData(session.user.id);
+    }
+  });
+
+  // cleanup
+  return () => {
+    mounted = false;
+    subscription.unsubscribe();
+  };
+}, []);
+
+  // 다른 탭 갔다 오면: 프로필 없을 때만 재로드
+  useEffect(() => {
+    const handleVisibility = () => {
+      if (document.visibilityState !== "visible") return;
+      if (!userRef.current || userProfileRef.current) return;
+
+      loadUserData(userRef.current.id).then(({ profile, workouts, goal }) => {
+        userProfileRef.current = profile;
         setUserProfile(profile);
         setWorkoutRecords(workouts);
         setUserGoalState(goal);
-      }
-      setIsLoading(false);
-    });
+      });
+    };
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
-        setUser(session?.user ?? null);
-        if (session?.user) {
-          const { profile, workouts, goal } = await loadUserData(session.user.id);
-          setUserProfile(profile);
-          setWorkoutRecords(workouts);
-          setUserGoalState(goal);
-        } else {
-          setUserProfile(null);
-          setWorkoutRecords([]);
-          setUserGoalState(null);
-        }
-      }
-    );
-
-    return () => subscription.unsubscribe();
+    document.addEventListener("visibilitychange", handleVisibility);
+    return () => document.removeEventListener("visibilitychange", handleVisibility);
   }, []);
 
   const login = async (email: string, password: string) => {
@@ -140,7 +230,11 @@ export function UserProvider({ children }: { children: ReactNode }) {
       .eq("id", user.id);
 
     if (!error) {
-      setUserProfile((prev) => (prev ? { ...prev, ...updates } : prev));
+      setUserProfile((prev) => {
+        const next = prev ? { ...prev, ...updates } : prev;
+        userProfileRef.current = next;
+        return next;
+      });
     }
 
     return { error: error?.message ?? null };
@@ -164,9 +258,11 @@ export function UserProvider({ children }: { children: ReactNode }) {
     if (pointsResult.error) {
       console.error("포인트 업데이트 실패:", pointsResult.error);
     } else {
-      setUserProfile((prev) =>
-        prev ? { ...prev, points: (prev.points ?? 0) + record.points_earned } : prev
-      );
+      setUserProfile((prev) => {
+        const next = prev ? { ...prev, points: (prev.points ?? 0) + record.points_earned } : prev;
+        userProfileRef.current = next;
+        return next;
+      });
     }
 
     return { error: null };
