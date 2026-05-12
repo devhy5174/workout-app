@@ -34,9 +34,25 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
 function ProtectedLayout() {
   const { user, userProfile, isLoading } = useUser();
 
-  if (isLoading) return <LoadingScreen />;
-  if (!user) return <Navigate to="/auth" replace />;
-  if (!userProfile?.nickname) return <Navigate to="/onboarding" replace />;
+  // 로딩 중
+  if (isLoading) {
+    return <LoadingScreen />;
+  }
+
+  // 로그인 안됨
+  if (!user) {
+    return <Navigate to="/auth" replace />;
+  }
+
+  // 프로필 아직 로딩 중
+  if (!userProfile) {
+    return <LoadingScreen />;
+  }
+
+  // 닉네임 없으면 온보딩
+  if (!userProfile.nickname) {
+    return <Navigate to="/onboarding" replace />;
+  }
 
   return (
     <div className="h-screen bg-gray-50 flex flex-col max-w-md mx-auto">

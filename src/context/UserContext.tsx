@@ -183,6 +183,9 @@ useEffect(() => {
     // 실제 데이터 fetch는 initSession에서만 처리
     if (event === "SIGNED_IN") {
       setUser(session?.user ?? null);
+      
+       // 로그인 직후 유저 데이터 다시 불러오기
+  initSession();
     }
   });
 
