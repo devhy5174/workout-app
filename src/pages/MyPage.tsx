@@ -1,6 +1,9 @@
 import { useState } from "react";
 import { useUser } from "../context/UserContext";
-import { useCharacter } from "../context/ActivityTypeContext";
+import { useActivityType } from "../context/ActivityTypeContext";
+import { useCharacter } from "../context/CharacterContext";
+import CharacterGrid from "../components/CharacterGrid";
+import Modal from "../components/ui/Modal";
 import { activityTypes } from "../data/activityTypes";
 import { type UserGoal } from "../lib/workoutService";
 import Diet from "./Diet";
@@ -207,101 +210,241 @@ function GoalSetModal({ onClose }: { onClose: () => void }) {
   );
 }
 
-// ── 캐릭터 선택 시트 ────────────────────────────────────
-function CharacterSheet({ onClose }: { onClose: () => void }) {
-  const { selectedId, selectActivityType } = useCharacter();
+// ── 활동 유형 선택 시트 ────────────────────────────────────
+function ActivityTypeSheet({ onClose }: { onClose: () => void }) {
+  const { selectedId, selectActivityType } = useActivityType();
+  const [pendingActivityTypeId, setPendingActivityTypeId] = useState<number | null>(
+    null,
+  );
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+
+  const pendingActivityType =
+    activityTypes.find((type) => type.id === pendingActivityTypeId) ?? null;
+  const checkedActivityTypeId = pendingActivityTypeId ?? selectedId;
+
+  function handleConfirm() {
+    if (pendingActivityTypeId === null) return;
+    selectActivityType(pendingActivityTypeId);
+    setPendingActivityTypeId(null);
+    setShowConfirmModal(false);
+    onClose();
+  }
+
+  function handleCloseConfirm() {
+    setShowConfirmModal(false);
+  }
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-end bg-black/40"
-      onClick={onClose}
-    >
+    <>
       <div
-        className="w-full max-w-md mx-auto bg-white rounded-t-3xl p-5 pb-8 max-h-[85vh] overflow-y-auto"
-        onClick={(e) => e.stopPropagation()}
+        className="fixed inset-0 z-50 flex items-end bg-black/40"
+        onClick={onClose}
       >
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-extrabold text-gray-800">캐릭터 변경</h3>
-          <button
-            onClick={onClose}
-            className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 font-bold"
-            aria-label="닫기"
-          >
-            ✕
-          </button>
-        </div>
-        <p className="text-sm text-gray-400 mb-4">
-          나에게 맞는 운동 스타일을 골라봐!
-        </p>
-        <div className="flex flex-col gap-3">
-          {activityTypes.map((c) => {
-            const isSelected = selectedId === c.id;
-            return (
-              <button
-                key={c.id}
-                onClick={() => {
-                  selectActivityType(c.id);
-                  onClose();
-                }}
-                className={`w-full rounded-3xl p-4 text-left transition-all duration-200 border-2 ${
-                  isSelected
-                    ? `${c.bg} ${c.border} shadow-md scale-[1.01]`
-                    : "bg-white border-transparent shadow-sm"
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <div
-                    className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${c.gradient} flex items-center justify-center shadow-sm flex-shrink-0`}
-                  >
-                    <span className="text-2xl">{c.emoji}</span>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="font-extrabold text-gray-800 text-sm">
-                        {c.name}
-                      </span>
-                      {isSelected && (
-                        <span className="text-[10px] font-bold text-white bg-[var(--color-primary)] rounded-full px-2 py-0.5">
-                          선택됨
+        <div
+          className="w-full max-w-md mx-auto bg-white rounded-t-3xl p-5 pb-8 max-h-[85vh] overflow-y-auto"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-extrabold text-gray-800">
+              활동유형 변경
+            </h3>
+            <button
+              onClick={onClose}
+              className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 font-bold"
+              aria-label="닫기"
+            >
+              ✕
+            </button>
+          </div>
+          <p className="text-sm text-gray-400 mb-4">
+            나에게 맞는 운동 스타일을 골라봐!
+          </p>
+          <div className="flex flex-col gap-3 pb-5">
+            {activityTypes.map((c) => {
+              const isSelected = selectedId === c.id;
+              const isChecked = checkedActivityTypeId === c.id;
+              return (
+                <button
+                  key={c.id}
+                  onClick={() => setPendingActivityTypeId(c.id)}
+                  className={`w-full rounded-3xl p-4 text-left transition-all duration-200 border-2 ${
+                    isChecked
+                      ? `${c.bg} ${c.border} shadow-md scale-[1.01]`
+                      : "bg-white border-transparent shadow-sm"
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <div
+                      className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${c.gradient} flex items-center justify-center shadow-sm flex-shrink-0`}
+                    >
+                      <span className="text-2xl">{c.emoji}</span>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="font-extrabold text-gray-800 text-sm">
+                          {c.name}
+                        </span>
+                        {isSelected && (
+                          <span className="text-[10px] font-bold text-white bg-[var(--color-primary)] rounded-full px-2 py-0.5">
+                            선택됨
+                          </span>
+                        )}
+                        {!isSelected && isChecked && (
+                          <span className="text-[10px] font-bold text-[var(--color-primary)] bg-[var(--color-primary)]/10 rounded-full px-2 py-0.5">
+                            변경 예정
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-xs text-gray-500 mt-0.5">{c.style}</p>
+                      <div className="flex items-center gap-1 mt-1">
+                        <span className="text-xs">{c.bonusIcon}</span>
+                        <span className="text-[11px] font-semibold text-gray-500">
+                          {c.bonus}
+                        </span>
+                      </div>
+                    </div>
+                    <div
+                      className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${
+                        isChecked
+                          ? `bg-gradient-to-br ${c.gradient} border-transparent`
+                          : "border-gray-200"
+                      }`}
+                    >
+                      {isChecked && (
+                        <span className="text-white text-[10px] font-bold">
+                          ✓
                         </span>
                       )}
                     </div>
-                    <p className="text-xs text-gray-500 mt-0.5">{c.style}</p>
-                    <div className="flex items-center gap-1 mt-1">
-                      <span className="text-xs">{c.bonusIcon}</span>
-                      <span className="text-[11px] font-semibold text-gray-500">
-                        {c.bonus}
-                      </span>
-                    </div>
                   </div>
-                  <div
-                    className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${
-                      isSelected
-                        ? `bg-gradient-to-br ${c.gradient} border-transparent`
-                        : "border-gray-200"
-                    }`}
-                  >
-                    {isSelected && (
-                      <span className="text-white text-[10px] font-bold">
-                        ✓
-                      </span>
-                    )}
-                  </div>
-                </div>
-              </button>
-            );
-          })}
+                </button>
+              );
+            })}
+          </div>
+          <div className="sticky bottom-0 -mx-5 -mb-8 bg-white/95 px-5 pt-3 pb-8 backdrop-blur">
+            <button
+              onClick={() => setShowConfirmModal(true)}
+              disabled={
+                pendingActivityTypeId === null ||
+                pendingActivityTypeId === selectedId
+              }
+              className="w-full py-4 rounded-2xl text-white font-extrabold text-base shadow-md active:scale-95 transition disabled:opacity-40 disabled:active:scale-100"
+              style={{
+                background:
+                  "linear-gradient(135deg, var(--color-primary), var(--color-secondary))",
+              }}
+            >
+              확인
+            </button>
+          </div>
         </div>
       </div>
-    </div>
+      <Modal
+        isOpen={showConfirmModal && pendingActivityType !== null}
+        title="활동유형을 변경할까요?"
+        message={`${pendingActivityType?.name ?? ""} 유형으로 변경할게요.`}
+        onConfirm={handleConfirm}
+        onClose={handleCloseConfirm}
+      />
+    </>
+  );
+}
+
+// ── 캐릭터 선택 시트 ────────────────────────────────────
+function CharacterSheet({ onClose }: { onClose: () => void }) {
+  const { selectedCharacterId, selectCharacter } = useCharacter();
+  const [pendingCharacterId, setPendingCharacterId] = useState<string | null>(
+    null,
+  );
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const checkedCharacterId = pendingCharacterId ?? selectedCharacterId;
+
+  async function handleConfirm() {
+    if (pendingCharacterId === null) return;
+    setIsSaving(true);
+    setError(null);
+    const result = await selectCharacter(pendingCharacterId);
+    setIsSaving(false);
+    if (result.error) {
+      setError(result.error);
+      setShowConfirmModal(false);
+      return;
+    }
+    setPendingCharacterId(null);
+    setShowConfirmModal(false);
+    onClose();
+  }
+
+  return (
+    <>
+      <div
+        className="fixed inset-0 z-50 flex items-end bg-black/40"
+        onClick={onClose}
+      >
+        <div
+          className="w-full max-w-md mx-auto bg-white rounded-t-3xl p-5 pb-8 max-h-[85vh] overflow-y-auto"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-extrabold text-gray-800">캐릭터 변경</h3>
+            <button
+              onClick={onClose}
+              className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 font-bold"
+              aria-label="닫기"
+            >
+              ✕
+            </button>
+          </div>
+          <p className="text-sm text-gray-400 mb-4">
+            홈과 마이페이지에 표시할 캐릭터를 골라주세요.
+          </p>
+          <CharacterGrid
+            selectedId={checkedCharacterId}
+            onSelect={setPendingCharacterId}
+            disabled={isSaving}
+          />
+          {error && (
+            <p className="mt-3 text-xs font-semibold text-red-500">{error}</p>
+          )}
+          <div className="sticky bottom-0 -mx-5 -mb-8 bg-white/95 px-5 pt-3 pb-8 backdrop-blur">
+            <button
+              onClick={() => setShowConfirmModal(true)}
+              disabled={
+                pendingCharacterId === null ||
+                pendingCharacterId === selectedCharacterId ||
+                isSaving
+              }
+              className="w-full py-4 rounded-2xl text-white font-extrabold text-base shadow-md active:scale-95 transition disabled:opacity-40 disabled:active:scale-100"
+              style={{
+                background:
+                  "linear-gradient(135deg, var(--color-primary), var(--color-secondary))",
+              }}
+            >
+              {isSaving ? "저장 중..." : "확인"}
+            </button>
+          </div>
+        </div>
+      </div>
+      <Modal
+        isOpen={showConfirmModal && pendingCharacterId !== null}
+        title="캐릭터를 변경할까요?"
+        message="선택한 캐릭터로 프로필을 변경할게요."
+        onConfirm={handleConfirm}
+        onClose={() => setShowConfirmModal(false)}
+      />
+    </>
   );
 }
 
 // ── 내정보 탭 ───────────────────────────────────────────
 function InfoTab() {
   const { userProfile, updateProfile, userGoal, deleteGoal } = useUser();
-  const { selectedActivityType } = useCharacter();
-  const [showSheet, setShowSheet] = useState(false);
+  const { selectedActivityType } = useActivityType();
+  const { selectedCharacter } = useCharacter();
+  const [showActivityTypeSheet, setShowActivityTypeSheet] = useState(false);
+  const [showCharacterSheet, setShowCharacterSheet] = useState(false);
   const [showGoalModal, setShowGoalModal] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -348,12 +491,17 @@ function InfoTab() {
     <div className="flex flex-col gap-4 px-4 pt-5 pb-20 h-full overflow-y-auto">
       {/* 캐릭터 & 닉네임 */}
       <div className="bg-white rounded-3xl shadow-sm p-6 flex flex-col items-center gap-3">
-        <div
-          className={`w-24 h-24 rounded-3xl bg-gradient-to-br ${
-            selectedActivityType?.gradient ?? "from-gray-200 to-gray-300"
-          } flex items-center justify-center shadow-md`}
-        >
-          <span className="text-5xl">{selectedActivityType?.emoji ?? "👤"}</span>
+        <div className="w-28 h-28 rounded-full bg-white flex items-center justify-center shadow-md overflow-hidden border border-gray-100">
+          {selectedCharacter ? (
+            <img
+              src={selectedCharacter.image}
+              alt=""
+              className="h-26 w-26 object-contain"
+              draggable={false}
+            />
+          ) : (
+            <span className="text-5xl">{selectedActivityType?.emoji ?? "👤"}</span>
+          )}
         </div>
         <div className="text-center">
           <p className="text-xl font-extrabold text-gray-800">
@@ -365,17 +513,30 @@ function InfoTab() {
             </p>
           )}
         </div>
-        <button
-          onClick={() => setShowSheet(true)}
-          className="mt-1 px-5 py-2 rounded-2xl text-sm font-bold text-white shadow-sm active:scale-95 transition-all"
-          style={{
-            background:
-              "linear-gradient(135deg, var(--color-primary), var(--color-secondary))",
-          }}
-          aria-label="캐릭터 변경하기"
-        >
-          캐릭터 변경하기
-        </button>
+        <div className="mt-1 grid w-full grid-cols-2 gap-2">
+          <button
+            onClick={() => setShowActivityTypeSheet(true)}
+            className="px-4 py-2 rounded-2xl text-sm font-bold text-white shadow-sm active:scale-95 transition-all"
+            style={{
+              background:
+                "linear-gradient(135deg, var(--color-primary), var(--color-secondary))",
+            }}
+            aria-label="활동유형 변경하기"
+          >
+            활동유형 변경
+          </button>
+          <button
+            onClick={() => setShowCharacterSheet(true)}
+            className="px-4 py-2 rounded-2xl text-sm font-bold border-2 bg-white shadow-sm active:scale-95 transition-all"
+            style={{
+              borderColor: "var(--color-primary)",
+              color: "var(--color-primary)",
+            }}
+            aria-label="캐릭터 변경하기"
+          >
+            캐릭터 변경
+          </button>
+        </div>
       </div>
 
       {/* 목표 설정 카드 */}
@@ -523,7 +684,12 @@ function InfoTab() {
         </div>
       </div>
 
-      {showSheet && <CharacterSheet onClose={() => setShowSheet(false)} />}
+      {showActivityTypeSheet && (
+        <ActivityTypeSheet onClose={() => setShowActivityTypeSheet(false)} />
+      )}
+      {showCharacterSheet && (
+        <CharacterSheet onClose={() => setShowCharacterSheet(false)} />
+      )}
       {showGoalModal && (
         <GoalSetModal onClose={() => setShowGoalModal(false)} />
       )}

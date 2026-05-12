@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
-import { useCharacter } from "../context/ActivityTypeContext";
+import { useActivityType } from "../context/ActivityTypeContext";
+import { useCharacter } from "../context/CharacterContext";
 import { useUser } from "../context/UserContext";
 import { storage } from "../utils/storage";
 import { calculateStreak, getThisWeekWorkouts } from "../utils/streak";
@@ -67,10 +68,10 @@ function ProgressBar({
 }
 
 export default function Home() {
-  const { selectedActivityType } = useCharacter();
+  const { selectedActivityType } = useActivityType();
+  const { selectedCharacter } = useCharacter();
   const { userGoal, workoutRecords, userProfile } = useUser();
 
-  const characterEmoji = selectedActivityType?.emoji ?? "🏃";
   const characterName = selectedActivityType?.name ?? null;
 
   const history = storage.getWorkoutHistory();
@@ -128,18 +129,27 @@ export default function Home() {
           />
         </div>
         <div className="relative mt-4">
-          <div className="w-44 h-44 rounded-full bg-gradient-to-br from-primary to-secondary shadow-xl flex items-center justify-center">
-            <span className="text-8xl select-none">{characterEmoji}</span>
+          <div className="w-56 h-56 rounded-full bg-white shadow-xl flex items-center justify-center overflow-hidden border border-white/80">
+            {selectedCharacter ? (
+              <img
+                src={selectedCharacter.image}
+                alt=""
+                className="h-55 w-55 select-none object-contain"
+                draggable={false}
+              />
+            ) : (
+              <span className="text-8xl select-none">🏃</span>
+            )}
           </div>
           {characterName && (
             <span className="absolute -bottom-6 left-1/2 -translate-x-1/2 text-xs font-bold text-primary whitespace-nowrap">
               {characterName}
             </span>
           )}
-          <span className="absolute top-1 right-3 text-xl animate-bounce">
+          <span className="absolute top-3 right-5 text-xl animate-bounce">
             ✨
           </span>
-          <span className="absolute bottom-4 left-0 text-lg animate-bounce delay-150">
+          <span className="absolute bottom-8 left-1 text-lg animate-bounce delay-150">
             ⚡
           </span>
         </div>

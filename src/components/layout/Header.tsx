@@ -1,5 +1,6 @@
 import { useLocation } from "react-router-dom";
-import { useCharacter } from "../../context/ActivityTypeContext";
+import { useActivityType } from "../../context/ActivityTypeContext";
+import { useCharacter } from "../../context/CharacterContext";
 
 const pageConfig: Record<string, { title: string; icon: string }> = {
   "/": { title: "홈", icon: "🏠" },
@@ -13,7 +14,8 @@ const pageConfig: Record<string, { title: string; icon: string }> = {
 
 export default function Header() {
   const { pathname } = useLocation();
-  const { selectedActivityType } = useCharacter();
+  const { selectedActivityType } = useActivityType();
+  const { selectedCharacter } = useCharacter();
   if (pathname === "/workout") return null;
   const { title } = pageConfig[pathname] ?? {
     title: "워크아웃",
@@ -41,9 +43,18 @@ export default function Header() {
           style={{ background: "rgba(255,255,255,0.2)" }}
           aria-label="내 캐릭터"
         >
-          <span className="text-lg" role="img" aria-hidden="true">
-            {characterEmoji}
-          </span>
+          {selectedCharacter ? (
+            <img
+              src={selectedCharacter.image}
+              alt=""
+              className="h-8 w-8 object-contain"
+              draggable={false}
+            />
+          ) : (
+            <span className="text-lg" role="img" aria-hidden="true">
+              {characterEmoji}
+            </span>
+          )}
         </div>
       </div>
     </header>
