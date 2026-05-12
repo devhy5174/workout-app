@@ -1,5 +1,4 @@
 import { useState } from "react";
-import Modal from "../components/ui/Modal";
 import CommunityWriteModal from "../components/CommunityWriteModal";
 
 // ─── 타입 ─────────────────────────────────────────────────
