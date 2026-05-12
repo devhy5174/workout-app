@@ -8,7 +8,6 @@ import {
   addCheer,
   removeCheer,
   type CommunityPost,
-  type SensoryCard,
 } from "../lib/communityService";
 import { useUser } from "../context/UserContext";
 
@@ -95,19 +94,10 @@ export function useCommunity() {
     }
   };
 
-  const submitPost = async (data: {
-    text: string;
-    card: SensoryCard | null;
-    tag: { label: string } | null;
-  }) => {
+  const submitPost = async (data: { text: string; tags: string[] }) => {
     if (!user) return { error: "로그인이 필요합니다." };
     const { data: newPost, error } = await createPost(
-      {
-        text: data.text,
-        card_id: data.card?.id ?? "night",
-        tag: data.tag?.label ?? "",
-        steps: 0,
-      },
+      { text: data.text, tags: data.tags, steps: 0 },
       user.id,
     );
     if (error || !newPost) return { error };

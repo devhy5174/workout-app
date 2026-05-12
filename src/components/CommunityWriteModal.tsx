@@ -5,105 +5,30 @@ interface Tag {
   label: string;
 }
 
-interface SensoryCard {
-  id: string;
-  label: string;
-  gradient: string;
-}
-
 interface CommunityWriteModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSubmit?: (data: {
     text: string;
-    tag: Tag | null;
-    card: SensoryCard | null;
+    tags: string[];
   }) => void;
 }
 
-// ───────────────── 감성 카드 ─────────────────
-const SENSORY_CARDS: SensoryCard[] = [
-  {
-    id: "night",
-    label: "밤거리",
-    gradient: "linear-gradient(135deg, #0f0c29 0%, #1a1a4e 50%, #24243e 100%)",
-
-  },
-  {
-    id: "dawn",
-    label: "새벽",
-    gradient: "linear-gradient(135deg, #1a0533 0%, #3d1a6e 50%, #6b3fa0 100%)",
-
-  },
-  {
-    id: "morning",
-    label: "출근길",
-    gradient: "linear-gradient(135deg, #f9a86c 0%, #f77b50 50%, #e85d3a 100%)",
-
-  },
-  {
-    id: "sunset",
-    label: "노을",
-    gradient: "linear-gradient(135deg, #fbc78a 0%, #f4845f 50%, #e85c6e 100%)",
-
-  },
-  {
-    id: "commute",
-    label: "퇴근길",
-    gradient: "linear-gradient(135deg, #2d1b5e 0%, #5a3480 50%, #8b5ea8 100%)",
-
-  },
-  {
-    id: "spring",
-    label: "봄길",
-    gradient: "linear-gradient(135deg, #fde8f0 0%, #f5b8d0 50%, #e888b0 100%)",
-
-  },
-  {
-    id: "forest",
-    label: "숲속",
-    gradient: "linear-gradient(135deg, #c8e6c0 0%, #88c878 50%, #4a9e5a 100%)",
-
-  },
-  {
-    id: "river",
-    label: "강변",
-    gradient: "linear-gradient(135deg, #c8e8f8 0%, #80c0e8 50%, #3a8abf 100%)",
-
-  },
-  {
-    id: "rain",
-    label: "빗속",
-    gradient: "linear-gradient(135deg, #b0bec5 0%, #78909c 50%, #455a64 100%)",
-
-  },
-  {
-    id: "autumn",
-    label: "가을길",
-    gradient: "linear-gradient(135deg, #ffe0b2 0%, #ffb74d 50%, #e65100 100%)",
-
-  },
-  {
-    id: "street",
-    label: "도심",
-    gradient: "linear-gradient(135deg, #cfd8dc 0%, #90a4ae 50%, #546e7a 100%)",
-
-  },
-];
-
 // ───────────────── 태그 ─────────────────
 const TAGS: Tag[] = [
-  {  label: "밤산책" },
-  {  label: "새벽산책" },
-  {  label: "아침걷기" },
-  {  label: "출근길" },
-  {  label: "퇴근길산책" },
-  {  label: "비오는날" },
-  {  label: "목표달성" },
-  {  label: "천천히걷기" },
-  {  label: "귀찮았지만성공" },
-  {  label: "오늘도완료" },
+  { label: "밤산책" },
+  { label: "새벽산책" },
+  { label: "아침걷기" },
+  { label: "출근길" },
+  { label: "퇴근길산책" },
+  { label: "비오는날" },
+  { label: "목표달성" },
+  { label: "천천히걷기" },
+  { label: "귀찮았지만성공" },
+  { label: "오늘도완료" },
 ];
+
+const MAX_TAGS = 2;
 
 export default function CommunityWriteModal({
   isOpen,
@@ -111,31 +36,28 @@ export default function CommunityWriteModal({
   onSubmit,
 }: CommunityWriteModalProps) {
   const [text, setText] = useState("");
-  const [selectedTag, setSelectedTag] = useState<Tag | null>(null);
-  const [selectedCard, setSelectedCard] = useState<SensoryCard | null>(
-    SENSORY_CARDS[0]
-  );
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
 
-  // 닫히면 초기화
   useEffect(() => {
     if (!isOpen) {
       setText("");
-      setSelectedTag(null);
-      setSelectedCard(SENSORY_CARDS[0]);
+      setSelectedTags([]);
     }
   }, [isOpen]);
 
   if (!isOpen) return null;
 
+  const toggleTag = (label: string) => {
+    setSelectedTags((prev) => {
+      if (prev.includes(label)) return prev.filter((t) => t !== label);
+      if (prev.length >= MAX_TAGS) return prev;
+      return [...prev, label];
+    });
+  };
+
   const handleSubmit = () => {
     if (!text.trim()) return;
-
-    onSubmit?.({
-      text,
-      tag: selectedTag,
-      card: selectedCard,
-    });
-
+    onSubmit?.({ text, tags: selectedTags });
     onClose();
   };
 
@@ -165,12 +87,10 @@ export default function CommunityWriteModal({
             <h2 className="text-[20px] font-bold text-stone-800">
               산책 기록 남기기 👣
             </h2>
-
             <p className="text-[12px] text-stone-400 mt-1">
               오늘 걸은 기분을 가볍게 적어보세요
             </p>
           </div>
-
           <button
             onClick={onClose}
             className="
@@ -183,49 +103,6 @@ export default function CommunityWriteModal({
           >
             ✕
           </button>
-        </div>
-
-        {/* 감성 카드 */}
-        <div className="mb-5">
-          <p className="text-[13px] font-medium text-stone-600 mb-3">
-            오늘 분위기
-          </p>
-
-          <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1">
-            {SENSORY_CARDS.map((card) => {
-              const active = selectedCard?.id === card.id;
-
-              return (
-                <button
-                  key={card.id}
-                  onClick={() => setSelectedCard(card)}
-                  className={`
-                    relative flex-shrink-0
-                    w-20 h-16 rounded-2xl
-                    overflow-hidden
-                    transition-all duration-150
-                    active:scale-95
-                    ${
-                      active
-                        ? "ring-2 ring-orange-400 ring-offset-2"
-                        : "ring-1 ring-stone-200"
-                    }
-                  `}
-                  style={{
-                    background: card.gradient,
-                  }}
-                >
-                  <div className="absolute inset-0 bg-black/10" />
-
-                  <div className="absolute bottom-2 left-2 text-left">
-                    <p className="text-[11px] text-white font-medium mt-0.5">
-                      {card.label}
-                    </p>
-                  </div>
-                </button>
-              );
-            })}
-          </div>
         </div>
 
         {/* 글 작성 */}
@@ -250,40 +127,35 @@ export default function CommunityWriteModal({
               transition-all
             "
           />
-
           <div className="flex justify-end mt-2">
-            <span className="text-[11px] text-stone-300">
-              {text.length}/120
-            </span>
+            <span className="text-[11px] text-stone-300">{text.length}/120</span>
           </div>
         </div>
 
-        {/* 태그 */}
+        {/* 태그 - 최대 2개 */}
         <div className="mb-7">
-          <p className="text-[13px] font-medium text-stone-600 mb-3">
-            오늘의 기분
-          </p>
+          <div className="flex items-center gap-2 mb-3">
+            <p className="text-[13px] font-medium text-stone-600">오늘의 기분</p>
+            <span className="text-[11px] text-stone-400">최대 2개</span>
+          </div>
 
           <div className="flex flex-wrap gap-2">
             {TAGS.map((tag) => {
-              const active = selectedTag?.label === tag.label;
-
+              const active = selectedTags.includes(tag.label);
+              const disabled = !active && selectedTags.length >= MAX_TAGS;
               return (
                 <button
                   key={tag.label}
-                  onClick={() =>
-                    setSelectedTag(active ? null : tag)
-                  }
+                  onClick={() => toggleTag(tag.label)}
                   className={`
                     rounded-full px-4 py-2
                     text-[12px] font-medium
                     transition-all duration-150
                     active:scale-95
-                    ${
-                      active
-                        ? "bg-orange-400 text-white shadow-sm shadow-orange-200"
-                        : "bg-white border border-stone-200 text-stone-500"
-                    }
+                    ${active
+                      ? "bg-orange-400 text-white shadow-sm shadow-orange-200"
+                      : "bg-white border border-stone-200 text-stone-500"}
+                    ${disabled ? "opacity-40 pointer-events-none" : ""}
                   `}
                 >
                   #{tag.label}
@@ -301,11 +173,9 @@ export default function CommunityWriteModal({
             w-full h-14 rounded-2xl
             text-sm font-bold
             transition-all duration-150
-            ${
-              text.trim()
-                ? "bg-gradient-to-r from-orange-400 to-orange-500 text-white shadow-lg shadow-orange-200 active:scale-[0.98]"
-                : "bg-stone-200 text-stone-400"
-            }
+            ${text.trim()
+              ? "bg-gradient-to-r from-orange-400 to-orange-500 text-white shadow-lg shadow-orange-200 active:scale-[0.98]"
+              : "bg-stone-200 text-stone-400"}
           `}
         >
           기록 남기기

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import CommunityWriteModal from "../components/CommunityWriteModal";
+import Modal from "../components/ui/Modal";
 import { useCommunity } from "../hooks/useCommunity";
 import { getCardById, type SensoryCard } from "../lib/communityService";
 import { getAvatarCharacterById } from "../data/avatarCharacters";
@@ -13,7 +14,7 @@ interface Tag {
 interface Post {
   id: string;
   card: SensoryCard;
-  tag: Tag;
+  tags: string[];
   text: string;
   nickname: string;
   title: string;
@@ -78,7 +79,7 @@ function PostCard({
   return (
     <div className="flex items-start gap-2.5">
 
-      {/* 아바타 */}
+      {/* 아바타  */}
       <div className="flex-shrink-0 flex flex-col items-center gap-1 pt-1">
         {characterImage ? (
           <img
@@ -111,39 +112,36 @@ function PostCard({
           }}
         />
 
-        <div className="bg-white rounded-2xl border border-stone-100 shadow-sm p-2.5">
+        <div className="bg-white rounded-2xl border border-stone-100 shadow-sm px-3.5 pt-3 pb-2.5">
 
-          {/* 감성 카드 배경 */}
-          <div
-            className="relative h-[100px] flex flex-col justify-between p-3 rounded-xl"
-            style={{ background: post.card.gradient }}
-          >
-            {/* 상단: 카드 라벨 + 태그 */}
-            <div className="flex items-center justify-between p-3 rounded-xl overflow-hidden">
-              <span className="bg-white/20 backdrop-blur-sm border border-white/25 text-white/90 rounded-full px-2 py-0.5 text-[10px] font-medium whitespace-nowrap">
-                 {post.card.label}
-              </span>
-              <span className="bg-black/25 backdrop-blur-sm text-white rounded-full px-2 py-0.5 text-[10px] font-medium whitespace-nowrap">
-                #{post.tag.label}
-              </span>
+          {/* 태그 배지(최대 2개) + 걸음수 배지 */}
+          <div className="flex items-center justify-between mb-2.5">
+            <div className="flex items-center gap-1 flex-wrap">
+              {post.tags.slice(0, 2).map((tag) => (
+                <span
+                  key={tag}
+                  className="rounded-full px-2.5 py-0.5 text-[11px] font-semibold"
+                  style={{ background: "var(--color-primary-light)", color: "var(--color-primary)" }}
+                >
+                  #{tag}
+                </span>
+              ))}
             </div>
-
-            {/* 하단: 걸음수 */}
-            <div className="flex items-center gap-1.5 self-start bg-black/25 backdrop-blur-sm rounded-full px-3 py-1">
-              <FootprintIcon className="w-3.5 h-3.5 text-white" />
-              <span className="text-[13px] text-white font-semibold">{post.steps}</span>
+            <div className="flex items-center gap-1 bg-stone-100 rounded-full px-2.5 py-1 flex-shrink-0">
+              <FootprintIcon className="w-3 h-3 text-stone-500" />
+              <span className="text-[13px] text-stone-700 font-bold">{post.steps}</span>
             </div>
           </div>
 
-          {/* 텍스트 */}
-          <div className="px-3.5 pt-3 pb-2.5">
+          {/* 텍스트 - 고정 높이 + 드래그 스크롤 */}
+          <div className="max-h-[80px] overflow-y-auto scrollbar-hide mb-2.5">
             <p className="text-[14px] text-stone-700 font-normal leading-relaxed whitespace-pre-line">
               {post.text}
             </p>
           </div>
 
           {/* 하단 바: 칭호 + 버튼 */}
-          <div className="flex items-center justify-between px-3.5 py-2.5 border-t border-stone-50">
+          <div className="flex items-center justify-between pt-2.5 border-t border-stone-50">
             <span className="text-[11px] text-stone-400 font-light">{post.title}</span>
 
             <div className="flex items-center gap-1.5">
@@ -159,13 +157,12 @@ function PostCard({
               <button
                 onClick={onCheer}
                 aria-label={post.cheered ? "응원 취소" : "응원 보내기"}
-                className={`
-                  flex items-center gap-1 rounded-full px-3 py-1.5 text-[11px] font-medium
-                  transition-all duration-150 active:scale-95
-                  ${post.cheered
-                    ? "bg-orange-50 text-orange-500 border border-orange-200"
-                    : "bg-stone-50 text-stone-400 border border-stone-200"}
-                `}
+                className="flex items-center gap-1 rounded-full px-3 py-1.5 text-[11px] font-medium transition-all duration-150 active:scale-95 border"
+                style={
+                  post.cheered
+                    ? { background: "var(--color-primary-light)", color: "var(--color-primary)", borderColor: "var(--color-primary)" }
+                    : { background: "#f8f8f7", color: "#a8a29e", borderColor: "#e7e5e4" }
+                }
               >
                 <span>🌿</span>
                 <span>{post.cheered ? "응원 완료" : "응원하기"}</span>
@@ -194,6 +191,7 @@ export default function CommunityPage() {
   const [tab, setTab]                       = useState<TabType>("community");
   const [filterTags, setFilterTags]         = useState<string[]>([]);
   const [writeModalOpen, setWriteModalOpen] = useState(false);
+  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
 
   const {
     posts,
@@ -215,7 +213,7 @@ export default function CommunityPage() {
   const toPost = (p: ReturnType<typeof useCommunity>["posts"][number], isMine?: boolean): Post => ({
     id: p.id,
     card: getCardById(p.card_id),
-    tag: { label: p.tag },
+    tags: p.tags,
     text: p.text,
     nickname: p.nickname,
     title: deriveTitle(p.activity_type_id),
@@ -232,7 +230,7 @@ export default function CommunityPage() {
   const filteredPosts =
     filterTags.length === 0
       ? enrichedPosts
-      : enrichedPosts.filter((p) => filterTags.includes(p.tag.label));
+      : enrichedPosts.filter((p) => p.tags.some((t) => filterTags.includes(t)));
 
   const openWriteModal  = () => setWriteModalOpen(true);
   const closeWriteModal = () => setWriteModalOpen(false);
@@ -303,7 +301,9 @@ export default function CommunityPage() {
               <div className="text-orange-400 text-xl font-light">+</div>
             </button>
 
-            {/* 태그 필터 */}
+            {/* 태그 필터 - 유저 증가 후 활성화 예정 */}
+            {/* 현재는 게시글 수가 적어 필터 효과 없음 */}
+            {/*
             <div className="flex gap-2 overflow-x-auto pb-1 mb-5 scrollbar-hide">
               <button
                 onClick={() => setFilterTags([])}
@@ -327,6 +327,7 @@ export default function CommunityPage() {
                 );
               })}
             </div>
+            */}
 
             {/* 말풍선 피드 */}
             <div className="flex flex-col gap-5">
@@ -378,7 +379,7 @@ export default function CommunityPage() {
                     key={post.id}
                     post={post}
                     onCheer={() => toggleCheer(post.id)}
-                    onDelete={() => removePost(post.id)}
+                    onDelete={() => setDeleteTargetId(post.id)}
                     showDelete
                   />
                 ))
@@ -391,12 +392,24 @@ export default function CommunityPage() {
 
       </div>
 
-      {/* ── 모달 ── */}
+      {/* ── 삭제 확인 모달 ── */}
+      <Modal
+        isOpen={deleteTargetId !== null}
+        title="게시글 삭제"
+        message="이 기록을 삭제할까요? 삭제 후에는 되돌릴 수 없어요."
+        onConfirm={() => {
+          if (deleteTargetId) removePost(deleteTargetId);
+          setDeleteTargetId(null);
+        }}
+        onClose={() => setDeleteTargetId(null)}
+      />
+
+      {/* ── 글쓰기 모달 ── */}
       <CommunityWriteModal
         isOpen={writeModalOpen}
         onClose={closeWriteModal}
         onSubmit={async (data) => {
-          await submitPost(data);
+          await submitPost({ text: data.text, tags: data.tags });
           closeWriteModal();
         }}
       />

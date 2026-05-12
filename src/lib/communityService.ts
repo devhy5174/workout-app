@@ -28,7 +28,7 @@ export type CommunityPost = {
   user_id: string;
   text: string;
   card_id: string;
-  tag: string;
+  tags: string[];
   steps: number;
   cheers: number;
   created_at: string;
@@ -63,7 +63,7 @@ function mergePost(row: any, profileMap: ProfileMap): CommunityPost {
     user_id: row.user_id,
     text: row.text,
     card_id: row.card_id ?? "night",
-    tag: row.tag ?? "",
+    tags: Array.isArray(row.tags) ? row.tags : [],
     steps: row.steps ?? 0,
     cheers: row.cheers ?? 0,
     created_at: row.created_at,
@@ -97,7 +97,7 @@ export async function getMyPosts(userId: string): Promise<CommunityPost[]> {
 }
 
 export async function createPost(
-  input: { text: string; card_id: string; tag: string; steps?: number },
+  input: { text: string; tags: string[]; steps?: number },
   userId: string,
 ): Promise<{ data: CommunityPost | null; error: string | null }> {
   const { data: row, error } = await supabase
@@ -105,8 +105,7 @@ export async function createPost(
     .insert({
       user_id: userId,
       text: input.text,
-      card_id: input.card_id,
-      tag: input.tag,
+      tags: input.tags,
       steps: input.steps ?? 0,
       cheers: 0,
     })

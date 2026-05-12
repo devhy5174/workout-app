@@ -1,7 +1,9 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { FaPlay, FaPause, FaStop } from "react-icons/fa";
 import { useActivityType } from "../context/ActivityTypeContext";
 import { useUser } from "../context/UserContext";
+import { getAvatarCharacterById } from "../data/avatarCharacters";
 import { activityTypes } from "../data/activityTypes";
 import { storage } from "../utils/storage";
 import { POINT_RULES } from "../data/points";
@@ -84,17 +86,26 @@ const formatTime = (s: number) => {
 export default function Workout() {
   const navigate = useNavigate();
   const { selectedActivityType, selectedId, selectActivityType } = useActivityType();
-  const { userGoal, saveWorkout, workoutRecords } = useUser();
+  const { userGoal, saveWorkout, workoutRecords, userProfile } = useUser();
 
-  const [state, setState] = useState<WorkoutState>("idle");
-  const [steps, setSteps] = useState(0);
-  const [elapsed, setElapsed] = useState(0);
+  const [state, setState] = useState<WorkoutState>(
+    () => (sessionStorage.getItem("wk_state") as WorkoutState) ?? "idle",
+  );
+  const [steps, setSteps] = useState<number>(
+    () => Number(sessionStorage.getItem("wk_steps") ?? 0),
+  );
+  const [elapsed, setElapsed] = useState<number>(
+    () => Number(sessionStorage.getItem("wk_elapsed") ?? 0),
+  );
   const [showStartModal, setShowStartModal] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [earnedPoints, setEarnedPoints] = useState(0);
   const [pendingId, setPendingId] = useState<number>(() => selectedId ?? 1);
 
+
+
   const characterEmoji = selectedActivityType?.emoji ?? "🏃";
+  const characterImage = getAvatarCharacterById(userProfile?.character_id ?? null)?.image ?? null;
   const kcalPerMin = selectedActivityType?.kcalPerMin ?? 4;
   const distance = parseFloat((steps * 0.0008).toFixed(2));
   const calories = Math.floor(kcalPerMin * (elapsed / 60));
@@ -153,10 +164,17 @@ export default function Workout() {
     }
   }, [state, goalProgress]);
 
+  const clearWorkoutSession = () => {
+    sessionStorage.removeItem("wk_state");
+    sessionStorage.removeItem("wk_steps");
+    sessionStorage.removeItem("wk_elapsed");
+  };
+
   const handleStop = async () => {
     const currentCalories = calories;
     const currentElapsed = elapsed;
     setState("paused");
+    clearWorkoutSession();
 
     const prevKcal = storage.getBurnedKcal() ?? 0;
     storage.setBurnedKcal(prevKcal + currentCalories);
@@ -356,7 +374,10 @@ console.log("🔥 saveWorkout 호출됨");
                 transition: "left 0.12s ease, top 0.12s ease",
               }}
             >
-              {characterEmoji}
+              {characterImage
+                ? <img src={characterImage} alt="" className="w-full h-full object-contain rounded-full" />
+                : <span>{characterEmoji}</span>
+              }
             </div>
           )}
 
@@ -373,7 +394,7 @@ console.log("🔥 saveWorkout 호출됨");
                     "linear-gradient(135deg, var(--color-primary), var(--color-secondary))",
                 }}
               >
-                <span className="text-white text-3xl">▶</span>
+                <FaPlay className="text-white text-2xl" />
                 <span className="text-white font-extrabold text-xs mt-0.5">
                   시작
                 </span>
@@ -434,28 +455,27 @@ console.log("🔥 saveWorkout 호출됨");
                 setPendingId(selectedId ?? 1);
                 setShowStartModal(true);
               }}
-              className="flex-1 py-4 rounded-2xl text-white font-extrabold shadow-md active:scale-95 transition"
+              className="flex-1 py-4 rounded-2xl text-white font-extrabold shadow-md active:scale-95 transition flex items-center justify-center gap-2"
               style={{
                 background:
                   "linear-gradient(135deg, var(--color-primary), var(--color-secondary))",
               }}
-            >
-              🏃 운동 시작
+            >운동 시작
             </button>
           )}
           {state === "running" && (
             <>
               <button
                 onClick={() => setState("paused")}
-                className="flex-1 py-4 rounded-2xl bg-white shadow-sm font-extrabold text-gray-600 border border-gray-100 active:scale-95 transition"
+                className="flex-1 py-4 rounded-2xl bg-white shadow-sm font-extrabold text-gray-600 border border-gray-100 active:scale-95 transition flex items-center justify-center gap-2"
               >
-                ⏸ 일시정지
+                <FaPause className="text-gray-500 text-base" /> 일시정지
               </button>
               <button
                 onClick={handleStop}
-                className="flex-1 py-4 rounded-2xl bg-gray-100 font-extrabold text-gray-500 active:scale-95 transition"
+                className="flex-1 py-4 rounded-2xl bg-gray-100 font-extrabold text-gray-500 active:scale-95 transition flex items-center justify-center gap-2"
               >
-                ⏹ 종료
+                <FaStop className="text-gray-400 text-base" /> 종료
               </button>
             </>
           )}
@@ -463,19 +483,19 @@ console.log("🔥 saveWorkout 호출됨");
             <>
               <button
                 onClick={() => setState("running")}
-                className="flex-1 py-4 rounded-2xl text-white font-extrabold shadow-md active:scale-95 transition"
+                className="flex-1 py-4 rounded-2xl text-white font-extrabold shadow-md active:scale-95 transition flex items-center justify-center gap-2"
                 style={{
                   background:
                     "linear-gradient(135deg, var(--color-primary), var(--color-secondary))",
                 }}
               >
-                ▶ 재개
+                <FaPlay className="text-white text-base" /> 재개
               </button>
               <button
                 onClick={handleStop}
-                className="flex-1 py-4 rounded-2xl bg-gray-100 font-extrabold text-gray-500 active:scale-95 transition"
+                className="flex-1 py-4 rounded-2xl bg-gray-100 font-extrabold text-gray-500 active:scale-95 transition flex items-center justify-center gap-2"
               >
-                ⏹ 종료
+                <FaStop className="text-gray-400 text-base" /> 종료
               </button>
             </>
           )}
@@ -716,7 +736,7 @@ console.log("🔥 saveWorkout 호출됨");
 
             <div className="px-6 py-4">
               <button
-                onClick={() => navigate("/")}
+                onClick={() => { clearWorkoutSession(); navigate("/"); }}
                 className="w-full py-4 rounded-2xl text-white font-extrabold text-base active:scale-95 transition"
                 style={{
                   background:
