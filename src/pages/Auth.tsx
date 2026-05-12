@@ -55,7 +55,7 @@ export default function Auth() {
   const handleSignup = async () => {
     setError(null);
     setIsSubmitting(true);
-    const { data, error } = await supabase.auth.signUp({ email, password });
+    const { error } = await supabase.auth.signUp({ email, password });
     if (error) {
       setError(toKorean(error.message));
       setIsSubmitting(false);
