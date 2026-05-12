@@ -1,14 +1,14 @@
 import { useState } from "react";
-import { useCharacter } from "../context/CharacterContext";
-import { characters } from "../data/characters";
-import Modal from "../components/ui/Modal";
+import { useCharacter } from "../../context/ActivityTypeContext";
+import { activityTypes } from "../../data/activityTypes";
+import Modal from "../../components/ui/Modal";
 
-export default function Character() {
-  const { selectedId, selectCharacter } = useCharacter();
+export default function ActivityTypePage() {
+  const { selectedId, selectActivityType } = useCharacter();
   const selected = selectedId;
   const [modalOpen, setModalOpen] = useState(false);
 
-  const selectedCharacter = characters.find((c) => c.id === selected);
+  const selectedCharacter = activityTypes.find((c) => c.id === selected);
 
   function handleConfirm() {
     setModalOpen(false);
@@ -18,19 +18,19 @@ export default function Character() {
     <div className="flex flex-col gap-4 p-5 h-full overflow-y-auto pb-20">
       <div className="mb-1">
         <h2 className="text-2xl font-extrabold text-[var(--color-primary)]">
-          캐릭터 선택
+          활동 유형 선택
         </h2>
         <p className="text-sm text-gray-400 mt-1">
           나에게 맞는 운동 스타일을 골라봐!
         </p>
       </div>
 
-      {characters.map((c) => {
+      {activityTypes.map((c) => {
         const isSelected = selected === c.id;
         return (
           <button
             key={c.id}
-            onClick={() => selectCharacter(c.id)}
+            onClick={() => selectActivityType(c.id)}
             className={`w-full rounded-3xl p-5 text-left transition-all duration-200 border-2 ${
               isSelected
                 ? `${c.bg} ${c.border} shadow-md scale-[1.02]`

@@ -1,5 +1,5 @@
 import { supabase } from "./supabase";
-import { getCharacterById } from "../data/characters";
+import { getCharacterById } from "../data/activityTypes";
 
 export type TimeSlot = "새벽" | "아침" | "저녁" | "주말";
 

@@ -2,7 +2,7 @@
 // Types
 // ─────────────────────────────────────────────
 
-export type CharacterType = "walker" | "power_walker" | "runner" | "hiker";
+export type ActivityTypes = "walker" | "power_walker" | "runner" | "hiker";
 
 export interface DietMacros {
   protein: number; // 목표 비율 (%)
@@ -10,7 +10,7 @@ export interface DietMacros {
   fat: number;
 }
 
-export interface CharacterDietProfile {
+export interface ActivityDietProfile {
   description: string;
   dailyKcalTarget: number;
   macros: DietMacros;
@@ -20,9 +20,9 @@ export interface CharacterDietProfile {
   mealTip: string;
 }
 
-export interface Character {
+export interface ActivityType {
   id: number;
-  type: CharacterType;
+  type: ActivityTypes;
   emoji: string;
   name: string;
   style: string;
@@ -32,14 +32,14 @@ export interface Character {
   gradient: string;
   bg: string;
   border: string;
-  dietProfile: CharacterDietProfile;
+  dietProfile: ActivityDietProfile;
 }
 
 // ─────────────────────────────────────────────
 // Data
 // ─────────────────────────────────────────────
 
-export const characters: Character[] = [
+export const activityTypes: ActivityType[] = [
   {
     id: 1,
     type: "walker",
@@ -143,9 +143,9 @@ export const characters: Character[] = [
 ];
 
 export const getCharacterByType = (
-  type: CharacterType,
-): Character | undefined => characters.find((c) => c.type === type);
+  type: ActivityTypes,
+): ActivityType | undefined => activityTypes.find((c) => c.type === type);
 
 export const getCharacterById = (
   id: number,
-): Character | undefined => characters.find((c) => c.id === id);
+): ActivityType | undefined => activityTypes.find((c) => c.id === id);

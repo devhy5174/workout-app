@@ -1,4 +1,4 @@
-import type { CharacterType } from "./characters";
+import type { ActivityTypes } from "./activityTypes";
 
 // ─────────────────────────────────────────────
 // Types
@@ -22,7 +22,7 @@ export interface RecommendedFood {
   portion: string; // 1인분 기준 설명
   tags: string[]; // 예: ['고단백', '저지방', '비건']
   mealTimes: MealTime[];
-  forCharacters: CharacterType[]; // 추천 캐릭터 유형
+  forCharacters: ActivityTypes[]; // 추천 캐릭터 유형
 }
 
 export interface RecommendedMenu {
@@ -34,7 +34,7 @@ export interface RecommendedMenu {
   foods: Pick<RecommendedFood, "name" | "emoji" | "nutrition">[];
   totalNutrition: Nutrition;
   tags: string[];
-  forCharacters: CharacterType[];
+  forCharacters: ActivityTypes[];
   prepTime: number; // 분
 }
 
@@ -437,8 +437,8 @@ export const recommendedMenus: RecommendedMenu[] = [
 export const getMenusByMealTime = (time: MealTime): RecommendedMenu[] =>
   recommendedMenus.filter((m) => m.mealTime === time);
 
-export const getMenusForCharacter = (type: CharacterType): RecommendedMenu[] =>
+export const getMenusForCharacter = (type: ActivityTypes): RecommendedMenu[] =>
   recommendedMenus.filter((m) => m.forCharacters.includes(type));
 
-export const getFoodsForCharacter = (type: CharacterType): RecommendedFood[] =>
+export const getFoodsForCharacter = (type: ActivityTypes): RecommendedFood[] =>
   recommendedFoods.filter((f) => f.forCharacters.includes(type));

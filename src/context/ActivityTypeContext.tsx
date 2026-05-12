@@ -1,18 +1,18 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { storage } from "../utils/storage";
-import { type Character, characters } from "../data/characters";
+import { type ActivityType, activityTypes } from "../data/activityTypes";
 import { useUser } from "./UserContext";
 
-type CharacterContextValue = {
+type ActivityTypeContextValue = {
   selectedId: number | null;
-  selectedCharacter: Character | null;
-  selectCharacter: (id: number) => void;
+  selectedActivityType: ActivityType | null;
+  selectActivityType: (id: number) => void;
 };
 
-const CharacterContext = createContext<CharacterContextValue>({
+const ActivityTypeContext = createContext<ActivityTypeContextValue>({
   selectedId: null,
-  selectedCharacter: null,
-  selectCharacter: () => {},
+  selectedActivityType: null,
+  selectActivityType: () => {},
 });
 
 export function CharacterProvider({ children }: { children: React.ReactNode }) {
@@ -30,20 +30,20 @@ export function CharacterProvider({ children }: { children: React.ReactNode }) {
     }
   }, [userProfile?.character_id, selectedId]);
 
-  const selectedCharacter = characters.find((c) => c.id === selectedId) ?? null;
+  const selectedActivityType = activityTypes.find((c) => c.id === selectedId) ?? null;
 
-  const selectCharacter = (id: number) => {
+  const selectActivityType = (id: number) => {
     setSelectedId(id);
     storage.set("CHARACTER", String(id));
   };
 
   return (
-    <CharacterContext.Provider
-      value={{ selectedId, selectedCharacter, selectCharacter }}
+    <ActivityTypeContext.Provider
+      value={{ selectedId, selectedActivityType, selectActivityType }}
     >
       {children}
-    </CharacterContext.Provider>
+    </ActivityTypeContext.Provider>
   );
 }
 
-export const useCharacter = () => useContext(CharacterContext);
+export const useCharacter = () => useContext(ActivityTypeContext);

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useUser } from "../context/UserContext";
-import { useCharacter } from "../context/CharacterContext";
-import { characters } from "../data/characters";
+import { useCharacter } from "../context/ActivityTypeContext";
+import { activityTypes } from "../data/activityTypes";
 import { type UserGoal } from "../lib/workoutService";
 import Diet from "./Diet";
 
@@ -209,7 +209,7 @@ function GoalSetModal({ onClose }: { onClose: () => void }) {
 
 // ── 캐릭터 선택 시트 ────────────────────────────────────
 function CharacterSheet({ onClose }: { onClose: () => void }) {
-  const { selectedId, selectCharacter } = useCharacter();
+  const { selectedId, selectActivityType } = useCharacter();
 
   return (
     <div
@@ -234,13 +234,13 @@ function CharacterSheet({ onClose }: { onClose: () => void }) {
           나에게 맞는 운동 스타일을 골라봐!
         </p>
         <div className="flex flex-col gap-3">
-          {characters.map((c) => {
+          {activityTypes.map((c) => {
             const isSelected = selectedId === c.id;
             return (
               <button
                 key={c.id}
                 onClick={() => {
-                  selectCharacter(c.id);
+                  selectActivityType(c.id);
                   onClose();
                 }}
                 className={`w-full rounded-3xl p-4 text-left transition-all duration-200 border-2 ${
@@ -300,7 +300,7 @@ function CharacterSheet({ onClose }: { onClose: () => void }) {
 // ── 내정보 탭 ───────────────────────────────────────────
 function InfoTab() {
   const { userProfile, updateProfile, userGoal, deleteGoal } = useUser();
-  const { selectedCharacter } = useCharacter();
+  const { selectedActivityType } = useCharacter();
   const [showSheet, setShowSheet] = useState(false);
   const [showGoalModal, setShowGoalModal] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState(false);
@@ -350,18 +350,18 @@ function InfoTab() {
       <div className="bg-white rounded-3xl shadow-sm p-6 flex flex-col items-center gap-3">
         <div
           className={`w-24 h-24 rounded-3xl bg-gradient-to-br ${
-            selectedCharacter?.gradient ?? "from-gray-200 to-gray-300"
+            selectedActivityType?.gradient ?? "from-gray-200 to-gray-300"
           } flex items-center justify-center shadow-md`}
         >
-          <span className="text-5xl">{selectedCharacter?.emoji ?? "👤"}</span>
+          <span className="text-5xl">{selectedActivityType?.emoji ?? "👤"}</span>
         </div>
         <div className="text-center">
           <p className="text-xl font-extrabold text-gray-800">
             {userProfile?.nickname ?? "닉네임 없음"}
           </p>
-          {selectedCharacter && (
+          {selectedActivityType && (
             <p className="text-sm text-gray-400 mt-0.5">
-              {selectedCharacter.name}
+              {selectedActivityType.name}
             </p>
           )}
         </div>

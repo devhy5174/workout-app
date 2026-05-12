@@ -1,5 +1,5 @@
 import { useLocation } from "react-router-dom";
-import { useCharacter } from "../../context/CharacterContext";
+import { useCharacter } from "../../context/ActivityTypeContext";
 
 const pageConfig: Record<string, { title: string; icon: string }> = {
   "/": { title: "홈", icon: "🏠" },
@@ -13,14 +13,14 @@ const pageConfig: Record<string, { title: string; icon: string }> = {
 
 export default function Header() {
   const { pathname } = useLocation();
-  const { selectedCharacter } = useCharacter();
+  const { selectedActivityType } = useCharacter();
   if (pathname === "/workout") return null;
   const { title } = pageConfig[pathname] ?? {
     title: "워크아웃",
     icon: "🏋️",
   };
 
-  const characterEmoji = selectedCharacter?.emoji ?? "🏃";
+  const characterEmoji = selectedActivityType?.emoji ?? "🏃";
 
   return (
     <header

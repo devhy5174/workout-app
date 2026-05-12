@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { useCharacter } from "../context/CharacterContext";
+import { useCharacter } from "../context/ActivityTypeContext";
 import { useUser } from "../context/UserContext";
-import { characters } from "../data/characters";
+import { activityTypes } from "../data/activityTypes";
 import { storage } from "../utils/storage";
 import { POINT_RULES } from "../data/points";
 import { calculateStreak, isWeekend } from "../utils/streak";
@@ -83,7 +83,7 @@ const formatTime = (s: number) => {
 
 export default function Workout() {
   const navigate = useNavigate();
-  const { selectedCharacter, selectedId, selectCharacter } = useCharacter();
+  const { selectedActivityType, selectedId, selectActivityType } = useCharacter();
   const { userGoal, saveWorkout, workoutRecords } = useUser();
 
   const [state, setState] = useState<WorkoutState>("idle");
@@ -94,8 +94,8 @@ export default function Workout() {
   const [earnedPoints, setEarnedPoints] = useState(0);
   const [pendingId, setPendingId] = useState<number>(() => selectedId ?? 1);
 
-  const characterEmoji = selectedCharacter?.emoji ?? "🏃";
-  const kcalPerMin = selectedCharacter?.kcalPerMin ?? 4;
+  const characterEmoji = selectedActivityType?.emoji ?? "🏃";
+  const kcalPerMin = selectedActivityType?.kcalPerMin ?? 4;
   const distance = parseFloat((steps * 0.0008).toFixed(2));
   const calories = Math.floor(kcalPerMin * (elapsed / 60));
   const pointsEarned = Math.max(Math.floor(distance * POINT_RULES.PER_KM), 1);
@@ -140,8 +140,8 @@ export default function Workout() {
   const emojiX = CX + RADIUS * Math.cos(angle);
   const emojiY = CY + RADIUS * Math.sin(angle);
 
-  const charDiet = selectedCharacter
-    ? DIET_BY_CHARACTER[selectedCharacter.id]
+  const charDiet = selectedActivityType
+    ? DIET_BY_CHARACTER[selectedActivityType.id]
     : null;
   const durationDiet =
     elapsedMin >= 30 ? DIET_BY_DURATION.protein : DIET_BY_DURATION.light;
@@ -168,8 +168,8 @@ export default function Workout() {
           ? "⏱ 30분 이상 운동 — 단백질 보충 필요!"
           : "⏱ 30분 미만 운동 — 가벼운 식단 추천",
       durationMeals: durationDiet.meals,
-      characterEmoji: selectedCharacter?.emoji,
-      characterName: selectedCharacter?.name,
+      characterEmoji: selectedActivityType?.emoji,
+      characterName: selectedActivityType?.name,
       characterMeals: charDiet?.meals,
       tip: charDiet?.tip,
     });
@@ -215,7 +215,7 @@ console.log("🔥 saveWorkout 호출됨");
       steps,
       calories: currentCalories,
       points_earned: earned,
-      workout_type: selectedCharacter?.type ?? "walker",
+      workout_type: selectedActivityType?.type ?? "walker",
       goal_achieved: goalProgress >= 100,
     });
 
@@ -259,7 +259,7 @@ console.log("🔥 saveWorkout 호출됨");
         </button>
         <div className="flex flex-col items-center gap-0.5">
           <h1 className="font-extrabold text-gray-800">운동 트래킹</h1>
-          {selectedCharacter && (
+          {selectedActivityType && (
             <span
               className="text-xs font-bold px-2.5 py-0.5 rounded-full text-white"
               style={{
@@ -267,7 +267,7 @@ console.log("🔥 saveWorkout 호출됨");
                   "linear-gradient(135deg, var(--color-primary), var(--color-secondary))",
               }}
             >
-              {selectedCharacter.emoji} {selectedCharacter.name} · {kcalPerMin}
+              {selectedActivityType.emoji} {selectedActivityType.name} · {kcalPerMin}
               kcal/분
             </span>
           )}
@@ -508,7 +508,7 @@ console.log("🔥 saveWorkout 호출됨");
               선택한 유형으로 칼로리가 계산돼요
             </p>
             <div className="flex flex-col gap-3 mb-5">
-              {characters.map((c) => {
+              {activityTypes.map((c) => {
                 const isActive = pendingId === c.id;
                 return (
                   <button
@@ -550,7 +550,7 @@ console.log("🔥 saveWorkout 호출됨");
             </div>
             <button
               onClick={() => {
-                selectCharacter(pendingId);
+                selectActivityType(pendingId);
                 setShowStartModal(false);
                 setState("running");
               }}
@@ -689,7 +689,7 @@ console.log("🔥 saveWorkout 호출됨");
                 {charDiet && (
                   <div>
                     <p className="text-[11px] text-gray-400 font-semibold mb-1.5">
-                      {selectedCharacter!.emoji} {selectedCharacter!.name} 맞춤
+                      {selectedActivityType!.emoji} {selectedActivityType!.name} 맞춤
                       식단
                     </p>
                     <div className="flex gap-2 flex-wrap mb-2">

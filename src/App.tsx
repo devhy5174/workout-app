@@ -7,7 +7,7 @@ import {
 } from "react-router-dom";
 import BottomNav from "./components/layout/BottomNav";
 import Home from "./pages/Home";
-import Character from "./pages/Character";
+import Character from "./pages/onBoarding/ActivityTypePage";
 import Party from "./pages/Party";
 import Goal from "./pages/Goal";
 import Diet from "./pages/Diet";
@@ -15,7 +15,7 @@ import Points from "./pages/Points";
 import Settings from "./pages/Settings";
 import Workout from "./pages/Workout";
 import Auth from "./pages/Auth";
-import Onboarding from "./pages/Onboarding";
+import Onboarding from "./pages/onBoarding/Onboarding";
 import Community from "./pages/Community";
 import PartyDetail from "./pages/PartyDetail";
 import MyPage from "./pages/MyPage";

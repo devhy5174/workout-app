@@ -1,5 +1,5 @@
 import { storage, type RecommendedDiet } from "../utils/storage";
-import { useCharacter } from "../context/CharacterContext";
+import { useCharacter } from "../context/ActivityTypeContext";
 import { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
 
@@ -32,7 +32,7 @@ const DEFAULT_DIET: RecommendedDiet = {
 
 const kcalGoal = 2000;
 export default function Diet() {
-  const { selectedCharacter } = useCharacter();
+  const { selectedActivityType } = useCharacter();
   const [burnedKcal, setBurnedKcal] = useState<number>(0);
 
   const location = useLocation();
@@ -154,8 +154,8 @@ export default function Diet() {
         <p className="text-white font-bold text-sm">
           {hasWorkout
             ? "운동 후 30분 이내 단백질을 섭취하세요!"
-            : selectedCharacter
-              ? `${selectedCharacter.emoji} 오늘 운동하면 ${selectedCharacter.name} 맞춤 식단을 받아요!`
+            : selectedActivityType
+              ? `${selectedActivityType.emoji} 오늘 운동하면 ${selectedActivityType.name} 맞춤 식단을 받아요!`
               : "오늘 운동하고 맞춤 식단을 받아보세요!"}
         </p>
       </div>
@@ -218,21 +218,21 @@ export default function Diet() {
       )}
 
       {/* 캐릭터 맞춤 식단 (운동 전 / 캐릭터 선택 시) */}
-      {!hasWorkout && selectedCharacter && (
+      {!hasWorkout && selectedActivityType && (
         <div className="bg-white rounded-3xl shadow-sm p-5 flex flex-col gap-3">
           <div className="flex items-center gap-2">
-            <span className="text-2xl">{selectedCharacter.emoji}</span>
+            <span className="text-2xl">{selectedActivityType.emoji}</span>
             <div>
               <p className="text-xs text-gray-400 font-semibold">
-                {selectedCharacter.name} 맞춤 추천
+                {selectedActivityType.name} 맞춤 추천
               </p>
               <p className="font-bold text-gray-800 text-sm">
-                {selectedCharacter.dietProfile.description}
+                {selectedActivityType.dietProfile.description}
               </p>
             </div>
           </div>
           <div className="flex gap-2 flex-wrap">
-            {selectedCharacter.dietProfile.recommendedFoods.map((food) => (
+            {selectedActivityType.dietProfile.recommendedFoods.map((food) => (
               <span
                 key={food}
                 className="px-3 py-1.5 rounded-full text-xs font-bold text-white"
@@ -246,13 +246,13 @@ export default function Diet() {
             ))}
           </div>
           <p className="text-[11px] text-gray-400 leading-snug">
-            💡 {selectedCharacter.dietProfile.mealTip}
+            💡 {selectedActivityType.dietProfile.mealTip}
           </p>
         </div>
       )}
 
       {/* 기본 추천 식단 (운동 없음 + 캐릭터 없음) */}
-      {!hasWorkout && !selectedCharacter && (
+      {!hasWorkout && !selectedActivityType && (
         <div className="bg-white rounded-3xl shadow-sm p-5 flex flex-col gap-3">
           <p className="font-extrabold text-gray-800 text-sm">
             기본 추천 식단 🥗

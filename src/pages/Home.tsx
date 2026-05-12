@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { useCharacter } from "../context/CharacterContext";
+import { useCharacter } from "../context/ActivityTypeContext";
 import { useUser } from "../context/UserContext";
 import { storage } from "../utils/storage";
 import { calculateStreak, getThisWeekWorkouts } from "../utils/streak";
@@ -67,11 +67,11 @@ function ProgressBar({
 }
 
 export default function Home() {
-  const { selectedCharacter } = useCharacter();
+  const { selectedActivityType } = useCharacter();
   const { userGoal, workoutRecords, userProfile } = useUser();
 
-  const characterEmoji = selectedCharacter?.emoji ?? "🏃";
-  const characterName = selectedCharacter?.name ?? null;
+  const characterEmoji = selectedActivityType?.emoji ?? "🏃";
+  const characterName = selectedActivityType?.name ?? null;
 
   const history = storage.getWorkoutHistory();
   const streak = calculateStreak(history);

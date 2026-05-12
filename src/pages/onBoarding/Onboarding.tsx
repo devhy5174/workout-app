@@ -1,11 +1,11 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useUser } from "../context/UserContext";
-import { useCharacter } from "../context/CharacterContext";
-import { characters, type Character } from "../data/characters";
-import { supabase } from "../lib/supabase";
-import male from "../assets/images/basic_m.png";
-import female from "../assets/images/basic_w.png";
+import { useUser } from "../../context/UserContext";
+import { useCharacter } from "../../context/ActivityTypeContext";
+import { activityTypes, type ActivityType } from "../../data/activityTypes";
+import { supabase } from "../../lib/supabase";
+import male from "../../assets/images/basic_m.webp";
+import female from "../../assets/images/basic_w.webp";
 
 type Gender = "male" | "female";
 
@@ -264,7 +264,7 @@ function CharacterCard({
   selected,
   onSelect,
 }: {
-  character: Character;
+  character: ActivityType;
   selected: boolean;
   onSelect: () => void;
 }) {
@@ -323,7 +323,7 @@ function StepCharacter({
         캐릭터마다 다른 보너스를 받아요.
       </p>
       <div className="grid grid-cols-2 gap-3 w-full">
-        {characters.map((c) => (
+        {activityTypes.map((c) => (
           <CharacterCard
             key={c.id}
             character={c}
@@ -342,7 +342,7 @@ const TOTAL_STEPS = 4;
 
 export default function Onboarding() {
   const { updateProfile } = useUser();
-  const { selectCharacter } = useCharacter();
+  const { selectActivityType } = useCharacter();
   const navigate = useNavigate();
 
   const [step, setStep] = useState(1);
@@ -407,7 +407,7 @@ export default function Onboarding() {
     if (error) {
       console.error("온보딩 프로필 저장 실패:", error);
     }
-    if (characterId !== null) selectCharacter(characterId);
+    if (characterId !== null) selectActivityType(characterId);
     setIsSubmitting(false);
     navigate("/", { replace: true });
   };
