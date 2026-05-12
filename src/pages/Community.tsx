@@ -6,10 +6,8 @@ import { getCardById, type SensoryCard } from "../lib/communityService";
 import { getAvatarCharacterById } from "../data/avatarCharacters";
 import { getCharacterById } from "../data/activityTypes";
 
-// ─── 타입 ─────────────────────────────────────────────────
-interface Tag {
-  label: string;
-}
+// ─── 타입 ───────────────────────────────────────────────── 
+
 
 interface Post {
   id: string;
@@ -27,18 +25,6 @@ interface Post {
 
 type TabType = "community" | "mine";
 
-// ─── 태그 필터 목록 ────────────────────────────────────────
-const TAGS: Tag[] = [
-  { label: "밤산책" },
-  { label: "아침걷기" },
-  { label: "출근길" },
-  { label: "퇴근길산책" },
-  { label: "비오는날" },
-  { label: "목표달성" },
-  { label: "천천히걷기" },
-  { label: "귀찮았지만성공" },
-  { label: "오늘도완료" },
-];
 
 function deriveTitle(activityTypeId: number | null): string {
   if (!activityTypeId) return "산책러";
@@ -189,7 +175,7 @@ function EmptyState({ message }: { message: string }) {
 // ─── 메인 페이지 ───────────────────────────────────────────
 export default function CommunityPage() {
   const [tab, setTab]                       = useState<TabType>("community");
-  const [filterTags, setFilterTags]         = useState<string[]>([]);
+  const [filterTags]         = useState<string[]>([]);
   const [writeModalOpen, setWriteModalOpen] = useState(false);
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
 
@@ -204,10 +190,7 @@ export default function CommunityPage() {
     totalCheersReceived,
   } = useCommunity();
 
-  const toggleFilterTag = (label: string) =>
-    setFilterTags((prev) =>
-      prev.includes(label) ? prev.filter((t) => t !== label) : [...prev, label]
-    );
+
 
   // CommunityPost → Post (뷰 모델 변환)
   const toPost = (p: ReturnType<typeof useCommunity>["posts"][number], isMine?: boolean): Post => ({
@@ -301,33 +284,7 @@ export default function CommunityPage() {
               <div className="text-orange-400 text-xl font-light">+</div>
             </button>
 
-            {/* 태그 필터 - 유저 증가 후 활성화 예정 */}
-            {/* 현재는 게시글 수가 적어 필터 효과 없음 */}
-            {/*
-            <div className="flex gap-2 overflow-x-auto pb-1 mb-5 scrollbar-hide">
-              <button
-                onClick={() => setFilterTags([])}
-                className={`flex-shrink-0 rounded-full px-3.5 py-1.5 text-[12px] font-medium transition-all duration-150 active:scale-95
-                  ${filterTags.length === 0 ? "bg-stone-800 text-white" : "bg-white text-stone-500 border border-stone-200"}`}
-              >
-                전체
-              </button>
-              {TAGS.map((tag) => {
-                const active = filterTags.includes(tag.label);
-                return (
-                  <button
-                    key={tag.label}
-                    onClick={() => toggleFilterTag(tag.label)}
-                    aria-label={`${tag.label} 필터`}
-                    className={`flex-shrink-0 rounded-full px-3.5 py-1.5 text-[12px] font-medium transition-all duration-150 active:scale-95 whitespace-nowrap
-                      ${active ? "bg-orange-400 text-white shadow-sm shadow-orange-200" : "bg-white text-stone-500 border border-stone-200"}`}
-                  >
-                    #{tag.label}
-                  </button>
-                );
-              })}
-            </div>
-            */}
+          
 
             {/* 말풍선 피드 */}
             <div className="flex flex-col gap-5">
