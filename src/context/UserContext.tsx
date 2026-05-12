@@ -32,6 +32,7 @@ export type AppUser = {
   weight: number | null;
   bmi: number | null;
   points: number | null;
+  theme: string | null;
   created_at: string;
 };
 
