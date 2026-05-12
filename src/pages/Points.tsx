@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { POINT_RULES, POINT_EXCHANGE } from "../data/points";
-import { storage } from "../utils/storage";
+import { useUser } from "../context/UserContext";
 
 
 const friends = [
@@ -36,13 +36,32 @@ const brandItems = [
 
 type Tab = "history" | "gift" | "exchange";
 
+const WORKOUT_ICONS: Record<string, string> = {
+  walker: "🚶",
+  power_walker: "🚶‍♂️",
+  runner: "🏃",
+  hiker: "🏔️",
+};
+
+function formatPointDate(dateStr: string) {
+  const d = new Date(dateStr + "T00:00:00");
+  const days = ["일", "월", "화", "수", "목", "금", "토"];
+  return `${d.getMonth() + 1}/${d.getDate()} (${days[d.getDay()]})`;
+}
+
 export default function Points() {
   const [tab, setTab] = useState<Tab>("history");
   const [selectedFriend, setSelectedFriend] = useState<number | null>(null);
   const [giftAmount, setGiftAmount] = useState("");
 
-  const myPoints = storage.getPoints();
-  const history = storage.getPointsHistory();
+  const { userProfile, workoutRecords } = useUser();
+  const myPoints = userProfile?.points ?? 0;
+  const history = workoutRecords.map((r) => ({
+    icon: WORKOUT_ICONS[r.workout_type] ?? "🏃",
+    desc: `${r.distance.toFixed(2)}km 운동 완료`,
+    points: r.points_earned,
+    date: formatPointDate(r.date),
+  }));
 
   const tabs: { key: Tab; label: string }[] = [
     { key: "history", label: "적립내역" },

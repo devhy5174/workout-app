@@ -84,7 +84,7 @@ const formatTime = (s: number) => {
 export default function Workout() {
   const navigate = useNavigate();
   const { selectedCharacter, selectedId, selectCharacter } = useCharacter();
-  const { userGoal, saveWorkout } = useUser();
+  const { userGoal, saveWorkout, workoutRecords } = useUser();
 
   const [state, setState] = useState<WorkoutState>("idle");
   const [steps, setSteps] = useState(0);
@@ -170,68 +170,38 @@ export default function Workout() {
     // ── 포인트 계산 ──────────────────────────────────
     const today = new Date();
     const pad = (n: number) => String(n).padStart(2, "0");
-    const todayStr = `${today.getFullYear()}.${pad(today.getMonth() + 1)}.${pad(today.getDate())}`;
     const todayIso = `${today.getFullYear()}-${pad(today.getMonth() + 1)}-${pad(today.getDate())}`;
 
-    const todayHistory = storage
-      .getPointsHistory()
-      .filter((e) => e.date === todayStr);
-    const hasBonus = (icon: string) =>
-      todayHistory.some((e) => e.icon === icon);
+    const todayAlreadyWorkedOut = workoutRecords.some((r) => r.date === todayIso);
+    const todayGoalAlreadyAchieved = workoutRecords.some(
+      (r) => r.date === todayIso && r.goal_achieved,
+    );
 
     let earned = 0;
-
-    storage.addPoints(pointsEarned);
-    storage.addPointsHistory({
-      date: todayStr,
-      desc: `${distance}km 운동 완료`,
-      points: pointsEarned,
-      icon: "🏃",
-    });
     earned += pointsEarned;
 
     if (
       steps >= (userGoal?.goal_type === "steps" ? goalValue : 5000) &&
-      !hasBonus("🎯")
+      !todayGoalAlreadyAchieved
     ) {
-      storage.addPoints(POINT_RULES.GOAL_BONUS);
-      storage.addPointsHistory({
-        date: todayStr,
-        desc: "걸음 수 목표 달성",
-        points: POINT_RULES.GOAL_BONUS,
-        icon: "🎯",
-      });
       earned += POINT_RULES.GOAL_BONUS;
     }
 
     const freshHistory = storage.getWorkoutHistory();
     const currentStreak = calculateStreak(freshHistory);
-    if (currentStreak > 0 && currentStreak % 7 === 0 && !hasBonus("🔥")) {
-      storage.addPoints(POINT_RULES.STREAK_7_BONUS);
-      storage.addPointsHistory({
-        date: todayStr,
-        desc: `${currentStreak}일 연속 운동 보너스`,
-        points: POINT_RULES.STREAK_7_BONUS,
-        icon: "🔥",
-      });
+    if (currentStreak > 0 && currentStreak % 7 === 0 && !todayAlreadyWorkedOut) {
       earned += POINT_RULES.STREAK_7_BONUS;
     }
 
-    if (isWeekend(today) && !hasBonus("⭐")) {
-      storage.addPoints(POINT_RULES.WEEKEND_BONUS);
-      storage.addPointsHistory({
-        date: todayStr,
-        desc: "주말 운동 보너스",
-        points: POINT_RULES.WEEKEND_BONUS,
-        icon: "⭐",
-      });
+    if (isWeekend(today) && !todayAlreadyWorkedOut) {
       earned += POINT_RULES.WEEKEND_BONUS;
     }
 
     setEarnedPoints(earned);
-
+    setShowModal(true);
+console.log("🔥 saveWorkout 호출됨");
     // ── Supabase 저장 ──────────────────────────────
-    await saveWorkout({
+    const saveResult = await saveWorkout({
       date: todayIso,
       duration: currentElapsed,
       distance,
@@ -242,7 +212,9 @@ export default function Workout() {
       goal_achieved: goalProgress >= 100,
     });
 
-    setShowModal(true);
+    if (saveResult.error) {
+      console.error("운동 저장 실패 — Supabase 에러:", saveResult.error);
+    }
   };
 
   // 걸음 수 증가 (현실적: 분당 100보 기준)

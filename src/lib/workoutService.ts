@@ -26,11 +26,20 @@ export type UserGoal = {
 export async function saveWorkoutRecord(
   record: Omit<WorkoutRecord, "id" | "user_id" | "created_at">,
   userId: string,
-): Promise<{ error: string | null }> {
-  const { error } = await supabase
+): Promise<{ data: WorkoutRecord | null; error: string | null }> {
+  const { data, error } = await supabase
     .from("workout_history")
-    .insert({ ...record, user_id: userId });
-  return { error: error?.message ?? null };
+    .insert({ ...record, user_id: userId })
+    .select()
+    .single();
+
+  if (error) {
+    console.error("[workout_history] insert 실패:", error.code, error.message, error.details);
+    return { data: null, error: error.message };
+  }
+
+  console.log("[workout_history] 저장 성공:", data);
+  return { data: data as WorkoutRecord, error: null };
 }
 
 export async function fetchWorkoutHistory(
@@ -40,10 +49,40 @@ export async function fetchWorkoutHistory(
     .from("workout_history")
     .select("*")
     .eq("user_id", userId)
-    .order("created_at", { ascending: false })
+    .order("date", { ascending: false })
     .limit(50);
   if (error || !data) return [];
   return data as WorkoutRecord[];
+}
+
+export async function addUserPoints(
+  userId: string,
+  points: number,
+): Promise<{ error: string | null }> {
+  const { data, error: fetchError } = await supabase
+    .from("app_users")
+    .select("points")
+    .eq("id", userId)
+    .single();
+
+  if (fetchError) {
+    console.error("[app_users] points 조회 실패:", fetchError.code, fetchError.message);
+    return { error: fetchError.message };
+  }
+
+  const current = (data as { points: number | null } | null)?.points ?? 0;
+  const { error } = await supabase
+    .from("app_users")
+    .update({ points: current + points })
+    .eq("id", userId);
+
+  if (error) {
+    console.error("[app_users] points 업데이트 실패:", error.code, error.message);
+    return { error: error.message };
+  }
+
+  console.log("[app_users] points 업데이트:", current, "→", current + points);
+  return { error: null };
 }
 
 export async function fetchActiveGoal(
