@@ -16,7 +16,6 @@ export default function Auth() {
   const [mode, setMode] = useState<Mode>("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [nickname, setNickname] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [signupDone, setSignupDone] = useState(false);
@@ -55,22 +54,12 @@ export default function Auth() {
 
   const handleSignup = async () => {
     setError(null);
-    if (!nickname.trim()) {
-      setError("닉네임을 입력해주세요.");
-      return;
-    }
     setIsSubmitting(true);
     const { data, error } = await supabase.auth.signUp({ email, password });
     if (error) {
       setError(toKorean(error.message));
       setIsSubmitting(false);
       return;
-    }
-    if (data.user) {
-      await supabase.from("app_users").insert({
-        id: data.user.id,
-        nickname: nickname.trim(),
-      });
     }
     setIsSubmitting(false);
     setSignupDone(true);
@@ -118,7 +107,7 @@ export default function Auth() {
         <div className="text-center mb-10">
           <div className="text-8xl mb-4 drop-shadow-lg">🏃</div>
           <h1 className="text-3xl font-black text-white tracking-tight">Workout</h1>
-          <p className="text-white/60 text-sm mt-2">함께 운동하고 포인트를 모아요</p>
+          <p className="text-white/60 text-sm mt-2">함께 걸어요</p>
         </div>
 
         {/* 탭 전환 */}
@@ -144,16 +133,6 @@ export default function Auth() {
 
         {/* 폼 */}
         <form onSubmit={handleSubmit} className="w-full space-y-3">
-          {mode === "signup" && (
-            <input
-              type="text"
-              placeholder="닉네임"
-              value={nickname}
-              onChange={(e) => setNickname(e.target.value)}
-              className="w-full px-5 py-4 rounded-2xl bg-white text-gray-800 text-sm placeholder-gray-400 focus:outline-none shadow-sm"
-              required
-            />
-          )}
           <input
             type="email"
             placeholder="이메일"

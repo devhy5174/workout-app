@@ -108,21 +108,28 @@ export default function Workout() {
   const goalType = userGoal?.goal_type ?? "steps";
   const goalValue = userGoal?.goal_value ?? 5000;
 
+  // 오늘 이미 완료된 운동 기록 합산
+  const todayIsoKey = new Date().toISOString().split("T")[0];
+  const todayRecords = workoutRecords.filter((r) => r.date === todayIsoKey);
+  const alreadySteps = todayRecords.reduce((s, r) => s + r.steps, 0);
+  const alreadyDistance = todayRecords.reduce((s, r) => s + r.distance, 0);
+  const alreadyCalories = todayRecords.reduce((s, r) => s + r.calories, 0);
+
   const currentGoalValue =
     goalType === "steps"
-      ? steps
+      ? steps + alreadySteps
       : goalType === "distance"
-        ? distance
-        : calories;
+        ? distance + alreadyDistance
+        : calories + alreadyCalories;
 
   const goalProgress = Math.min((currentGoalValue / goalValue) * 100, 100);
 
   const remainingText =
     goalType === "steps"
-      ? `${Math.max(0, Math.ceil(goalValue - steps)).toLocaleString()}보 남음`
+      ? `${Math.max(0, Math.ceil(goalValue - currentGoalValue)).toLocaleString()}보 남음`
       : goalType === "distance"
-        ? `${Math.max(0, goalValue - distance).toFixed(2)}km 남음`
-        : `${Math.max(0, Math.ceil(goalValue - calories))}kcal 남음`;
+        ? `${Math.max(0, goalValue - currentGoalValue).toFixed(2)}km 남음`
+        : `${Math.max(0, Math.ceil(goalValue - currentGoalValue))}kcal 남음`;
 
   const goalLabelText = userGoal
     ? `목표 ${goalType === "steps" ? `${goalValue.toLocaleString()}보` : goalType === "distance" ? `${goalValue}km` : `${goalValue}kcal`}`

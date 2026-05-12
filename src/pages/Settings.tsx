@@ -1,4 +1,6 @@
+import { useNavigate } from "react-router-dom";
 import { useTheme } from "../context/ThemeContext";
+import { useUser } from "../context/UserContext";
 
 type Theme = "energy" | "nature" | "cosmo";
 
@@ -10,6 +12,13 @@ const themes: { value: Theme; label: string; color: string }[] = [
 
 export default function Settings() {
   const { theme, setTheme } = useTheme();
+  const { logout } = useUser();
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    await logout();
+    navigate("/auth", { replace: true });
+  };
 
   return (
     <div className="flex flex-col gap-6 p-6 h-full overflow-y-auto pb-20">
@@ -52,6 +61,14 @@ export default function Settings() {
           </button>
         ))}
       </div>
+
+      <button
+        onClick={handleLogout}
+        aria-label="로그아웃"
+        className="w-full py-4 rounded-2xl font-bold text-sm text-red-500 bg-white shadow hover:bg-red-50 transition"
+      >
+        로그아웃
+      </button>
     </div>
   );
 }

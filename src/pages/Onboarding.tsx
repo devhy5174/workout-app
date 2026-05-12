@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useUser } from "../context/UserContext";
 import { useCharacter } from "../context/CharacterContext";
 import { characters, type Character } from "../data/characters";
+import { supabase } from "../lib/supabase";
 import male from "../assets/images/basic_m.png";
 import female from "../assets/images/basic_w.png";
 
@@ -13,9 +14,11 @@ type Gender = "male" | "female";
 function StepNickname({
   nickname,
   setNickname,
+  duplicateError,
 }: {
   nickname: string;
   setNickname: (v: string) => void;
+  duplicateError: string | null;
 }) {
   return (
     <div className="flex flex-col items-center pt-6">
@@ -36,13 +39,22 @@ function StepNickname({
         maxLength={10}
         className="w-full px-5 py-4 rounded-2xl bg-white border-2 text-gray-800 text-base font-semibold placeholder-gray-300 focus:outline-none transition-colors"
         style={{
-          borderColor: nickname.trim() ? "var(--color-primary)" : "#e5e7eb",
+          borderColor: duplicateError
+            ? "#ef4444"
+            : nickname.trim()
+            ? "var(--color-primary)"
+            : "#e5e7eb",
         }}
         autoFocus
       />
-      <p className="self-end mt-2 text-xs text-gray-300">
-        {nickname.length}/10
-      </p>
+      <div className="flex justify-between w-full mt-2">
+        {duplicateError ? (
+          <p className="text-xs text-red-500 font-semibold">{duplicateError}</p>
+        ) : (
+          <span />
+        )}
+        <p className="text-xs text-gray-300">{nickname.length}/10</p>
+      </div>
     </div>
   );
 }
@@ -335,6 +347,7 @@ export default function Onboarding() {
 
   const [step, setStep] = useState(1);
   const [nickname, setNickname] = useState("");
+  const [duplicateError, setDuplicateError] = useState<string | null>(null);
   const [gender, setGender] = useState<Gender | null>(null);
   const [age, setAge] = useState("");
   const [height, setHeight] = useState("");
@@ -361,12 +374,28 @@ export default function Onboarding() {
     (step === 4 && characterId !== null);
 
   const handleNext = async () => {
+    if (step === 1) {
+      setIsSubmitting(true);
+      const { data } = await supabase
+        .from("app_users")
+        .select("id")
+        .eq("nickname", nickname.trim())
+        .maybeSingle();
+      setIsSubmitting(false);
+      if (data) {
+        setDuplicateError("이미 사용 중인 닉네임이에요.");
+        return;
+      }
+      setDuplicateError(null);
+      setStep((s) => s + 1);
+      return;
+    }
     if (step < TOTAL_STEPS) {
       setStep((s) => s + 1);
       return;
     }
     setIsSubmitting(true);
-    await updateProfile({
+    const { error } = await updateProfile({
       nickname: nickname.trim(),
       gender: gender as string,
       age: a || null,
@@ -375,6 +404,9 @@ export default function Onboarding() {
       bmi: bmiValue,
       character_id: characterId,
     });
+    if (error) {
+      console.error("온보딩 프로필 저장 실패:", error);
+    }
     if (characterId !== null) selectCharacter(characterId);
     setIsSubmitting(false);
     navigate("/", { replace: true });
@@ -413,7 +445,11 @@ export default function Onboarding() {
       {/* 단계별 컨텐츠 */}
       <div className="flex-1 px-6 overflow-y-auto">
         {step === 1 && (
-          <StepNickname nickname={nickname} setNickname={setNickname} />
+          <StepNickname
+            nickname={nickname}
+            setNickname={(v) => { setNickname(v); setDuplicateError(null); }}
+            duplicateError={duplicateError}
+          />
         )}
         {step === 2 && <StepGender gender={gender} setGender={setGender} />}
         {step === 3 && (

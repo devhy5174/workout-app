@@ -69,3 +69,36 @@ src/
 - src/components/ → 재사용 컴포넌트
 - src/data/ → 고정 데이터 (Supabase 교체 불필요)
 - src/utils/ → 유틸 함수
+
+
+## Supabase 테이블 구조
+
+### 테이블명 주의
+- 유저 테이블은 반드시 `app_users` 사용 (users 아님!)
+- 다른 유저 정보는 `public_profiles` 뷰에서 읽기
+
+### RLS Policy 현황
+app_users
+- 본인 읽기 (SELECT) - 내 정보 조회
+- 본인 수정 (UPDATE) - 내 정보 수정
+- 본인 삽입 (INSERT) - 가입시 추가
+
+parties
+- 파티 전체 읽기 (SELECT) - 누구나 읽기 가능
+- 파티 생성 (INSERT) - 로그인 유저만
+- 방장만 수정 (UPDATE)
+- 방장만 삭제 (DELETE)
+
+party_members
+- 멤버 전체 읽기 (SELECT) - 누구나 읽기 가능
+- 본인 참가 (INSERT)
+- 본인 탈퇴 (DELETE)
+
+user_goals
+- 본인 목표 (ALL)
+
+workout_history
+- 본인 운동기록 (ALL)
+
+public_profiles (뷰)
+- 제한없음 (UNRESTRICTED) - id, nickname, character_id, points, streak만 노출

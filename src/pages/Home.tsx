@@ -68,14 +68,14 @@ function ProgressBar({
 
 export default function Home() {
   const { selectedCharacter } = useCharacter();
-  const { userGoal, workoutRecords } = useUser();
+  const { userGoal, workoutRecords, userProfile } = useUser();
 
   const characterEmoji = selectedCharacter?.emoji ?? "🏃";
   const characterName = selectedCharacter?.name ?? null;
 
   const history = storage.getWorkoutHistory();
   const streak = calculateStreak(history);
-  const points = storage.getPoints();
+  const points = userProfile?.points ?? 0;
   const weekWorkouts = getThisWeekWorkouts(history);
   const workoutDays = weekWorkouts.filter(Boolean).length;
   const burnedKcal = storage.getBurnedKcal();
