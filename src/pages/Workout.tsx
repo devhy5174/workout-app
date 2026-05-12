@@ -102,7 +102,12 @@ export default function Workout() {
   const [earnedPoints, setEarnedPoints] = useState(0);
   const [pendingId, setPendingId] = useState<number>(() => selectedId ?? 1);
 
-
+  // 화면 이탈 후 복귀 시 상태 유지
+useEffect(() => {
+  sessionStorage.setItem("wk_state", state);
+  sessionStorage.setItem("wk_steps", String(steps));
+  sessionStorage.setItem("wk_elapsed", String(elapsed));
+}, [state, steps, elapsed]);
 
   const characterEmoji = selectedActivityType?.emoji ?? "🏃";
   const characterImage = getAvatarCharacterById(userProfile?.character_id ?? null)?.image ?? null;

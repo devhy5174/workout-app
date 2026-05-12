@@ -142,10 +142,6 @@ useEffect(() => {
       // 언마운트됐으면 중단
       if (!mounted) return;
 
-      console.log("2. fetchProfile 완료", profile);
-      console.log("3. fetchWorkoutHistory 완료", workouts);
-      console.log("4. fetchActiveGoal 완료", goal);
-
       // 상태 저장
       setUserProfile(profile);
       setWorkoutRecords(workouts);
