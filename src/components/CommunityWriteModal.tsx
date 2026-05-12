@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 
 // ───────────────── 타입 ─────────────────
 interface Tag {
-  emoji: string;
   label: string;
 }
 
@@ -10,7 +9,6 @@ interface SensoryCard {
   id: string;
   label: string;
   gradient: string;
-  emoji: string;
 }
 
 interface CommunityWriteModalProps {
@@ -28,56 +26,83 @@ const SENSORY_CARDS: SensoryCard[] = [
   {
     id: "night",
     label: "밤거리",
-    gradient:
-      "linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)",
-    emoji: "🌙",
+    gradient: "linear-gradient(135deg, #0f0c29 0%, #1a1a4e 50%, #24243e 100%)",
+
+  },
+  {
+    id: "dawn",
+    label: "새벽",
+    gradient: "linear-gradient(135deg, #1a0533 0%, #3d1a6e 50%, #6b3fa0 100%)",
+
+  },
+  {
+    id: "morning",
+    label: "출근길",
+    gradient: "linear-gradient(135deg, #f9a86c 0%, #f77b50 50%, #e85d3a 100%)",
+
   },
   {
     id: "sunset",
     label: "노을",
-    gradient:
-      "linear-gradient(135deg, #ff9a56 0%, #ff6b35 50%, #c94b4b 100%)",
-    emoji: "🌅",
+    gradient: "linear-gradient(135deg, #fbc78a 0%, #f4845f 50%, #e85c6e 100%)",
+
+  },
+  {
+    id: "commute",
+    label: "퇴근길",
+    gradient: "linear-gradient(135deg, #2d1b5e 0%, #5a3480 50%, #8b5ea8 100%)",
+
   },
   {
     id: "spring",
     label: "봄길",
-    gradient:
-      "linear-gradient(135deg, #f8c8d4 0%, #e8a4b8 50%, #d4849c 100%)",
-    emoji: "🌸",
+    gradient: "linear-gradient(135deg, #fde8f0 0%, #f5b8d0 50%, #e888b0 100%)",
+
   },
   {
     id: "forest",
     label: "숲속",
-    gradient:
-      "linear-gradient(135deg, #a8d8a8 0%, #72b872 50%, #4a9e4a 100%)",
-    emoji: "🌿",
-  },
-  {
-    id: "rain",
-    label: "빗속",
-    gradient:
-      "linear-gradient(135deg, #8fa8c8 0%, #6888a8 50%, #4a6888 100%)",
-    emoji: "🌧️",
+    gradient: "linear-gradient(135deg, #c8e6c0 0%, #88c878 50%, #4a9e5a 100%)",
+
   },
   {
     id: "river",
     label: "강변",
-    gradient:
-      "linear-gradient(135deg, #b8d4e8 0%, #7ab0d4 50%, #4a8cb8 100%)",
-    emoji: "🏞️",
+    gradient: "linear-gradient(135deg, #c8e8f8 0%, #80c0e8 50%, #3a8abf 100%)",
+
+  },
+  {
+    id: "rain",
+    label: "빗속",
+    gradient: "linear-gradient(135deg, #b0bec5 0%, #78909c 50%, #455a64 100%)",
+
+  },
+  {
+    id: "autumn",
+    label: "가을길",
+    gradient: "linear-gradient(135deg, #ffe0b2 0%, #ffb74d 50%, #e65100 100%)",
+
+  },
+  {
+    id: "street",
+    label: "도심",
+    gradient: "linear-gradient(135deg, #cfd8dc 0%, #90a4ae 50%, #546e7a 100%)",
+
   },
 ];
 
 // ───────────────── 태그 ─────────────────
 const TAGS: Tag[] = [
-  { emoji: "🌙", label: "밤산책" },
-  { emoji: "☀️", label: "아침걷기" },
-  { emoji: "🌧️", label: "비오는날" },
-  { emoji: "🔥", label: "목표달성" },
-  { emoji: "🌱", label: "천천히걷기" },
-  { emoji: "😴", label: "귀찮았지만성공" },
-  { emoji: "💪", label: "오늘도완료" },
+  {  label: "밤산책" },
+  {  label: "새벽산책" },
+  {  label: "아침걷기" },
+  {  label: "출근길" },
+  {  label: "퇴근길산책" },
+  {  label: "비오는날" },
+  {  label: "목표달성" },
+  {  label: "천천히걷기" },
+  {  label: "귀찮았지만성공" },
+  {  label: "오늘도완료" },
 ];
 
 export default function CommunityWriteModal({
@@ -193,8 +218,6 @@ export default function CommunityWriteModal({
                   <div className="absolute inset-0 bg-black/10" />
 
                   <div className="absolute bottom-2 left-2 text-left">
-                    <p className="text-sm">{card.emoji}</p>
-
                     <p className="text-[11px] text-white font-medium mt-0.5">
                       {card.label}
                     </p>
@@ -263,7 +286,7 @@ export default function CommunityWriteModal({
                     }
                   `}
                 >
-                  {tag.emoji} {tag.label}
+                  #{tag.label}
                 </button>
               );
             })}
