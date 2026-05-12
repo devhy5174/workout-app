@@ -101,4 +101,4 @@ workout_history
 - 본인 운동기록 (ALL)
 
 public_profiles (뷰)
-- 제한없음 (UNRESTRICTED) - id, nickname, character_id, points, streak만 노출
+- 제한없음 (UNRESTRICTED) - id, nickname, character_id, activity_type_id, points, streak만 노출

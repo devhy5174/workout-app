@@ -24,7 +24,7 @@ export type { WorkoutRecord, UserGoal };
 export type AppUser = {
   id: string;
   nickname: string | null;
-  character_id: number | null;
+  activity_type_id: number | null;
   gender: string | null;
   age: number | null;
   height: number | null;

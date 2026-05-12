@@ -22,13 +22,13 @@ export function CharacterProvider({ children }: { children: React.ReactNode }) {
     return saved ? Number(saved) : null;
   });
 
-  // userProfile.character_id에서 자동 동기화 (로그인, 다른 기기, 온보딩 직후)
+  // userProfile.activity_type_id에서 자동 동기화 (로그인, 다른 기기, 온보딩 직후)
   useEffect(() => {
-    if (selectedId === null && userProfile?.character_id) {
-      setSelectedId(userProfile.character_id);
-      storage.set("CHARACTER", String(userProfile.character_id));
+    if (selectedId === null && userProfile?.activity_type_id) {
+      setSelectedId(userProfile.activity_type_id);
+      storage.set("CHARACTER", String(userProfile.activity_type_id));
     }
-  }, [userProfile?.character_id, selectedId]);
+  }, [userProfile?.activity_type_id, selectedId]);
 
   const selectedActivityType = activityTypes.find((c) => c.id === selectedId) ?? null;
 

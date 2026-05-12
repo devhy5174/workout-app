@@ -244,7 +244,7 @@ export async function getPartyTodayStats(
 export async function getPartyMembers(partyId: string): Promise<PartyMember[]> {
   const { data: members, error } = await supabase
     .from("party_members")
-    .select("user_id, party_id, joined_at, public_profiles(nickname, character_id)")
+    .select("user_id, party_id, joined_at, public_profiles(nickname, activity_type_id)")
     .eq("party_id", partyId);
 
   if (error || !members) return [];
@@ -268,8 +268,8 @@ export async function getPartyMembers(partyId: string): Promise<PartyMember[]> {
   return members.map((m: any) => {
     const profile = m.public_profiles as any;
     const characterEmoji =
-      profile?.character_id != null
-        ? (getCharacterById(profile.character_id)?.emoji ?? "🏃")
+      profile?.activity_type_id != null
+        ? (getCharacterById(profile.activity_type_id)?.emoji ?? "🏃")
         : "🏃";
     return {
       user_id: m.user_id,
