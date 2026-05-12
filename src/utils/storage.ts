@@ -3,6 +3,7 @@
 
 const KEYS = {
   CHARACTER: "character",
+  AVATAR_CHARACTER: "avatar_character",
   THEME: "theme",
   LANGUAGE: "language",
   STEPS: "steps",

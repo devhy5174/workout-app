@@ -1,9 +1,11 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useUser } from "../../context/UserContext";
-import { useCharacter } from "../../context/ActivityTypeContext";
+import { useActivityType } from "../../context/ActivityTypeContext";
+import { useCharacter } from "../../context/CharacterContext";
 import { activityTypes, type ActivityType } from "../../data/activityTypes";
 import { supabase } from "../../lib/supabase";
+import CharacterGrid from "../../components/CharacterGrid";
 import male from "../../assets/images/basic_m.webp";
 import female from "../../assets/images/basic_w.webp";
 
@@ -257,14 +259,14 @@ function StepBody({
   );
 }
 
-// ─── Step 4: 캐릭터 ───────────────────────────────────────────────────────────
+// ─── Step 4: 활동 유형 ────────────────────────────────────────────────────────
 
-function CharacterCard({
-  character,
+function ActivityTypeCard({
+  activityType,
   selected,
   onSelect,
 }: {
-  character: ActivityType;
+  activityType: ActivityType;
   selected: boolean;
   onSelect: () => void;
 }) {
@@ -277,42 +279,37 @@ function CharacterCard({
         background: selected ? "var(--color-primary-light, #fff0ec)" : "white",
       }}
     >
-      {/*
-        캐릭터 이미지 교체 포인트:
-        character.image_url 이 준비되면 아래 div를 <img> 태그로 교체하세요.
-        <img src={character.image_url} alt={character.name} className="w-16 h-16 object-contain" />
-      */}
       <div
-        className={`w-16 h-16 rounded-xl bg-gradient-to-br ${character.gradient} flex items-center justify-center text-3xl mb-2`}
+        className={`w-16 h-16 rounded-xl bg-gradient-to-br ${activityType.gradient} flex items-center justify-center text-3xl mb-2`}
       >
-        {character.emoji}
+        {activityType.emoji}
       </div>
 
       <span
         className="text-sm font-black"
         style={{ color: selected ? "var(--color-primary)" : "#374151" }}
       >
-        {character.name}
+        {activityType.name}
       </span>
       <span className="text-xs text-gray-400 mt-0.5 text-center leading-tight">
-        {character.style}
+        {activityType.style}
       </span>
       <span
         className="text-xs mt-1.5 font-semibold"
         style={{ color: "var(--color-primary)" }}
       >
-        {character.bonusIcon} {character.bonus}
+        {activityType.bonusIcon} {activityType.bonus}
       </span>
     </button>
   );
 }
 
-function StepCharacter({
-  characterId,
-  setCharacterId,
+function StepActivityType({
+  activityTypeId,
+  setActivityTypeId,
 }: {
-  characterId: number | null;
-  setCharacterId: (id: number) => void;
+  activityTypeId: number | null;
+  setActivityTypeId: (id: number) => void;
 }) {
   return (
     <div className="flex flex-col items-center pt-4">
@@ -324,11 +321,11 @@ function StepCharacter({
       </p>
       <div className="grid grid-cols-2 gap-3 w-full">
         {activityTypes.map((c) => (
-          <CharacterCard
+          <ActivityTypeCard
             key={c.id}
-            character={c}
-            selected={characterId === c.id}
-            onSelect={() => setCharacterId(c.id)}
+            activityType={c}
+            selected={activityTypeId === c.id}
+            onSelect={() => setActivityTypeId(c.id)}
           />
         ))}
       </div>
@@ -336,13 +333,36 @@ function StepCharacter({
   );
 }
 
+// ─── Step 5: 캐릭터 ───────────────────────────────────────────────────────────
+
+function StepCharacter({
+  characterId,
+  setCharacterId,
+}: {
+  characterId: string | null;
+  setCharacterId: (id: string) => void;
+}) {
+  return (
+    <div className="flex flex-col items-center pt-4">
+      <h2 className="text-2xl font-black text-gray-800 text-center mb-1">
+        함께할 캐릭터를 골라주세요
+      </h2>
+      <p className="text-gray-400 text-sm mb-6">
+        홈과 마이페이지에 표시되는 나만의 캐릭터예요.
+      </p>
+      <CharacterGrid selectedId={characterId} onSelect={setCharacterId} />
+    </div>
+  );
+}
+
 // ─── 메인 온보딩 ──────────────────────────────────────────────────────────────
 
-const TOTAL_STEPS = 4;
+const TOTAL_STEPS = 5;
 
 export default function Onboarding() {
   const { updateProfile } = useUser();
-  const { selectActivityType } = useCharacter();
+  const { selectActivityType } = useActivityType();
+  const { selectCharacter } = useCharacter();
   const navigate = useNavigate();
 
   const [step, setStep] = useState(1);
@@ -352,7 +372,8 @@ export default function Onboarding() {
   const [age, setAge] = useState("");
   const [height, setHeight] = useState("");
   const [weight, setWeight] = useState("");
-  const [characterId, setCharacterId] = useState<number | null>(null);
+  const [activityTypeId, setActivityTypeId] = useState<number | null>(null);
+  const [characterId, setCharacterId] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const a = parseInt(age);
@@ -371,7 +392,8 @@ export default function Onboarding() {
       h <= 250 &&
       w >= 20 &&
       w <= 300) ||
-    (step === 4 && characterId !== null);
+    (step === 4 && activityTypeId !== null) ||
+    (step === 5 && characterId !== null);
 
   const handleNext = async () => {
     if (step === 1) {
@@ -402,12 +424,14 @@ export default function Onboarding() {
       height: h || null,
       weight: w || null,
       bmi: bmiValue,
+      activity_type_id: activityTypeId,
       character_id: characterId,
     });
     if (error) {
       console.error("온보딩 프로필 저장 실패:", error);
     }
-    if (characterId !== null) selectActivityType(characterId);
+    if (activityTypeId !== null) selectActivityType(activityTypeId);
+    if (characterId !== null) await selectCharacter(characterId);
     setIsSubmitting(false);
     navigate("/", { replace: true });
   };
@@ -463,6 +487,12 @@ export default function Onboarding() {
           />
         )}
         {step === 4 && (
+          <StepActivityType
+            activityTypeId={activityTypeId}
+            setActivityTypeId={setActivityTypeId}
+          />
+        )}
+        {step === 5 && (
           <StepCharacter
             characterId={characterId}
             setCharacterId={setCharacterId}

@@ -1,10 +1,10 @@
 import { useState } from "react";
-import { useCharacter } from "../../context/ActivityTypeContext";
+import { useActivityType } from "../../context/ActivityTypeContext";
 import { activityTypes } from "../../data/activityTypes";
 import Modal from "../../components/ui/Modal";
 
 export default function ActivityTypePage() {
-  const { selectedId, selectActivityType } = useCharacter();
+  const { selectedId, selectActivityType } = useActivityType();
   const selected = selectedId;
   const [modalOpen, setModalOpen] = useState(false);
 

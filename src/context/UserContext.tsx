@@ -25,6 +25,7 @@ export type AppUser = {
   id: string;
   nickname: string | null;
   activity_type_id: number | null;
+  character_id: string | null;
   gender: string | null;
   age: number | null;
   height: number | null;

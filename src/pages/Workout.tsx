@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { useCharacter } from "../context/ActivityTypeContext";
+import { useActivityType } from "../context/ActivityTypeContext";
 import { useUser } from "../context/UserContext";
 import { activityTypes } from "../data/activityTypes";
 import { storage } from "../utils/storage";
@@ -83,7 +83,7 @@ const formatTime = (s: number) => {
 
 export default function Workout() {
   const navigate = useNavigate();
-  const { selectedActivityType, selectedId, selectActivityType } = useCharacter();
+  const { selectedActivityType, selectedId, selectActivityType } = useActivityType();
   const { userGoal, saveWorkout, workoutRecords } = useUser();
 
   const [state, setState] = useState<WorkoutState>("idle");

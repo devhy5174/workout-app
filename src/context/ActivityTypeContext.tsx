@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import { createContext, useContext, useEffect, useState } from "react";
 import { storage } from "../utils/storage";
 import { type ActivityType, activityTypes } from "../data/activityTypes";
@@ -15,25 +16,25 @@ const ActivityTypeContext = createContext<ActivityTypeContextValue>({
   selectActivityType: () => {},
 });
 
-export function CharacterProvider({ children }: { children: React.ReactNode }) {
+export function ActivityTypeProvider({ children }: { children: React.ReactNode }) {
   const { userProfile } = useUser();
-  const [selectedId, setSelectedId] = useState<number | null>(() => {
+  const [localSelectedId, setLocalSelectedId] = useState<number | null>(() => {
     const saved = storage.get("CHARACTER");
     return saved ? Number(saved) : null;
   });
 
   // userProfile.activity_type_id에서 자동 동기화 (로그인, 다른 기기, 온보딩 직후)
   useEffect(() => {
-    if (selectedId === null && userProfile?.activity_type_id) {
-      setSelectedId(userProfile.activity_type_id);
+    if (localSelectedId === null && userProfile?.activity_type_id) {
       storage.set("CHARACTER", String(userProfile.activity_type_id));
     }
-  }, [userProfile?.activity_type_id, selectedId]);
+  }, [userProfile?.activity_type_id, localSelectedId]);
 
+  const selectedId = localSelectedId ?? userProfile?.activity_type_id ?? null;
   const selectedActivityType = activityTypes.find((c) => c.id === selectedId) ?? null;
 
   const selectActivityType = (id: number) => {
-    setSelectedId(id);
+    setLocalSelectedId(id);
     storage.set("CHARACTER", String(id));
   };
 
@@ -46,4 +47,4 @@ export function CharacterProvider({ children }: { children: React.ReactNode }) {
   );
 }
 
-export const useCharacter = () => useContext(ActivityTypeContext);
+export const useActivityType = () => useContext(ActivityTypeContext);

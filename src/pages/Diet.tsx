@@ -1,5 +1,5 @@
 import { storage, type RecommendedDiet } from "../utils/storage";
-import { useCharacter } from "../context/ActivityTypeContext";
+import { useActivityType } from "../context/ActivityTypeContext";
 import { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
 
@@ -32,7 +32,7 @@ const DEFAULT_DIET: RecommendedDiet = {
 
 const kcalGoal = 2000;
 export default function Diet() {
-  const { selectedActivityType } = useCharacter();
+  const { selectedActivityType } = useActivityType();
   const [burnedKcal, setBurnedKcal] = useState<number>(0);
 
   const location = useLocation();
