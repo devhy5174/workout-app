@@ -80,12 +80,20 @@ function ProgressBar({
   );
 }
 
+function getGreeting() {
+  const h = new Date().getHours();
+  if (h >= 5 && h < 12) return "좋은 아침이에요";
+  if (h >= 12 && h < 18) return "좋은 오후예요";
+  if (h >= 18 && h < 22) return "좋은 저녁이에요";
+  return "오늘도 수고했어요";
+}
+
 export default function Home() {
   const { selectedActivityType } = useActivityType();
   const { selectedCharacter } = useCharacter();
   const { userGoal, workoutRecords, userProfile } = useUser();
 
-  const characterName = selectedActivityType?.name ?? null;
+  const activityTypeName = selectedActivityType?.name ?? null;
 
   const history = storage.getWorkoutHistory();
   const streak = calculateStreak(history);
@@ -170,11 +178,17 @@ export default function Home() {
               <span className="text-8xl select-none">🏃</span>
             )}
           </div>
-          {characterName && (
+             <div className="text-center mt-3">
+          <p className="text-xl font-extrabold text-gray-800">
+            {getGreeting()}, {userProfile?.nickname ?? "운동왕"}님!
+          </p>
+        {activityTypeName && (
             <span className="absolute -bottom-6 left-1/2 -translate-x-1/2 text-xs font-bold text-primary whitespace-nowrap">
-              {characterName}
+              {activityTypeName}
             </span>
           )}
+        </div>
+          
           <span className="absolute top-3 right-5 text-xl animate-bounce">
             ✨
           </span>
