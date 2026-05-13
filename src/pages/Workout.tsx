@@ -351,7 +351,7 @@ console.log("🔥 saveWorkout 호출됨");
               cy={CY}
               r={RADIUS}
               fill="none"
-              stroke="#f3f4f6"
+              stroke="var(--color-ring-track)"
               strokeWidth={STROKE_W}
             />
             <circle

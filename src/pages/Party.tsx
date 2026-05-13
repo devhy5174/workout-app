@@ -826,8 +826,8 @@ function DeleteConfirmModal({
 
 function Toast({ message, icon = "🎉" }: { message: string; icon?: string }) {
   return (
-    <div className="fixed top-6 left-1/2 -translate-x-1/2 z-50 pointer-events-none">
-      <div className="bg-gray-800 text-white text-sm font-bold px-5 py-3 rounded-2xl shadow-xl flex items-center gap-2 animate-fade-in-down">
+    <div className="fixed top-6 left-0 right-0 flex justify-center z-50 pointer-events-none">
+      <div className="bg-gray-800 text-white text-sm font-bold px-5 py-3 rounded-2xl shadow-xl flex items-center gap-2 whitespace-nowrap animate-fade-in-down">
         <span>{icon}</span>
         <span>{message}</span>
       </div>

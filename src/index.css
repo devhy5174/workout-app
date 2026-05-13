@@ -58,6 +58,7 @@ html, body {
     --color-bg: #fff8f5;
     --color-text: #2d2d2d;
     --color-primary-light: #fff0ec;
+    --color-ring-track: #f3f4f6;
   }
 
   /* 🟢 네이처 테마 */
@@ -68,6 +69,7 @@ html, body {
     --color-bg: #f5fff8;
     --color-text: #2d2d2d;
     --color-primary-light: #e8faf2;
+    --color-ring-track: #f3f4f6;
   }
 
   /* 🔵 코스모 테마 */
@@ -78,5 +80,6 @@ html, body {
     --color-bg: #f5f5ff;
     --color-text: #2d2d2d;
     --color-primary-light: #eef0fe;
+    --color-ring-track: #e8e8f0;
   }
 }

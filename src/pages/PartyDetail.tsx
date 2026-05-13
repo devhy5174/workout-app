@@ -295,7 +295,7 @@ export default function PartyDetail() {
   const slotFull = party.member_count >= party.max_members;
 
   return (
-    <div className="flex flex-col h-full bg-bg">
+    <div className="flex flex-col min-h-screen bg-bg mb-10">
       {/* 헤더 */}
       <div className="flex items-center gap-3 px-5 pt-5 pb-3">
         <button
@@ -310,7 +310,7 @@ export default function PartyDetail() {
         </h2>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-4 pb-28 flex flex-col gap-4">
+      <div className="flex-1 overflow-y-auto px-4 pb-6 flex flex-col gap-4">
         {/* 파티 기본 정보 */}
         <div className="bg-white rounded-3xl shadow-sm p-5 flex flex-col gap-3">
           <div className="flex items-start gap-4">
@@ -448,11 +448,9 @@ export default function PartyDetail() {
           )}
           <p className="text-[10px] text-gray-400 text-center">이번 주 누적 걸음 수 기준</p>
         </div>
-      </div>
 
-      {/* 하단 액션 버튼 */}
-      <div className="absolute bottom-16 left-0 right-0 max-w-md mx-auto px-4 pb-4">
-        <div className="bg-white rounded-3xl shadow-lg p-3 flex gap-2">
+        {/* 하단 액션 버튼 */}
+        <div className="bg-white rounded-3xl shadow-sm p-4 flex gap-2">
           {joined ? (
             leader ? (
               <div className="flex-1 py-3 rounded-2xl bg-yellow-50 text-sm font-extrabold text-yellow-600 flex items-center justify-center gap-1">
