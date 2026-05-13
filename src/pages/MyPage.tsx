@@ -1,4 +1,13 @@
 import { useState } from "react";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts";
 import { useUser } from "../context/UserContext";
 import { useActivityType } from "../context/ActivityTypeContext";
 import { useCharacter } from "../context/CharacterContext";
@@ -6,6 +15,7 @@ import CharacterGrid from "../components/CharacterGrid";
 import Modal from "../components/ui/Modal";
 import { activityTypes } from "../data/activityTypes";
 import { type UserGoal } from "../lib/workoutService";
+import { useWorkoutStats, type StatPeriod } from "../hooks/useWorkoutStats";
 import Diet from "./Diet";
 
 const WORKOUT_TYPE_LABEL: Record<string, { label: string; emoji: string }> = {
@@ -833,13 +843,151 @@ function WorkoutTab() {
   );
 }
 
+// ── 통계 탭 ─────────────────────────────────────────────
+function StatsTab() {
+  const { user } = useUser();
+  const { period, setPeriod, data, isLoading, periodLabel, totalSteps } =
+    useWorkoutStats(user?.id ?? null);
+
+  const periods: { key: StatPeriod; label: string }[] = [
+    { key: "day", label: "1일" },
+    { key: "week", label: "1주" },
+    { key: "month", label: "1개월" },
+  ];
+
+  const now = new Date();
+  const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+  const displaySteps =
+    period === "day"
+      ? totalSteps
+      : period === "week"
+        ? Math.round(totalSteps / 7)
+        : Math.round(totalSteps / daysInMonth);
+  const displayLabel = period === "day" ? "오늘 총 걸음수" : "일 평균 걸음수";
+  const chartTitle =
+    period === "day"
+      ? "시간대별 걸음수"
+      : period === "week"
+        ? "요일별 걸음수"
+        : "일별 걸음수";
+  const xInterval = period === "day" ? 2 : period === "month" ? 4 : 0;
+  const maxBarSize = period === "month" ? 10 : 36;
+
+  return (
+    <div className="flex flex-col gap-4 px-4 pt-5 pb-20 h-full overflow-y-auto">
+      {/* 기간 탭 */}
+      <div className="bg-white rounded-2xl shadow-sm p-1 flex">
+        {periods.map(({ key, label }) => (
+          <button
+            key={key}
+            onClick={() => setPeriod(key)}
+            className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition-all ${
+              period === key ? "bg-primary text-white shadow-sm" : "text-gray-400"
+            }`}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {/* 기간 텍스트 */}
+      <p className="text-xs text-center text-gray-400 font-semibold">
+        {periodLabel}
+      </p>
+
+      {/* 평균 / 합계 수치 */}
+      <div className="bg-white rounded-3xl shadow-sm px-6 py-5 flex flex-col items-center gap-1">
+        <p className="text-xs text-gray-400 font-semibold">{displayLabel}</p>
+        {isLoading ? (
+          <p className="text-5xl font-extrabold text-gray-200 animate-pulse">
+            —
+          </p>
+        ) : (
+          <p
+            className="text-5xl font-extrabold"
+            style={{ color: "var(--color-primary)" }}
+          >
+            {displaySteps.toLocaleString()}
+          </p>
+        )}
+        <p className="text-sm text-gray-400 font-semibold">보</p>
+      </div>
+
+      {/* 막대 그래프 */}
+      <div className="bg-white rounded-3xl shadow-sm p-4">
+        <p className="text-xs font-bold text-gray-500 mb-4">{chartTitle}</p>
+        {isLoading ? (
+          <div className="flex items-center justify-center h-44">
+            <p className="font-bold text-sm text-gray-300 animate-pulse">
+              불러오는 중...
+            </p>
+          </div>
+        ) : totalSteps === 0 ? (
+          <div className="flex flex-col items-center justify-center h-44 gap-2 text-gray-300">
+            <span className="text-4xl">🏃</span>
+            <p className="text-sm font-bold">이 기간에 운동 기록이 없어요</p>
+          </div>
+        ) : (
+          <ResponsiveContainer width="100%" height={180}>
+            <BarChart
+              data={data}
+              margin={{ top: 4, right: 4, left: -24, bottom: 0 }}
+            >
+              <CartesianGrid
+                vertical={false}
+                strokeDasharray="3 3"
+                stroke="#f3f4f6"
+              />
+              <XAxis
+                dataKey="label"
+                tick={{ fontSize: 10, fill: "#9ca3af", fontWeight: 600 }}
+                axisLine={false}
+                tickLine={false}
+                interval={xInterval}
+              />
+              <YAxis
+                tick={{ fontSize: 10, fill: "#9ca3af", fontWeight: 600 }}
+                axisLine={false}
+                tickLine={false}
+                tickFormatter={(v: number) =>
+                  v >= 1000 ? `${(v / 1000).toFixed(1)}k` : String(v)
+                }
+              />
+              <Tooltip
+                formatter={(value) => [
+                  `${Number(value ?? 0).toLocaleString()}보`,
+                  "걸음수",
+                ]}
+                contentStyle={{
+                  borderRadius: 12,
+                  border: "none",
+                  boxShadow: "0 4px 20px rgba(0,0,0,0.1)",
+                  fontSize: 12,
+                }}
+                cursor={{ fill: "rgba(0,0,0,0.04)" }}
+              />
+              <Bar
+                dataKey="steps"
+                fill="var(--color-primary)"
+                radius={[4, 4, 0, 0]}
+                maxBarSize={maxBarSize}
+              />
+            </BarChart>
+          </ResponsiveContainer>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ── MyPage 메인 ─────────────────────────────────────────
-type Tab = "info" | "diet" | "workout";
+type Tab = "info" | "diet" | "workout" | "stats";
 
 const tabs: { id: Tab; label: string }[] = [
   { id: "info", label: "내정보" },
   { id: "diet", label: "식단" },
   { id: "workout", label: "운동기록" },
+  { id: "stats", label: "통계" },
 ];
 
 export default function MyPage() {
@@ -867,6 +1015,7 @@ export default function MyPage() {
         {activeTab === "info" && <InfoTab />}
         {activeTab === "diet" && <Diet />}
         {activeTab === "workout" && <WorkoutTab />}
+        {activeTab === "stats" && <StatsTab />}
       </div>
     </div>
   );

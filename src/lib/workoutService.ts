@@ -208,3 +208,50 @@ export async function deleteActiveGoal(
     .eq("is_active", true);
   return { error: error?.message ?? null };
 }
+
+// 오늘 2시간 단위 걸음수 버킷 (인덱스 0=00~01시, 1=02~03시, ..., 11=22~23시)
+export async function fetchTodayHourlyStats(userId: string): Promise<number[]> {
+  const today = new Date().toISOString().split("T")[0];
+  const { data, error } = await supabase
+    .from("workout_history")
+    .select("steps, created_at")
+    .eq("user_id", userId)
+    .eq("date", today);
+
+  if (error || !data) return Array(12).fill(0);
+
+  const buckets = Array(12).fill(0);
+  for (const r of data) {
+    const hour = new Date(r.created_at).getHours();
+    const bucket = Math.floor(hour / 2);
+    buckets[bucket] += r.steps ?? 0;
+  }
+  return buckets;
+}
+
+// 이번 달 일별 걸음수 (인덱스 0=1일, 1=2일, ...)
+export async function fetchMonthlyStats(userId: string): Promise<number[]> {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = now.getMonth();
+  const firstDay = new Date(year, month, 1).toISOString().split("T")[0];
+  const lastDay = new Date(year, month + 1, 0).toISOString().split("T")[0];
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+  const { data, error } = await supabase
+    .from("workout_history")
+    .select("date, steps")
+    .eq("user_id", userId)
+    .gte("date", firstDay)
+    .lte("date", lastDay);
+
+  if (error || !data) return Array(daysInMonth).fill(0);
+
+  const stepsByDay: Record<number, number> = {};
+  for (const r of data) {
+    const day = parseInt(r.date.split("-")[2]);
+    stepsByDay[day] = (stepsByDay[day] ?? 0) + (r.steps ?? 0);
+  }
+
+  return Array.from({ length: daysInMonth }, (_, i) => stepsByDay[i + 1] ?? 0);
+}
