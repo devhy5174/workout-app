@@ -212,7 +212,7 @@ export default function Diet() {
       )}
 
       {/* 아침 / 점심 / 저녁 추천 메뉴 */}
-      {MEAL_CONFIGS.map(({ time, label, emoji }) => {
+      {MEAL_CONFIGS.map(({ time, label }) => {
         const menu = getBestMenu(time, activityType);
         if (!menu) return null;
         return (
