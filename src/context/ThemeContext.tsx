@@ -46,14 +46,14 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const setTheme = (t: Theme) => {
     setThemeState(t);
 
-    // fire-and-forget: app_users.theme 업데이트
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    (async () => {
+      const { data: { session } } = await supabase.auth.getSession();
       if (!session?.user) return;
-      supabase
+      await supabase
         .from("app_users")
         .update({ theme: t })
         .eq("id", session.user.id);
-    });
+    })();
   };
 
   return (
