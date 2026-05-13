@@ -552,11 +552,24 @@ console.log("🔥 saveWorkout 호출됨");
         <div
           className="fixed inset-0 z-50 flex items-end justify-center"
           style={{ background: "rgba(0,0,0,0.45)" }}
+          onClick={() => setShowStartModal(false)}
         >
-          <div className="w-full bg-white rounded-t-3xl p-6 pb-10 shadow-2xl">
-            <p className="font-extrabold text-gray-800 text-lg mb-1">
-              운동 유형 선택
-            </p>
+          <div
+            className="w-full bg-white rounded-t-3xl p-6 pb-10 shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between mb-1">
+              <p className="font-extrabold text-gray-800 text-lg">
+                운동 유형 선택
+              </p>
+              <button
+                onClick={() => setShowStartModal(false)}
+                className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 font-bold"
+                aria-label="닫기"
+              >
+                ✕
+              </button>
+            </div>
             <p className="text-xs text-gray-400 mb-4">
               선택한 유형으로 칼로리가 계산돼요
             </p>

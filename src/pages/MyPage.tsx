@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   BarChart,
   Bar,
@@ -14,7 +14,7 @@ import { useCharacter } from "../context/CharacterContext";
 import CharacterGrid from "../components/CharacterGrid";
 import Modal from "../components/ui/Modal";
 import { activityTypes } from "../data/activityTypes";
-import { type UserGoal } from "../lib/workoutService";
+import { type UserGoal, fetchTodayStats, type DayStats } from "../lib/workoutService";
 import { useWorkoutStats, type StatPeriod } from "../hooks/useWorkoutStats";
 import Diet from "./Diet";
 
@@ -458,6 +458,12 @@ function InfoTab() {
   const [showGoalModal, setShowGoalModal] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [todayStats, setTodayStats] = useState<DayStats>({ steps: 0, distance: 0, calories: 0 });
+
+  useEffect(() => {
+    if (!userProfile?.id) return;
+    fetchTodayStats(userProfile.id).then(setTodayStats);
+  }, [userProfile?.id]);
 
   const [height, setHeight] = useState<string>(
     () => userProfile?.height?.toString() ?? "",
@@ -546,6 +552,27 @@ function InfoTab() {
           >
             캐릭터 변경
           </button>
+        </div>
+      </div>
+
+      {/* 오늘 현황 카드 */}
+      <div className="bg-white rounded-3xl shadow-sm p-5">
+        <p className="font-extrabold text-gray-800 mb-3">오늘 현황</p>
+        <div className="grid grid-cols-3 gap-2">
+          {[
+            { label: "걸음수", value: todayStats.steps.toLocaleString(), unit: "보", emoji: "👟" },
+            { label: "거리", value: (todayStats.distance / 1000).toFixed(2), unit: "km", emoji: "📍" },
+            { label: "칼로리", value: Math.round(todayStats.calories).toLocaleString(), unit: "kcal", emoji: "🔥" },
+          ].map(({ label, value, unit, emoji }) => (
+            <div key={label} className="flex flex-col items-center bg-gray-50 rounded-2xl py-4 gap-1">
+              <span className="text-xl">{emoji}</span>
+              <p className="text-lg font-extrabold leading-tight" style={{ color: "var(--color-primary)" }}>
+                {value}
+              </p>
+              <p className="text-[10px] text-gray-400 font-bold">{unit}</p>
+              <p className="text-[10px] text-gray-400">{label}</p>
+            </div>
+          ))}
         </div>
       </div>
 
