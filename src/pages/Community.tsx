@@ -227,10 +227,10 @@ export default function CommunityPage() {
       <div className="sticky top-0 z-10 bg-bg/90 backdrop-blur-sm px-5 pt-5 pb-0 border-b border-stone-100/80">
         <div className="flex items-center gap-1.5 mb-0.5">
           <FootprintIcon className="w-[15px] h-[15px] text-orange-400" />
-          <h1 className="text-[18px] font-bold text-stone-800 tracking-tight">오늘의 산책 기록</h1>
+          <h1 className="text-[18px] font-bold text-stone-800 tracking-tight">오늘의 운동 기록</h1>
         </div>
         <p className="text-[12px] text-stone-400 font-light mb-3">
-          오늘 걸은 기분을 가볍게 남겨보세요
+          오늘의 움직임을 가볍게 기록해보세요
         </p>
 
         <div className="flex">
@@ -279,8 +279,8 @@ export default function CommunityPage() {
                   <span className="text-xl">👣</span>
                 </div>
                 <div className="text-left">
-                  <p className="text-sm font-semibold text-stone-700">오늘의 산책 기록 남기기</p>
-                  <p className="text-[12px] text-stone-400 mt-0.5">가볍게 오늘 기분을 적어보세요</p>
+                  <p className="text-sm font-semibold text-stone-700">오늘의 운동 기록 남기기</p>
+                  <p className="text-[12px] text-stone-400 mt-0.5">오늘의 움직임을 가볍게 기록해보세요</p>
                 </div>
               </div>
               <div className="text-orange-400 text-xl font-light">+</div>
@@ -343,7 +343,7 @@ export default function CommunityPage() {
                   />
                 ))
               ) : (
-                <EmptyState message="아직 기록이 없어요. 첫 산책을 남겨보세요 👣" />
+                <EmptyState message="아직 기록이 없어요. 첫 움직인 기록을 남겨보세요 👣" />
               )}
             </div>
           </>

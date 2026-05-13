@@ -85,10 +85,10 @@ export default function CommunityWriteModal({
         <div className="flex items-center justify-between mb-5">
           <div>
             <h2 className="text-[20px] font-bold text-stone-800">
-              산책 기록 남기기 👣
+              운동 기록 남기기 👣
             </h2>
             <p className="text-[12px] text-stone-400 mt-1">
-              오늘 걸은 기분을 가볍게 적어보세요
+              오늘의 움직임을 가볍게 기록해보세요
             </p>
           </div>
           <button
@@ -111,7 +111,7 @@ export default function CommunityWriteModal({
             value={text}
             onChange={(e) => setText(e.target.value)}
             rows={5}
-            placeholder="오늘은 어떤 걸음을 걸었나요?"
+            placeholder="오늘 운동은 어땠나요?"
             className="
               w-full rounded-3xl bg-white
               border border-stone-200
@@ -135,7 +135,7 @@ export default function CommunityWriteModal({
         {/* 태그 - 최대 2개 */}
         <div className="mb-7">
           <div className="flex items-center gap-2 mb-3">
-            <p className="text-[13px] font-medium text-stone-600">오늘의 기분</p>
+            <p className="text-[13px] font-medium text-stone-600">오늘의 태그</p>
             <span className="text-[11px] text-stone-400">최대 2개</span>
           </div>
 
