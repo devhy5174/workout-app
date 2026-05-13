@@ -268,14 +268,21 @@ console.log("🔥 saveWorkout 호출됨");
     }
   };
 
-  // 걸음 수 증가 (현실적: 분당 100보 기준)
+  // 걸음 수 증가 (유형별 페이스)
   useEffect(() => {
     if (state !== "running") return;
+    const intervalMap: Record<string, number> = {
+      walker: 600,       // 분당 100보
+      power_walker: 500, // 분당 120보
+      runner: 400,       // 분당 150보
+      hiker: 667,        // 분당 90보
+    };
+    const ms = intervalMap[selectedActivityType?.type ?? "walker"] ?? 600;
     const id = setInterval(() => {
       setSteps((prev) => prev + 1);
-    }, 600); // 0.6초마다 1보 = 분당 100보
+    }, ms);
     return () => clearInterval(id);
-  }, [state]);
+  }, [state, selectedActivityType]);
 
   // 타이머 (1초마다)
   useEffect(() => {
