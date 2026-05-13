@@ -6,6 +6,8 @@ import { useUser } from "../context/UserContext";
 import { storage } from "../utils/storage";
 import { calculateStreak, getThisWeekWorkouts } from "../utils/streak";
 import { getRandomMessage } from "../data/characterMessages";
+import { FAKE_ACTIVE_USERS } from "../data/fakeActiveUsers";
+import { getActiveSessions } from "../lib/sessionService";
 
 const workoutGoal = 7;
 const pointGoal = 500;
@@ -107,6 +109,36 @@ export default function Home() {
   const [bubbleMsg, setBubbleMsg] = useState(() => getRandomMessage(activityType));
   const displayedText = useTypingEffect(bubbleMsg);
 
+  const [marqueeText, setMarqueeText] = useState("");
+
+  useEffect(() => {
+    async function buildMarquee() {
+      let users: { nickname: string; activity: string; steps: number }[] = [];
+      try {
+        const sessions = await getActiveSessions();
+        if (sessions.length > 0) {
+          users = sessions.map((s) => ({
+            nickname: s.nickname,
+            activity: s.exercise_type,
+            steps: Math.floor(Math.random() * 5000) + 3000,
+          }));
+        }
+      } catch {}
+      if (users.length === 0) {
+        users = FAKE_ACTIVE_USERS.map((u) => ({
+          nickname: u.nickname,
+          activity: u.activity,
+          steps: u.steps,
+        }));
+      }
+      const base = users
+        .map((u) => `${u.nickname}님 ${u.activity}  ${u.steps.toLocaleString()}보`)
+        .join("   ·   ");
+      setMarqueeText(`${base}   ·   ${base}`);
+    }
+    buildMarquee();
+  }, []);
+
   const handleCharacterTap = () => {
     setBubbleMsg(getRandomMessage(activityType));
   };
@@ -145,7 +177,7 @@ export default function Home() {
       </div>
 
       {/* 캐릭터 + 말풍선 */}
-      <div className="flex flex-col items-center px-6 pt-4 pb-2">
+      <div className="flex flex-col items-center px-6 pt-4 pb-2 mb-3">
         <div className="relative bg-white rounded-2xl px-5 py-3 shadow-md mb-2 min-w-[180px]">
           <p className="text-sm font-bold text-gray-700 text-center">
             {displayedText}
@@ -198,8 +230,39 @@ export default function Home() {
         </div>
       </div>
 
+      {/* 실시간 운동 중 전광판 */}
+      {marqueeText && (
+        <div
+          className="mx-4 mt-3 flex items-center gap-2.5 rounded-2xl overflow-hidden py-3 px-4"
+          style={{ background: "var(--color-primary-light)" }}
+        >
+          <div className="flex items-center gap-1.5 flex-shrink-0">
+            <span
+              className="w-2 h-2 rounded-full animate-pulse"
+              style={{ background: "var(--color-primary)" }}
+            />
+            <span
+              className="text-[11px] font-extrabold whitespace-nowrap"
+              style={{ color: "var(--color-primary)" }}
+            >
+              지금 운동 중
+            </span>
+          </div>
+          <div className="flex-1 overflow-hidden min-w-0">
+            <div className="marquee-track">
+              <span
+                className="text-[11px] font-semibold"
+                style={{ color: "var(--color-primary)" }}
+              >
+                {marqueeText}
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* 스탯 카드 */}
-      <div className="mx-4 mt-10 flex flex-col gap-4">
+      <div className="mx-4 mt-4 flex flex-col gap-4">
         {/* 운동 시작 버튼 */}
         <Link
           to="/workout"

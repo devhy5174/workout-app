@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { FaPlay, FaPause, FaStop } from "react-icons/fa";
 import { useActivityType } from "../context/ActivityTypeContext";
@@ -9,6 +9,8 @@ import { storage } from "../utils/storage";
 import { POINT_RULES } from "../data/points";
 import { calculateStreak, isWeekend } from "../utils/streak";
 import { addPoints } from "../lib/pointService";
+import { startSession, updateSession, endSession } from "../lib/sessionService";
+import { FAKE_ACTIVE_USERS } from "../data/fakeActiveUsers";
 
 const DIET_BY_CHARACTER: Record<
   number,
@@ -103,6 +105,12 @@ export default function Workout() {
   const [earnedPoints, setEarnedPoints] = useState(0);
   const [pendingId, setPendingId] = useState<number>(() => selectedId ?? 1);
 
+  // 링 주변에 떠다닐 랜덤 친구 2명
+  const buddies = useMemo(() => {
+    const shuffled = [...FAKE_ACTIVE_USERS].sort(() => Math.random() - 0.5);
+    return shuffled.slice(0, 2);
+  }, []);
+
   // 화면 이탈 후 복귀 시 상태 유지
 useEffect(() => {
   sessionStorage.setItem("wk_state", state);
@@ -181,6 +189,7 @@ useEffect(() => {
     const currentElapsed = elapsed;
     setState("paused");
     clearWorkoutSession();
+    if (user) endSession(user.id);
 
     const prevKcal = storage.getBurnedKcal() ?? 0;
     storage.setBurnedKcal(prevKcal + currentCalories);
@@ -267,6 +276,20 @@ console.log("🔥 saveWorkout 호출됨");
       }
     }
   };
+
+  // 세션 시작/종료
+  useEffect(() => {
+    if (state === "running" && user) {
+      startSession(user.id, selectedActivityType?.type ?? "walker");
+    }
+  }, [state === "running"]);
+
+  // 30초마다 last_seen 갱신
+  useEffect(() => {
+    if (state !== "running" || !user) return;
+    const id = setInterval(() => updateSession(user.id), 30_000);
+    return () => clearInterval(id);
+  }, [state, user]);
 
   // 걸음 수 증가 (유형별 페이스)
   useEffect(() => {
@@ -413,6 +436,32 @@ console.log("🔥 saveWorkout 호출됨");
               }
             </div>
           )}
+
+          {/* 친구 아바타 - 링 주변에 둥둥 */}
+          <div
+            className="absolute z-10 buddy-float"
+            style={{ left: 200, top: 44 }}
+            title={`${buddies[0].nickname}님 ${buddies[0].activity}`}
+          >
+            <div className="w-9 h-9 rounded-full bg-white shadow-md border-2 border-white overflow-hidden">
+              <img src={buddies[0].character_image} alt={buddies[0].nickname} className="w-full h-full object-contain" />
+            </div>
+            <p className="text-[9px] font-extrabold text-center text-gray-600 mt-0.5 whitespace-nowrap leading-tight">
+              {buddies[0].nickname}
+            </p>
+          </div>
+          <div
+            className="absolute z-10 buddy-float-delay"
+            style={{ left: 28, top: 188 }}
+            title={`${buddies[1].nickname}님 ${buddies[1].activity}`}
+          >
+            <div className="w-9 h-9 rounded-full bg-white shadow-md border-2 border-white overflow-hidden">
+              <img src={buddies[1].character_image} alt={buddies[1].nickname} className="w-full h-full object-contain" />
+            </div>
+            <p className="text-[9px] font-extrabold text-center text-gray-600 mt-0.5 whitespace-nowrap leading-tight">
+              {buddies[1].nickname}
+            </p>
+          </div>
 
           <div className="absolute inset-0 flex flex-col items-center justify-center select-none">
             {state === "idle" && (

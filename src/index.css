@@ -31,6 +31,30 @@ html, body {
   50% { opacity: 1; transform: scale(1.1); }
 }
 
+@keyframes marquee-scroll {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+
+.marquee-track {
+  animation: marquee-scroll 22s linear infinite;
+  display: inline-block;
+  white-space: nowrap;
+}
+
+@keyframes buddy-float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-6px); }
+}
+
+.buddy-float {
+  animation: buddy-float 2.4s ease-in-out infinite;
+}
+
+.buddy-float-delay {
+  animation: buddy-float 2.4s ease-in-out 1.2s infinite;
+}
+
 @keyframes border-glow {
   0%, 100% {
     box-shadow: 0 0 0 0 transparent;
