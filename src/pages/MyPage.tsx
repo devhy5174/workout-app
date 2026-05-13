@@ -458,6 +458,7 @@ function InfoTab() {
   const [showGoalModal, setShowGoalModal] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [showBmiInfo, setShowBmiInfo] = useState(false);
   const [todayStats, setTodayStats] = useState<DayStats>({ steps: 0, distance: 0, calories: 0 });
 
   useEffect(() => {
@@ -702,7 +703,11 @@ function InfoTab() {
               </p>
             )}
           </div>
-          <div className="flex flex-col items-center gap-1 bg-gray-50 rounded-2xl p-3">
+          <button
+            onClick={() => setShowBmiInfo(true)}
+            className="flex flex-col items-center gap-1 bg-gray-50 rounded-2xl p-3 active:scale-95 transition-transform"
+            aria-label="BMI 설명 보기"
+          >
             <span className="text-lg">📊</span>
             <p className="text-[10px] text-gray-400 font-semibold">BMI</p>
             {bmi ? (
@@ -717,7 +722,7 @@ function InfoTab() {
             ) : (
               <p className="text-sm font-extrabold text-gray-800">—</p>
             )}
-          </div>
+          </button>
         </div>
       </div>
 
@@ -729,6 +734,55 @@ function InfoTab() {
       )}
       {showGoalModal && (
         <GoalSetModal onClose={() => setShowGoalModal(false)} />
+      )}
+      {showBmiInfo && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center px-6"
+          style={{ background: "rgba(0,0,0,0.45)" }}
+          onClick={() => setShowBmiInfo(false)}
+        >
+          <div
+            className="w-full max-w-xs bg-white rounded-3xl p-6 shadow-2xl flex flex-col gap-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between">
+              <p className="font-extrabold text-gray-800">BMI란?</p>
+              <button
+                onClick={() => setShowBmiInfo(false)}
+                className="w-7 h-7 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 text-sm font-bold"
+                aria-label="닫기"
+              >
+                ✕
+              </button>
+            </div>
+            <p className="text-xs text-gray-500 leading-relaxed">
+              체질량지수(Body Mass Index)로 체중(kg)을
+              키(m)의 제곱으로 나눈 값이에요.
+            </p>
+            <p className="text-xs font-bold text-center text-gray-600 bg-gray-50 rounded-2xl py-2.5">
+              BMI = 체중(kg) ÷ 키(m)²
+            </p>
+            <div className="flex flex-col gap-1.5">
+              {[
+                { range: "18.5 미만", label: "저체중", color: "text-blue-500" },
+                { range: "18.5 ~ 22.9", label: "정상", color: "text-green-500" },
+                { range: "23 ~ 24.9", label: "과체중", color: "text-yellow-500" },
+                { range: "25 이상", label: "비만", color: "text-red-500" },
+              ].map(({ range, label, color }) => (
+                <div
+                  key={label}
+                  className="flex items-center justify-between bg-gray-50 rounded-2xl px-4 py-2.5"
+                >
+                  <span className="text-xs text-gray-500 font-semibold">{range}</span>
+                  <span className={`text-sm font-extrabold ${color}`}>{label}</span>
+                </div>
+              ))}
+            </div>
+            <p className="text-[11px] text-gray-400 leading-relaxed">
+              💡 BMI는 근육량을 반영하지 않아 참고 지표로만 활용하세요.
+            </p>
+          </div>
+        </div>
       )}
     </div>
   );

@@ -32,10 +32,93 @@ function getBestMenu(
   return menus.find((m) => m.forCharacters.includes(activityType)) ?? menus[0] ?? null;
 }
 
+function BmrInfoModal({ onClose }: { onClose: () => void }) {
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center px-6"
+      style={{ background: "rgba(0,0,0,0.45)" }}
+      onClick={onClose}
+    >
+      <div
+        className="w-full max-w-xs bg-white rounded-3xl p-6 shadow-2xl flex flex-col gap-5"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* 헤더 */}
+        <div className="flex items-center justify-between">
+          <p className="font-extrabold text-gray-800">칼로리 계산 방식</p>
+          <button
+            onClick={onClose}
+            className="w-7 h-7 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 text-sm font-bold"
+            aria-label="닫기"
+          >
+            ✕
+          </button>
+        </div>
+
+        {/* 어떻게 계산되나요 */}
+        <div className="flex flex-col gap-2.5">
+          <p className="text-sm font-extrabold text-gray-800">💡 어떻게 계산되나요?</p>
+          <p className="text-xs text-gray-500 leading-relaxed">
+            Harris-Benedict 공식으로 기초대사량(BMR)을
+            계산하고 활동 유형별 배율을 곱해요.
+          </p>
+          <div className="flex flex-col gap-1.5">
+            {[
+              { label: "산책러", emoji: "🚶", multiplier: "× 1.375" },
+              { label: "파워워커", emoji: "🚶‍♂️", multiplier: "× 1.55" },
+              { label: "러너", emoji: "🏃", multiplier: "× 1.725" },
+              { label: "등산가", emoji: "🏔️", multiplier: "× 1.55" },
+            ].map(({ label, emoji, multiplier }) => (
+              <div
+                key={label}
+                className="flex items-center justify-between bg-gray-50 rounded-2xl px-4 py-2.5"
+              >
+                <span className="text-sm font-bold text-gray-700">
+                  {emoji} {label}
+                </span>
+                <span
+                  className="text-sm font-extrabold"
+                  style={{ color: "var(--color-primary)" }}
+                >
+                  {multiplier}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* 구분선 */}
+        <div className="h-px bg-gray-100" />
+
+        {/* 목표별 조정 가이드 */}
+        <div className="flex flex-col gap-2.5">
+          <p className="text-sm font-extrabold text-gray-800">🎯 목표별 조정 가이드</p>
+          <div className="flex flex-col gap-1.5">
+            {[
+              { label: "감량", desc: "− 300~500 kcal", color: "text-blue-500" },
+              { label: "유지", desc: "그대로", color: "text-green-500" },
+              { label: "증량", desc: "+ 300~500 kcal", color: "text-orange-500" },
+            ].map(({ label, desc, color }) => (
+              <div
+                key={label}
+                className="flex items-center justify-between bg-gray-50 rounded-2xl px-4 py-2.5"
+              >
+                <span className="text-sm font-bold text-gray-700">{label}</span>
+                <span className={`text-sm font-extrabold ${color}`}>{desc}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function Diet() {
   const { selectedActivityType } = useActivityType();
   const { userProfile } = useUser();
   const [burnedKcal, setBurnedKcal] = useState<number>(0);
+  const [showBmrInfo, setShowBmrInfo] = useState(false);
   const location = useLocation();
 
   const savedDiet = storage.getRecommendedDiet();
@@ -82,6 +165,13 @@ export default function Diet() {
             <div className="flex items-center gap-2">
               <span className="text-2xl">🔥</span>
               <span className="text-white font-bold text-sm">일일 권장 칼로리</span>
+              <button
+                onClick={() => setShowBmrInfo(true)}
+                className="w-5 h-5 rounded-full bg-white/25 flex items-center justify-center text-white text-[11px] font-extrabold leading-none"
+                aria-label="칼로리 계산 방식 보기"
+              >
+                i
+              </button>
             </div>
             {selectedActivityType && (
               <span className="text-[11px] font-bold text-white/80 bg-white/20 rounded-full px-2.5 py-0.5">
@@ -131,7 +221,6 @@ export default function Diet() {
             className="bg-white rounded-3xl shadow-sm p-5 flex flex-col gap-3"
           >
             <div className="flex items-center gap-2">
-              <span className="text-xl">{emoji}</span>
               <p className="font-extrabold text-gray-800">{label} 추천</p>
               <span className="text-[11px] font-bold text-[var(--color-primary)] bg-[var(--color-primary)]/10 rounded-full px-2 py-0.5 ml-auto">
                 {menu.totalNutrition.kcal} kcal
@@ -249,6 +338,8 @@ export default function Diet() {
         <br />
         개인 맞춤 칼로리를 계산해요 📊
       </p>
+
+      {showBmrInfo && <BmrInfoModal onClose={() => setShowBmrInfo(false)} />}
     </div>
   );
 }
