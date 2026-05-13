@@ -148,7 +148,7 @@ export async function createPost(
     .single();
   if (error || !row) return { data: null, error: error?.message ?? "작성 실패" };
   const profileMap = await fetchProfileMap([userId]);
-  return { data: mergePost(row, profileMap), error: null };
+  return { data: mergePost(row, profileMap, {}), error: null };
 }
 
 export async function deletePost(postId: string): Promise<{ error: string | null }> {
