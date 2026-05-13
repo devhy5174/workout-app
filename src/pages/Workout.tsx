@@ -782,14 +782,14 @@ console.log("🔥 saveWorkout 호출됨");
 
             <div className="px-6 py-4">
               <button
-                onClick={() => { clearWorkoutSession(); navigate("/"); }}
+                onClick={() => { clearWorkoutSession(); navigate("/community"); }}
                 className="w-full py-4 rounded-2xl text-white font-extrabold text-base active:scale-95 transition"
                 style={{
                   background:
                     "linear-gradient(135deg, var(--color-primary), var(--color-secondary))",
                 }}
               >
-                🏠 홈으로 가기
+                📝 오늘 기록 남기러 가기
               </button>
             </div>
           </div>
