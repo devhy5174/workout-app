@@ -8,6 +8,7 @@ import { activityTypes } from "../data/activityTypes";
 import { storage } from "../utils/storage";
 import { POINT_RULES } from "../data/points";
 import { calculateStreak, isWeekend } from "../utils/streak";
+import { addPoints } from "../lib/pointService";
 
 const DIET_BY_CHARACTER: Record<
   number,
@@ -86,7 +87,7 @@ const formatTime = (s: number) => {
 export default function Workout() {
   const navigate = useNavigate();
   const { selectedActivityType, selectedId, selectActivityType } = useActivityType();
-  const { userGoal, saveWorkout, workoutRecords, userProfile } = useUser();
+  const { user, userGoal, saveWorkout, workoutRecords, userProfile } = useUser();
 
   const [state, setState] = useState<WorkoutState>(
     () => (sessionStorage.getItem("wk_state") as WorkoutState) ?? "idle",
@@ -244,6 +245,26 @@ console.log("🔥 saveWorkout 호출됨");
 
     if (saveResult.error) {
       console.error("운동 저장 실패 — Supabase 에러:", saveResult.error);
+      return;
+    }
+
+    // ── point_history 기록 ──────────────────────────────
+    if (user) {
+      const workoutIcon = selectedActivityType?.emoji ?? "🏃";
+      const workoutType = selectedActivityType?.type ?? "walker";
+      await addPoints(user.id, pointsEarned, `${distance.toFixed(2)}km 운동 완료`, workoutIcon, workoutType);
+
+      if (steps >= (userGoal?.goal_type === "steps" ? goalValue : 5000) && !todayGoalAlreadyAchieved) {
+        await addPoints(user.id, POINT_RULES.GOAL_BONUS, "목표 달성 보너스", "🏆", "goal_bonus");
+      }
+
+      if (currentStreak > 0 && currentStreak % 7 === 0 && !todayAlreadyWorkedOut) {
+        await addPoints(user.id, POINT_RULES.STREAK_7_BONUS, "7일 연속 달성 보너스", "🔥", "streak");
+      }
+
+      if (isWeekend(today) && !todayAlreadyWorkedOut) {
+        await addPoints(user.id, POINT_RULES.WEEKEND_BONUS, "주말 운동 보너스", "🌅", "weekend");
+      }
     }
   };
 

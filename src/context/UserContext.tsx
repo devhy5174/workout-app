@@ -16,7 +16,6 @@ import {
   saveWorkoutRecord,
   saveUserGoal,
   deleteActiveGoal,
-  addUserPoints,
 } from "../lib/workoutService";
 
 export type { WorkoutRecord, UserGoal };
@@ -49,6 +48,7 @@ type UserContextValue = {
   saveGoal: (type: UserGoal["goal_type"], value: number) => Promise<{ error: string | null }>;
   deleteGoal: () => Promise<{ error: string | null }>;
   refreshWorkoutHistory: () => Promise<void>;
+  addLocalPoints: (amount: number) => void;
 };
 
 const UserContext = createContext<UserContextValue>({
@@ -64,6 +64,7 @@ const UserContext = createContext<UserContextValue>({
   saveGoal: async () => ({ error: null }),
   deleteGoal: async () => ({ error: null }),
   refreshWorkoutHistory: async () => {},
+  addLocalPoints: () => {},
 });
 
 async function fetchProfile(userId: string): Promise<AppUser | null> {
@@ -255,16 +256,12 @@ useEffect(() => {
     const newRecord: WorkoutRecord = savedRecord ?? { ...record, user_id: user.id };
     setWorkoutRecords((prev) => [newRecord, ...prev]);
 
-    const pointsResult = await addUserPoints(user.id, record.points_earned);
-    if (pointsResult.error) {
-      console.error("포인트 업데이트 실패:", pointsResult.error);
-    } else {
-      setUserProfile((prev) => {
-        const next = prev ? { ...prev, points: (prev.points ?? 0) + record.points_earned } : prev;
-        userProfileRef.current = next;
-        return next;
-      });
-    }
+    // 로컬 포인트 상태 낙관적 업데이트 (Supabase 실제 업데이트는 pointService.addPoints가 담당)
+    setUserProfile((prev) => {
+      const next = prev ? { ...prev, points: (prev.points ?? 0) + record.points_earned } : prev;
+      userProfileRef.current = next;
+      return next;
+    });
 
     return { error: null };
   };
@@ -301,6 +298,14 @@ useEffect(() => {
     setWorkoutRecords(workouts);
   };
 
+  const addLocalPoints = (amount: number) => {
+    setUserProfile((prev) => {
+      const next = prev ? { ...prev, points: (prev.points ?? 0) + amount } : prev;
+      userProfileRef.current = next;
+      return next;
+    });
+  };
+
   return (
     <UserContext.Provider
       value={{
@@ -316,6 +321,7 @@ useEffect(() => {
         saveGoal,
         deleteGoal,
         refreshWorkoutHistory,
+        addLocalPoints,
       }}
     >
       {children}

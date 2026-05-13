@@ -13,7 +13,7 @@ import type {
   PartyTodayStats,
 } from "../lib/partyService";
 import { POINT_RULES } from "../data/points";
-import { storage } from "../utils/storage";
+import { addPoints } from "../lib/pointService";
 
 const timeSlotEmoji: Record<string, string> = {
   새벽: "🌅",
@@ -184,7 +184,7 @@ function Toast({ message, icon = "🎉" }: { message: string; icon?: string }) {
 export default function PartyDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { user } = useUser();
+  const { user, addLocalPoints } = useUser();
   const { isJoined, isLeader, joinParty, leaveParty, kickMember } = useParty(
     user?.id ?? null,
   );
@@ -236,16 +236,10 @@ export default function PartyDetail() {
     const { error } = await joinParty(party.id);
     setShowJoinModal(false);
     if (!error) {
-      const today = new Date();
-      const pad = (n: number) => String(n).padStart(2, "0");
-      const todayStr = `${today.getFullYear()}.${pad(today.getMonth() + 1)}.${pad(today.getDate())}`;
-      storage.addPoints(POINT_RULES.PARTY_JOIN);
-      storage.addPointsHistory({
-        date: todayStr,
-        desc: `${party.name} 파티 참가`,
-        points: POINT_RULES.PARTY_JOIN,
-        icon: "🎉",
-      });
+      if (user) {
+        await addPoints(user.id, POINT_RULES.PARTY_JOIN, `${party.name} 파티 참가`, "🎉", "party");
+        addLocalPoints(POINT_RULES.PARTY_JOIN);
+      }
       showToast(`파티에 참가했어요! +${POINT_RULES.PARTY_JOIN}P 적립`, "🎉");
       await reloadMembers();
     }

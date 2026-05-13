@@ -1,6 +1,7 @@
 import { useLocation } from "react-router-dom";
 import { useActivityType } from "../../context/ActivityTypeContext";
 import { useCharacter } from "../../context/CharacterContext";
+import { useUser } from "../../context/UserContext";
 
 const pageConfig: Record<string, { title: string; icon: string }> = {
   "/": { title: "홈", icon: "🏠" },
@@ -16,6 +17,7 @@ export default function Header() {
   const { pathname } = useLocation();
   const { selectedActivityType } = useActivityType();
   const { selectedCharacter } = useCharacter();
+  const { userProfile } = useUser();
   if (pathname === "/workout") return null;
   const { title } = pageConfig[pathname] ?? {
     title: "워크아웃",
@@ -37,7 +39,7 @@ export default function Header() {
       </div>
 
       <div className="flex items-center gap-2.5">
-        <span className="text-sm font-bold text-white/90">0 P</span>
+        <span className="text-sm font-bold text-white/90">{(userProfile?.points ?? 0).toLocaleString()} P</span>
         <div
           className="w-9 h-9 rounded-full flex items-center justify-center border-2 border-white/40 shadow-sm"
           style={{ background: "rgba(255,255,255,0.2)" }}

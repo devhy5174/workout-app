@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { POINT_RULES, POINT_EXCHANGE } from "../data/points";
 import { useUser } from "../context/UserContext";
+import { usePoints } from "../hooks/usePoints";
 
 
 const friends = [
@@ -36,15 +37,8 @@ const brandItems = [
 
 type Tab = "history" | "gift" | "exchange";
 
-const WORKOUT_ICONS: Record<string, string> = {
-  walker: "🚶",
-  power_walker: "🚶‍♂️",
-  runner: "🏃",
-  hiker: "🏔️",
-};
-
 function formatPointDate(dateStr: string) {
-  const d = new Date(dateStr + "T00:00:00");
+  const d = new Date(dateStr);
   const days = ["일", "월", "화", "수", "목", "금", "토"];
   return `${d.getMonth() + 1}/${d.getDate()} (${days[d.getDay()]})`;
 }
@@ -54,13 +48,14 @@ export default function Points() {
   const [selectedFriend, setSelectedFriend] = useState<number | null>(null);
   const [giftAmount, setGiftAmount] = useState("");
 
-  const { userProfile, workoutRecords } = useUser();
+  const { user, userProfile } = useUser();
+  const { history: pointHistory, isLoading: historyLoading } = usePoints(user?.id ?? null);
   const myPoints = userProfile?.points ?? 0;
-  const history = workoutRecords.map((r) => ({
-    icon: WORKOUT_ICONS[r.workout_type] ?? "🏃",
-    desc: `${r.distance.toFixed(2)}km 운동 완료`,
-    points: r.points_earned,
-    date: formatPointDate(r.date),
+  const history = pointHistory.map((entry) => ({
+    icon: entry.icon,
+    desc: entry.description,
+    points: entry.points,
+    date: entry.created_at ? formatPointDate(entry.created_at) : "",
   }));
 
   const tabs: { key: Tab; label: string }[] = [
@@ -102,7 +97,12 @@ export default function Points() {
         {/* ── 적립내역 ── */}
         {tab === "history" && (
           <>
-            {history.length === 0 ? (
+            {historyLoading ? (
+              <div className="flex flex-col items-center justify-center py-20 gap-3 text-gray-300">
+                <span className="text-4xl animate-pulse">💰</span>
+                <p className="text-sm font-bold">불러오는 중...</p>
+              </div>
+            ) : history.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-20 gap-3 text-gray-300">
                 <span className="text-5xl">🏃</span>
                 <p className="font-bold text-sm">아직 적립 내역이 없어요</p>
