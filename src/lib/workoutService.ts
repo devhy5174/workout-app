@@ -116,6 +116,88 @@ export async function saveUserGoal(
   return { error: error?.message ?? null };
 }
 
+export type DayStats = {
+  steps: number;
+  distance: number;
+  calories: number;
+};
+
+export async function fetchTodayStats(userId: string): Promise<DayStats> {
+  const today = new Date().toISOString().split("T")[0];
+  const { data, error } = await supabase
+    .from("workout_history")
+    .select("steps, distance, calories")
+    .eq("user_id", userId)
+    .eq("date", today);
+
+  if (error || !data) return { steps: 0, distance: 0, calories: 0 };
+
+  return data.reduce(
+    (acc, r) => ({
+      steps: acc.steps + (r.steps ?? 0),
+      distance: acc.distance + (r.distance ?? 0),
+      calories: acc.calories + (r.calories ?? 0),
+    }),
+    { steps: 0, distance: 0, calories: 0 },
+  );
+}
+
+export async function fetchWeeklyStats(userId: string): Promise<number[]> {
+  const now = new Date();
+  const dayOfWeek = now.getDay(); // 0=일 1=월 ... 6=토
+  // 월요일을 0번 인덱스로 맞추기
+  const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+  const monday = new Date(now);
+  monday.setDate(now.getDate() + mondayOffset);
+  monday.setHours(0, 0, 0, 0);
+
+  const sunday = new Date(monday);
+  sunday.setDate(monday.getDate() + 6);
+
+  const startDate = monday.toISOString().split("T")[0];
+  const endDate = sunday.toISOString().split("T")[0];
+
+  const { data, error } = await supabase
+    .from("workout_history")
+    .select("date, steps")
+    .eq("user_id", userId)
+    .gte("date", startDate)
+    .lte("date", endDate);
+
+  if (error || !data) return Array(7).fill(0);
+
+  // 날짜별 steps 합산
+  const stepsByDate: Record<string, number> = {};
+  for (const r of data) {
+    stepsByDate[r.date] = (stepsByDate[r.date] ?? 0) + (r.steps ?? 0);
+  }
+
+  // 월(0)~일(6) 순서로 배열 반환
+  return Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(monday);
+    d.setDate(monday.getDate() + i);
+    const key = d.toISOString().split("T")[0];
+    return stepsByDate[key] ?? 0;
+  });
+}
+
+export async function fetchRangeStats(
+  userId: string,
+  startDate: string,
+  endDate: string,
+): Promise<number> {
+  const { data, error } = await supabase
+    .from("workout_history")
+    .select("steps")
+    .eq("user_id", userId)
+    .gte("date", startDate)
+    .lte("date", endDate);
+
+  if (error || !data) return 0;
+
+  return data.reduce((acc, r) => acc + (r.steps ?? 0), 0);
+}
+
 export async function deleteActiveGoal(
   userId: string,
 ): Promise<{ error: string | null }> {

@@ -5,6 +5,7 @@ import { useCommunity } from "../hooks/useCommunity";
 import { getCardById, type SensoryCard } from "../lib/communityService";
 import { getAvatarCharacterById } from "../data/avatarCharacters";
 import { getCharacterById } from "../data/activityTypes";
+import { useUser } from "../context/UserContext";
 
 // ─── 타입 ───────────────────────────────────────────────── 
 
@@ -140,19 +141,21 @@ function PostCard({
                   삭제
                 </button>
               )}
-              <button
-                onClick={onCheer}
-                aria-label={post.cheered ? "응원 취소" : "응원 보내기"}
-                className="flex items-center gap-1 rounded-full px-3 py-1.5 text-[11px] font-medium transition-all duration-150 active:scale-95 border"
-                style={
-                  post.cheered
-                    ? { background: "var(--color-primary-light)", color: "var(--color-primary)", borderColor: "var(--color-primary)" }
-                    : { background: "#f8f8f7", color: "#a8a29e", borderColor: "#e7e5e4" }
-                }
-              >
-                <span>🌿</span>
-                <span>{post.cheered ? "응원 완료" : "응원하기"}</span>
-              </button>
+              {!post.isMine && (
+                <button
+                  onClick={onCheer}
+                  aria-label={post.cheered ? "응원 취소" : "응원 보내기"}
+                  className="flex items-center gap-1 rounded-full px-3 py-1.5 text-[11px] font-medium transition-all duration-150 active:scale-95 border"
+                  style={
+                    post.cheered
+                      ? { background: "var(--color-primary-light)", color: "var(--color-primary)", borderColor: "var(--color-primary)" }
+                      : { background: "#f8f8f7", color: "#a8a29e", borderColor: "#e7e5e4" }
+                  }
+                >
+                  <span>🌿</span>
+                  <span>{post.cheered ? "응원 완료" : "응원하기"}</span>
+                </button>
+              )}
             </div>
           </div>
 
@@ -179,6 +182,7 @@ export default function CommunityPage() {
   const [writeModalOpen, setWriteModalOpen] = useState(false);
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
 
+  const { user } = useUser();
   const {
     posts,
     myPosts,
@@ -190,10 +194,8 @@ export default function CommunityPage() {
     totalCheersReceived,
   } = useCommunity();
 
-
-
   // CommunityPost → Post (뷰 모델 변환)
-  const toPost = (p: ReturnType<typeof useCommunity>["posts"][number], isMine?: boolean): Post => ({
+  const toPost = (p: ReturnType<typeof useCommunity>["posts"][number]): Post => ({
     id: p.id,
     card: getCardById(p.card_id),
     tags: p.tags,
@@ -203,12 +205,12 @@ export default function CommunityPage() {
     steps: formatSteps(p.steps),
     cheers: p.cheers,
     cheered: cheeredIds.has(p.id),
-    isMine,
+    isMine: p.user_id === user?.id,
     character_id: p.character_id,
   });
 
   const enrichedPosts = posts.map((p) => toPost(p));
-  const enrichedMyPosts = myPosts.map((p) => toPost(p, true));
+  const enrichedMyPosts = myPosts.map((p) => toPost(p));
 
   const filteredPosts =
     filterTags.length === 0

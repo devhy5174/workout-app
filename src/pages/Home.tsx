@@ -189,11 +189,11 @@ export default function Home() {
           )}
         </div>
           
-          <span className="absolute top-3 right-5 text-xl animate-bounce">
+          <span className="absolute top-5 right-5 text-xl animate-bounce">
             ✨
           </span>
-          <span className="absolute bottom-8 left-1 text-lg animate-bounce delay-150">
-            ⚡
+          <span className="absolute bottom-16 left-1 text-lg animate-bounce delay-150">
+            ✨
           </span>
         </div>
       </div>

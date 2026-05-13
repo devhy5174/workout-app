@@ -56,7 +56,21 @@ async function fetchProfileMap(userIds: string[]): Promise<ProfileMap> {
   return map;
 }
 
-function mergePost(row: any, profileMap: ProfileMap): CommunityPost {
+// community_cheers 테이블에서 post별 응원 수 집계
+async function fetchCheersMap(postIds: string[]): Promise<Record<string, number>> {
+  if (postIds.length === 0) return {};
+  const { data } = await supabase
+    .from("community_cheers")
+    .select("post_id")
+    .in("post_id", postIds);
+  const map: Record<string, number> = {};
+  for (const row of data ?? []) {
+    map[row.post_id] = (map[row.post_id] ?? 0) + 1;
+  }
+  return map;
+}
+
+function mergePost(row: any, profileMap: ProfileMap, cheersMap: Record<string, number>): CommunityPost {
   const profile = profileMap.get(row.user_id);
   return {
     id: row.id,
@@ -65,7 +79,7 @@ function mergePost(row: any, profileMap: ProfileMap): CommunityPost {
     card_id: row.card_id ?? "night",
     tags: Array.isArray(row.tags) ? row.tags : [],
     steps: row.steps ?? 0,
-    cheers: row.cheers ?? 0,
+    cheers: cheersMap[row.id] ?? 0,
     created_at: row.created_at,
     nickname: profile?.nickname ?? "익명",
     character_id: profile?.character_id ?? null,
@@ -73,16 +87,32 @@ function mergePost(row: any, profileMap: ProfileMap): CommunityPost {
   };
 }
 
-export async function getPosts(): Promise<CommunityPost[]> {
+export async function getPosts(
+  userId?: string,
+): Promise<{ posts: CommunityPost[]; cheeredIds: Set<string> }> {
   const { data, error } = await supabase
     .from("community_posts")
     .select("*")
     .order("created_at", { ascending: false })
     .limit(50);
-  if (error || !data || data.length === 0) return [];
+
+  if (error || !data || data.length === 0) return { posts: [], cheeredIds: new Set() };
+
+  const postIds = data.map((r: any) => r.id);
   const userIds = [...new Set(data.map((r: any) => r.user_id))];
-  const profileMap = await fetchProfileMap(userIds);
-  return data.map((r: any) => mergePost(r, profileMap));
+
+  const [profileMap, cheersMap, cheeredResult] = await Promise.all([
+    fetchProfileMap(userIds),
+    fetchCheersMap(postIds),
+    userId
+      ? supabase.from("community_cheers").select("post_id").eq("user_id", userId)
+      : Promise.resolve({ data: [] as { post_id: string }[], error: null }),
+  ]);
+
+  return {
+    posts: data.map((r: any) => mergePost(r, profileMap, cheersMap)),
+    cheeredIds: new Set((cheeredResult.data ?? []).map((r) => r.post_id)),
+  };
 }
 
 export async function getMyPosts(userId: string): Promise<CommunityPost[]> {
@@ -92,8 +122,13 @@ export async function getMyPosts(userId: string): Promise<CommunityPost[]> {
     .eq("user_id", userId)
     .order("created_at", { ascending: false });
   if (error || !data || data.length === 0) return [];
-  const profileMap = await fetchProfileMap([userId]);
-  return data.map((r: any) => mergePost(r, profileMap));
+
+  const postIds = data.map((r: any) => r.id);
+  const [profileMap, cheersMap] = await Promise.all([
+    fetchProfileMap([userId]),
+    fetchCheersMap(postIds),
+  ]);
+  return data.map((r: any) => mergePost(r, profileMap, cheersMap));
 }
 
 export async function createPost(
@@ -124,29 +159,26 @@ export async function deletePost(postId: string): Promise<{ error: string | null
   return { error: error?.message ?? null };
 }
 
-export async function addCheer(postId: string): Promise<{ error: string | null }> {
-  const { data } = await supabase
-    .from("community_posts")
-    .select("cheers")
-    .eq("id", postId)
-    .single();
+export async function addCheer(
+  postId: string,
+  userId: string,
+  postAuthorId: string,
+): Promise<{ error: string | null }> {
+  if (postAuthorId === userId) return { error: null };
   const { error } = await supabase
-    .from("community_posts")
-    .update({ cheers: ((data as any)?.cheers ?? 0) + 1 })
-    .eq("id", postId);
+    .from("community_cheers")
+    .insert({ post_id: postId, user_id: userId });
   return { error: error?.message ?? null };
 }
 
-export async function removeCheer(postId: string): Promise<{ error: string | null }> {
-  const { data } = await supabase
-    .from("community_posts")
-    .select("cheers")
-    .eq("id", postId)
-    .single();
-  const current = (data as any)?.cheers ?? 0;
+export async function removeCheer(
+  postId: string,
+  userId: string,
+): Promise<{ error: string | null }> {
   const { error } = await supabase
-    .from("community_posts")
-    .update({ cheers: Math.max(0, current - 1) })
-    .eq("id", postId);
+    .from("community_cheers")
+    .delete()
+    .eq("post_id", postId)
+    .eq("user_id", userId);
   return { error: error?.message ?? null };
 }
