@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { FaPlay, FaPause, FaStop } from "react-icons/fa";
+import { FaPlay, FaPause, FaStop, FaUsers } from "react-icons/fa";
 import { useActivityType } from "../context/ActivityTypeContext";
 import { useUser } from "../context/UserContext";
 import { getAvatarCharacterById } from "../data/avatarCharacters";
@@ -111,6 +111,8 @@ export default function Workout() {
   const [showModal, setShowModal] = useState(false);
   const [earnedPoints, setEarnedPoints] = useState(0);
   const [pendingId, setPendingId] = useState<number>(() => selectedId ?? 1);
+
+  const [showBuddies, setShowBuddies] = useState(true);
 
   // 링 주변 공전할 친구 2명
   const buddies = useMemo(() => {
@@ -354,7 +356,16 @@ console.log("🔥 saveWorkout 호출됨");
             </span>
           )}
         </div>
-        <div className="w-10" />
+        <button
+          onClick={() => setShowBuddies((v) => !v)}
+          className="w-10 h-10 rounded-full bg-white shadow-sm flex items-center justify-center active:scale-90 transition"
+          aria-label={showBuddies ? "친구 숨기기" : "친구 보이기"}
+        >
+          <FaUsers
+            className="text-base"
+            style={{ color: showBuddies ? "var(--color-primary)" : "#9ca3af" }}
+          />
+        </button>
       </div>
 
       {/* 목표 뱃지 */}
@@ -457,7 +468,7 @@ console.log("🔥 saveWorkout 호출됨");
               to   { transform: rotate(-360deg); }
             }
           `}</style>
-          <div
+          {showBuddies && <div
             className="absolute pointer-events-none"
             style={{ left: CX, top: CY }}
           >
@@ -503,7 +514,7 @@ console.log("🔥 saveWorkout 호출됨");
                 </div>
               </div>
             ))}
-          </div>
+          </div>}
 
           <div className="absolute inset-0 flex flex-col items-center justify-center select-none">
             {state === "idle" && (
