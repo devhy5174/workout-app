@@ -14,7 +14,7 @@ import type {
 } from "../lib/partyService";
 
 type TimeSlot = "새벽" | "아침" | "저녁" | "주말";
-type DistanceOption = "3km" | "5km" | "10km";
+type StepsOption = 5000 | 10000 | 15000;
 type MaxMembersOption = 5 | 10 | 20;
 
 const timeSlotEmoji: Record<TimeSlot, string> = {
@@ -112,7 +112,9 @@ function PartyCard({
             {party.description}
             {party.active_count > 0 && (
               <span className="ml-2 inline-flex items-center gap-0.5 text-[10px] font-bold text-emerald-500 bg-emerald-50 px-1.5 py-0.5 rounded-full whitespace-nowrap align-middle">
-                🟢 {party.active_count}명 운동 중
+                 <span className="text-[5px]">
+              🟢  
+            </span>{party.active_count}명 운동 중
               </span>
             )}
           </p>
@@ -169,11 +171,11 @@ function PartyCard({
           </div>
         </button>
         <div className="bg-gray-50 rounded-2xl px-3 py-2 flex items-center gap-2">
-          <span className="text-base">📍</span>
+          <span className="text-base">👣</span>
           <div>
-            <p className="text-[10px] text-gray-400">목표 거리</p>
+            <p className="text-[10px] text-gray-400">목표 걸음수</p>
             <p className="text-xs font-bold text-gray-700">
-              {party.target_distance}km
+              {(party.target_steps ?? 10000).toLocaleString()}보/인
             </p>
           </div>
         </div>
@@ -199,21 +201,45 @@ function PartyCard({
         </div>
       </div>
 
-      <div className="bg-orange-50 rounded-2xl px-4 py-3 flex flex-col gap-1">
-        <p className="text-xs font-extrabold text-orange-400">
-          🔥 오늘 파티 현황
-        </p>
+      <div className="bg-orange-50 rounded-xl px-3 py-1.5 flex flex-col gap-1">
+        <p className="text-[10px] font-extrabold text-orange-400">🔥 오늘 파티 현황</p>
         {todayStats === null ? (
-          <p className="text-xs text-gray-300 animate-pulse">불러오는 중...</p>
-        ) : todayStats.totalSteps === 0 ? (
-          <p className="text-xs text-gray-400">아직 오늘 운동 기록이 없어요</p>
+          <p className="text-[10px] text-gray-300 animate-pulse">불러오는 중...</p>
         ) : (
-          <p className="text-xs font-bold text-gray-700">
-            총 걸음수{" "}
-            <span className="text-orange-500">
-              {todayStats.totalSteps.toLocaleString()} 보
-            </span>
-          </p>
+          <>
+            <div className="flex items-center justify-between">
+              <p className="text-[10px] font-bold text-gray-700">
+                <span className="text-orange-500">
+                  {todayStats.totalSteps.toLocaleString()}
+                </span>
+                {" / "}
+                {((party.target_steps ?? 10000) * party.max_members).toLocaleString()}보
+              </p>
+              <p className="text-[10px] font-bold text-orange-400">
+                {Math.min(
+                  Math.round(
+                    (todayStats.totalSteps /
+                      ((party.target_steps ?? 10000) * party.max_members)) *
+                      100,
+                  ),
+                  100,
+                )}%
+              </p>
+            </div>
+            <div className="w-full h-1.5 bg-orange-100 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-gradient-to-r from-orange-400 to-primary rounded-full transition-all duration-700"
+                style={{
+                  width: `${Math.min(
+                    (todayStats.totalSteps /
+                      ((party.target_steps ?? 10000) * party.max_members)) *
+                      100,
+                    100,
+                  )}%`,
+                }}
+              />
+            </div>
+          </>
         )}
       </div>
 
@@ -545,7 +571,7 @@ function CreatePartyModal({
   onCreate: (input: CreatePartyInput) => Promise<void>;
 }) {
   const [name, setName] = useState("");
-  const [distance, setDistance] = useState<DistanceOption>("5km");
+  const [steps, setSteps] = useState<StepsOption>(10000);
   const [timeSlot, setTimeSlot] = useState<TimeSlot>("아침");
   const [maxMembers, setMaxMembers] = useState<MaxMembersOption>(10);
   const [selectedTagIds, setSelectedTagIds] = useState<number[]>([]);
@@ -568,9 +594,9 @@ function CreatePartyModal({
 
     await onCreate({
       name: name.trim(),
-      description: `${timeSlot} ${distance} 함께 달려요!`,
+      description: `${timeSlot} ${steps.toLocaleString()}보 함께 달려요!`,
       max_members: maxMembers,
-      target_distance: distance,
+      target_steps: steps,
       exercise_time: timeSlot,
       tags,
     });
@@ -578,7 +604,7 @@ function CreatePartyModal({
     setSubmitting(false);
   };
 
-  const distanceOptions: DistanceOption[] = ["3km", "5km", "10km"];
+  const stepsOptions: StepsOption[] = [5000, 10000, 15000];
   const timeSlotOptions: TimeSlot[] = ["새벽", "아침", "저녁", "주말"];
   const maxMembersOptions: MaxMembersOption[] = [5, 10, 20];
 
@@ -615,22 +641,25 @@ function CreatePartyModal({
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <label className="text-xs font-bold text-gray-500">목표 거리</label>
+          <label className="text-xs font-bold text-gray-500">목표 걸음수</label>
           <div className="flex gap-2">
-            {distanceOptions.map((d) => (
+            {stepsOptions.map((s) => (
               <button
-                key={d}
-                onClick={() => setDistance(d)}
+                key={s}
+                onClick={() => setSteps(s)}
                 className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition ${
-                  distance === d
+                  steps === s
                     ? "bg-primary text-white"
                     : "bg-gray-100 text-gray-500"
                 }`}
               >
-                {d}
+                {s.toLocaleString()}보
               </button>
             ))}
           </div>
+          <p className="text-[10px] text-gray-400">
+            총 목표 {(steps * maxMembers).toLocaleString()}보 ({maxMembers}명 × {steps.toLocaleString()}보)
+          </p>
         </div>
 
         <div className="flex flex-col gap-1.5">

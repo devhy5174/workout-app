@@ -69,6 +69,13 @@ const GOAL_TYPE_LABEL = {
   calories: "칼로리",
 };
 
+const ACTIVITY_LABEL: Record<string, string> = {
+  walker: "워킹 중",
+  power_walker: "파워워킹 중",
+  runner: "러닝 중",
+  hiker: "등산 중",
+};
+
 const SVG_SIZE = 280;
 const CX = SVG_SIZE / 2;
 const CY = SVG_SIZE / 2;
@@ -105,11 +112,12 @@ export default function Workout() {
   const [earnedPoints, setEarnedPoints] = useState(0);
   const [pendingId, setPendingId] = useState<number>(() => selectedId ?? 1);
 
-  // 링 주변에 떠다닐 랜덤 친구 2명
+  // 링 주변 공전할 친구 2명
   const buddies = useMemo(() => {
     const shuffled = [...FAKE_ACTIVE_USERS].sort(() => Math.random() - 0.5);
     return shuffled.slice(0, 2);
   }, []);
+
 
   // 화면 이탈 후 복귀 시 상태 유지
 useEffect(() => {
@@ -375,9 +383,10 @@ console.log("🔥 saveWorkout 호출됨");
       >
         {state === "idle" && "시작 버튼을 눌러보세요!"}
         {state === "running" && "🔥 운동 중이에요!"}
-        {state === "paused" && <span className="flex items-center gap-1"><FaPause className="inline" /> 일시정지됨</span>}
+        {state === "paused" && <span className="inline-flex items-center justify-center gap-1"><FaPause /> 일시정지됨</span>}
         {state === "done" && "🎉 목표 달성! 대단해요!"}
       </p>
+
 
       {/* 링 + 캐릭터 */}
       <div className="flex-1 flex flex-col items-center justify-center gap-6 px-6">
@@ -437,30 +446,63 @@ console.log("🔥 saveWorkout 호출됨");
             </div>
           )}
 
-          {/* 친구 아바타 - 링 주변에 둥둥 */}
+          {/* 친구 아바타 - 캐릭터 중심 공전 */}
+          <style>{`
+            @keyframes orbit-rotate {
+              from { transform: rotate(0deg); }
+              to   { transform: rotate(360deg); }
+            }
+            @keyframes counter-rotate {
+              from { transform: rotate(0deg); }
+              to   { transform: rotate(-360deg); }
+            }
+          `}</style>
           <div
-            className="absolute z-10 buddy-float"
-            style={{ left: 200, top: 44 }}
-            title={`${buddies[0].nickname}님 ${buddies[0].activity}`}
+            className="absolute pointer-events-none"
+            style={{ left: CX, top: CY }}
           >
-            <div className="w-9 h-9 rounded-full bg-white shadow-md border-2 border-white overflow-hidden">
-              <img src={buddies[0].character_image} alt={buddies[0].nickname} className="w-full h-full object-contain" />
-            </div>
-            <p className="text-[9px] font-extrabold text-center text-gray-600 mt-0.5 whitespace-nowrap leading-tight">
-              {buddies[0].nickname}
-            </p>
-          </div>
-          <div
-            className="absolute z-10 buddy-float-delay"
-            style={{ left: 28, top: 188 }}
-            title={`${buddies[1].nickname}님 ${buddies[1].activity}`}
-          >
-            <div className="w-9 h-9 rounded-full bg-white shadow-md border-2 border-white overflow-hidden">
-              <img src={buddies[1].character_image} alt={buddies[1].nickname} className="w-full h-full object-contain" />
-            </div>
-            <p className="text-[9px] font-extrabold text-center text-gray-600 mt-0.5 whitespace-nowrap leading-tight">
-              {buddies[1].nickname}
-            </p>
+            {buddies.map((buddy, i) => (
+              <div
+                key={buddy.nickname}
+                className="absolute z-10"
+                style={{
+                  left: 0,
+                  top: 0,
+                  transformOrigin: "0 0",
+                  animation: "orbit-rotate 20s linear infinite",
+                  animationDelay: i === 0 ? "0s" : "-10s",
+                }}
+                title={`${buddy.nickname}님 ${buddy.activity}`}
+              >
+                <div
+                  className="absolute flex flex-col items-center"
+                  style={{
+                    left: 112,
+                    top: -18,
+                    width: 36,
+                    height: 36,
+                    transformOrigin: "18px 18px",
+                    animation: "counter-rotate 20s linear infinite",
+                    animationDelay: i === 0 ? "0s" : "-10s",
+                  }}
+                >
+                  {/* 말풍선 - 아바타 위에 따라다님 */}
+                  <div
+                    className="absolute bg-white shadow-sm rounded-full px-2 py-0.5 flex items-center gap-1 whitespace-nowrap"
+                    style={{ bottom: "calc(100% + 4px)", left: "50%", transform: "translateX(-50%)" }}
+                  >
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse flex-shrink-0" />
+                    <span className="text-[8px] font-bold text-gray-600">
+                      {buddy.nickname} {ACTIVITY_LABEL[buddy.activity] ?? "운동 중"}
+                    </span>
+                  </div>
+                  {/* 아바타 */}
+                  <div className="w-9 h-9 rounded-full bg-white shadow-md border-2 border-white overflow-hidden">
+                    <img src={buddy.character_image} alt={buddy.nickname} className="w-full h-full object-contain" />
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
 
           <div className="absolute inset-0 flex flex-col items-center justify-center select-none">

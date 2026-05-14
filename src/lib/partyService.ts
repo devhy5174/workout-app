@@ -12,7 +12,7 @@ export type Party = {
   created_by: string;
   leader_nickname: string;
   max_members: number;
-  target_distance: string;
+  target_steps: number;
   exercise_time: TimeSlot;
   tags: string[];
   created_at: string;
@@ -35,7 +35,7 @@ export type CreatePartyInput = {
   name: string;
   description: string;
   max_members: number;
-  target_distance: string;
+  target_steps: number;
   exercise_time: TimeSlot;
   tags: string[];
 };
@@ -168,7 +168,7 @@ export async function createParty(
       name: input.name,
       description: input.description,
       max_members: input.max_members,
-      target_distance: parseFloat(input.target_distance),
+      target_steps: input.target_steps,
       exercise_time: input.exercise_time,
       tags: input.tags,
       created_by: userId,
@@ -294,6 +294,65 @@ export async function getPartyTodayStats(
     (topMemberRow?.public_profiles as any)?.nickname ?? "알 수 없음";
 
   return { totalSteps, topMember: { nickname: topNickname, steps: topSteps } };
+}
+
+export type AchievedParty = {
+  id: string;
+  name: string;
+  emoji: string;
+};
+
+export async function getAchievedPartiesForUser(userId: string): Promise<AchievedParty[]> {
+  const { data: memberRows } = await supabase
+    .from("party_members")
+    .select("party_id")
+    .eq("user_id", userId);
+
+  if (!memberRows || memberRows.length === 0) return [];
+
+  const partyIds = memberRows.map((r: any) => r.party_id);
+  const { data: parties } = await supabase
+    .from("parties")
+    .select("id, name, target_steps, max_members")
+    .in("id", partyIds);
+
+  if (!parties || parties.length === 0) return [];
+
+  // 달성 후 24시간 동안만 배너 표시
+  const since24h = new Date(Date.now() - 24 * 60 * 60 * 1000);
+
+  const achieved: AchievedParty[] = [];
+
+  for (const party of parties) {
+    const targetTotal = (party.target_steps ?? 0) * party.max_members;
+    if (targetTotal <= 0) continue;
+
+    const { data: members } = await supabase
+      .from("party_members")
+      .select("user_id")
+      .eq("party_id", party.id);
+
+    if (!members || members.length === 0) continue;
+
+    const memberUserIds = members.map((m: any) => m.user_id);
+    const { data: workouts } = await supabase
+      .from("workout_history")
+      .select("steps")
+      .in("user_id", memberUserIds)
+      .gte("created_at", since24h.toISOString());
+
+    const totalSteps = (workouts ?? []).reduce((sum: number, w: any) => sum + w.steps, 0);
+
+    if (totalSteps >= targetTotal) {
+      achieved.push({
+        id: party.id,
+        name: party.name,
+        emoji: PARTY_EMOJIS[party.name.length % PARTY_EMOJIS.length],
+      });
+    }
+  }
+
+  return achieved;
 }
 
 export async function getPartyMembers(partyId: string): Promise<PartyMember[]> {

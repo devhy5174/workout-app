@@ -9,6 +9,7 @@ import { getRandomMessage } from "../data/characterMessages";
 import { FAKE_ACTIVE_USERS } from "../data/fakeActiveUsers";
 import { getActiveSessions } from "../lib/sessionService";
 import { getAvatarCharacterById } from "../data/avatarCharacters";
+import { getAchievedPartiesForUser, type AchievedParty } from "../lib/partyService";
 
 type DisplayUser = {
   nickname: string;
@@ -109,7 +110,7 @@ function getGreeting() {
 export default function Home() {
   const { selectedActivityType } = useActivityType();
   const { selectedCharacter } = useCharacter();
-  const { userGoal, workoutRecords, userProfile } = useUser();
+  const { user, userGoal, workoutRecords, userProfile } = useUser();
 
   const activityTypeName = selectedActivityType?.name ?? null;
 
@@ -126,6 +127,21 @@ export default function Home() {
   const displayedText = useTypingEffect(bubbleMsg);
 
   const [activeUsers, setActiveUsers] = useState<DisplayUser[]>([]);
+  const [achievedParties, setAchievedParties] = useState<AchievedParty[]>([]);
+  const [currentBannerIndex, setCurrentBannerIndex] = useState(0);
+
+  useEffect(() => {
+    if (!user?.id) return;
+    getAchievedPartiesForUser(user.id).then(setAchievedParties);
+  }, [user?.id]);
+
+  useEffect(() => {
+    if (achievedParties.length === 0) return;
+    const id = setInterval(() => {
+      setCurrentBannerIndex((prev) => (prev + 1) % achievedParties.length);
+    }, 4500);
+    return () => clearInterval(id);
+  }, [achievedParties.length]);
 
   useEffect(() => {
     async function buildActiveUsers() {
@@ -186,6 +202,28 @@ export default function Home() {
 
   return (
     <div className="flex flex-col h-full overflow-y-auto pb-20 bg-bg">
+      {/* 파티 목표 달성 배너 */}
+      {achievedParties.length > 0 && (
+        <div className="mx-4 mt-4 h-[52px] relative overflow-hidden rounded-2xl shadow-sm">
+          <style>{`
+            @keyframes slideUpIn {
+              from { transform: translateY(100%); }
+              to   { transform: translateY(0); }
+            }
+          `}</style>
+          <div
+            key={currentBannerIndex}
+            className="absolute inset-0 flex items-center bg-gradient-to-r from-orange-400 to-primary px-4"
+            style={{ animation: "slideUpIn 0.5s cubic-bezier(0.22, 1, 0.36, 1) forwards" }}
+          >
+            <p className="text-white text-sm font-bold">
+              🎉 {achievedParties[currentBannerIndex].emoji}{" "}
+              {achievedParties[currentBannerIndex].name} 파티 목표 달성!
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* 상단 Streak */}
       <div className="flex justify-between items-center px-5 pt-4 pb-2">
         <div className="flex items-center gap-2 bg-primary-light rounded-full px-4 py-1.5">

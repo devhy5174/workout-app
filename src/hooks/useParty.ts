@@ -8,13 +8,16 @@ import {
   kickMember,
   deleteParty,
   getPartyMembers,
+  getAchievedPartiesForUser,
   type Party,
   type CreatePartyInput,
+  type AchievedParty,
 } from "../lib/partyService";
 
 export function useParty(userId: string | null) {
   const [parties, setParties] = useState<Party[]>([]);
   const [myParties, setMyParties] = useState<Party[]>([]);
+  const [achievedParties, setAchievedParties] = useState<AchievedParty[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -22,12 +25,14 @@ export function useParty(userId: string | null) {
     setIsLoading(true);
     setError(null);
     try {
-      const [all, mine] = await Promise.all([
+      const [all, mine, achieved] = await Promise.all([
         getParties(),
         userId ? getMyParties(userId) : Promise.resolve([]),
+        userId ? getAchievedPartiesForUser(userId) : Promise.resolve([]),
       ]);
       setParties(all);
       setMyParties(mine);
+      setAchievedParties(achieved);
     } catch {
       setError("파티를 불러오는데 실패했어요");
     } finally {
@@ -88,6 +93,7 @@ export function useParty(userId: string | null) {
   return {
     parties,
     myParties,
+    achievedParties,
     isLoading,
     error,
     isJoined,
