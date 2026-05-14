@@ -77,9 +77,11 @@ function PartyCard({
 }) {
   const slotFull = party.member_count >= party.max_members;
   const [todayStats, setTodayStats] = useState<PartyTodayStats | null>(null);
+  const [memberPreviews, setMemberPreviews] = useState<PartyMember[]>([]);
 
   useEffect(() => {
     getPartyTodayStats(party.id).then(setTodayStats);
+    getPartyMembers(party.id).then((data) => setMemberPreviews(data.slice(0, 3)));
   }, [party.id]);
 
   return (
@@ -133,7 +135,30 @@ function PartyCard({
           onClick={() => onMembers(party)}
           className="bg-gray-50 rounded-2xl px-3 py-2 flex items-center gap-2 text-left active:bg-gray-100 transition"
         >
-          <span className="text-base">👥</span>
+          <div className="flex items-center">
+            {memberPreviews.length > 0 ? (
+              memberPreviews.map((m, i) => (
+                <span
+                  key={m.user_id}
+                  className="w-7 h-7 rounded-full bg-white border-2 border-gray-50 shadow-sm flex items-center justify-center overflow-hidden flex-shrink-0"
+                  style={{ marginLeft: i > 0 ? "-8px" : "0", zIndex: 10 - i }}
+                >
+                  {m.character_image ? (
+                    <img
+                      src={m.character_image}
+                      alt=""
+                      className="w-8 h-8 object-contain"
+                      draggable={false}
+                    />
+                  ) : (
+                    <span className="text-sm">{m.character_emoji}</span>
+                  )}
+                </span>
+              ))
+            ) : (
+              <span className="text-base">👥</span>
+            )}
+          </div>
           <div>
             <p className="text-[10px] text-gray-400">멤버</p>
             <p className="text-xs font-bold text-gray-700">
