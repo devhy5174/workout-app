@@ -340,9 +340,9 @@ export default function PartyDetail() {
             <div className="bg-gray-50 rounded-2xl px-3 py-2 flex items-center gap-2">
               <span className="text-base">📍</span>
               <div>
-                <p className="text-[10px] text-gray-400">목표 거리</p>
+                <p className="text-[10px] text-gray-400">목표 걸음수</p>
                 <p className="text-xs font-bold text-gray-700">
-                  {party.target_distance}km
+                  {party.target_steps}보
                 </p>
               </div>
             </div>
