@@ -38,26 +38,31 @@ export async function endSession(userId: string) {
 }
 
 export async function getActiveSessions(): Promise<ActiveSession[]> {
-  const { data, error } = await supabase
+  const { data: sessions, error } = await supabase
     .from("active_sessions")
-    .select(`
-      user_id,
-      exercise_type,
-      started_at,
-      last_seen,
-      public_profiles!inner(nickname, character_id)
-    `)
+    .select("user_id, exercise_type, started_at, last_seen")
     .eq("is_active", true)
     .order("last_seen", { ascending: false });
 
-  if (error || !data) return [];
+  if (error || !sessions || sessions.length === 0) return [];
 
-  return (data as any[]).map((row) => ({
-    user_id: row.user_id,
-    exercise_type: row.exercise_type,
-    started_at: row.started_at,
-    last_seen: row.last_seen,
-    nickname: row.public_profiles?.nickname ?? "익명",
-    character_id: row.public_profiles?.character_id ?? null,
+  const userIds = sessions.map((s) => s.user_id);
+
+  const { data: profiles } = await supabase
+    .from("public_profiles")
+    .select("id, nickname, character_id")
+    .in("id", userIds);
+
+  const profileMap = new Map(
+    (profiles ?? []).map((p) => [p.id, p])
+  );
+
+  return sessions.map((s) => ({
+    user_id: s.user_id,
+    exercise_type: s.exercise_type,
+    started_at: s.started_at,
+    last_seen: s.last_seen,
+    nickname: profileMap.get(s.user_id)?.nickname ?? "익명",
+    character_id: profileMap.get(s.user_id)?.character_id ?? null,
   }));
 }

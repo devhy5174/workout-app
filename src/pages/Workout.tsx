@@ -375,7 +375,7 @@ console.log("🔥 saveWorkout 호출됨");
       >
         {state === "idle" && "시작 버튼을 눌러보세요!"}
         {state === "running" && "🔥 운동 중이에요!"}
-        {state === "paused" && "⏸ 일시정지됨"}
+        {state === "paused" && <span className="flex items-center gap-1"><FaPause className="inline" /> 일시정지됨</span>}
         {state === "done" && "🎉 목표 달성! 대단해요!"}
       </p>
 

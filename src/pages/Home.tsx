@@ -8,9 +8,25 @@ import { calculateStreak, getThisWeekWorkouts } from "../utils/streak";
 import { getRandomMessage } from "../data/characterMessages";
 import { FAKE_ACTIVE_USERS } from "../data/fakeActiveUsers";
 import { getActiveSessions } from "../lib/sessionService";
+import { getAvatarCharacterById } from "../data/avatarCharacters";
+
+type DisplayUser = {
+  nickname: string;
+  character_image: string | null;
+  activity: string;
+  steps: number;
+  isReal: boolean;
+};
 
 const workoutGoal = 7;
 const pointGoal = 500;
+
+const ACTIVITY_LABEL: Record<string, string> = {
+  walker: "산책 중",
+  power_walker: "파워워킹 중",
+  runner: "러닝 중",
+  hiker: "등산 중",
+};
 
 function useTypingEffect(text: string, speed = 40) {
   const [displayed, setDisplayed] = useState("");
@@ -109,34 +125,41 @@ export default function Home() {
   const [bubbleMsg, setBubbleMsg] = useState(() => getRandomMessage(activityType));
   const displayedText = useTypingEffect(bubbleMsg);
 
-  const [marqueeText, setMarqueeText] = useState("");
+  const [activeUsers, setActiveUsers] = useState<DisplayUser[]>([]);
 
   useEffect(() => {
-    async function buildMarquee() {
-      let users: { nickname: string; activity: string; steps: number }[] = [];
+    async function buildActiveUsers() {
+      let realUsers: DisplayUser[] = [];
       try {
         const sessions = await getActiveSessions();
-        if (sessions.length > 0) {
-          users = sessions.map((s) => ({
-            nickname: s.nickname,
-            activity: s.exercise_type,
-            steps: Math.floor(Math.random() * 5000) + 3000,
-          }));
-        }
-      } catch {}
-      if (users.length === 0) {
-        users = FAKE_ACTIVE_USERS.map((u) => ({
-          nickname: u.nickname,
-          activity: u.activity,
-          steps: u.steps,
+        const shuffled = [...sessions].sort(() => Math.random() - 0.5);
+        realUsers = shuffled.map((s) => ({
+          nickname: s.nickname,
+          character_image: getAvatarCharacterById(s.character_id)?.image ?? null,
+          activity: s.exercise_type,
+          steps: Math.floor(Math.random() * 5000) + 3000,
+          isReal: true,
         }));
+      } catch {}
+
+      if (realUsers.length >= 8) {
+        setActiveUsers(realUsers.slice(0, 8));
+      } else {
+        const needed = 8 - realUsers.length;
+        const shuffledFake = [...FAKE_ACTIVE_USERS]
+          .sort(() => Math.random() - 0.5)
+          .slice(0, needed)
+          .map((u) => ({
+            nickname: u.nickname,
+            character_image: u.character_image,
+            activity: u.activity,
+            steps: u.steps,
+            isReal: false,
+          }));
+        setActiveUsers([...realUsers, ...shuffledFake]);
       }
-      const base = users
-        .map((u) => `${u.nickname}님 ${u.activity}  ${u.steps.toLocaleString()}보`)
-        .join("   ·   ");
-      setMarqueeText(`${base}   ·   ${base}`);
     }
-    buildMarquee();
+    buildActiveUsers();
   }, []);
 
   const handleCharacterTap = () => {
@@ -231,9 +254,9 @@ export default function Home() {
       </div>
 
       {/* 실시간 운동 중 전광판 */}
-      {marqueeText && (
+      {activeUsers.length > 0 && (
         <div
-          className="mx-4 mt-3 flex items-center gap-2.5 rounded-2xl overflow-hidden py-3 px-4"
+          className="mx-4 mt-3 flex items-center gap-2.5 rounded-2xl overflow-hidden py-5 px-4"
           style={{ background: "var(--color-primary-light)" }}
         >
           <div className="flex items-center gap-1.5 flex-shrink-0">
@@ -245,17 +268,37 @@ export default function Home() {
               className="text-[11px] font-extrabold whitespace-nowrap"
               style={{ color: "var(--color-primary)" }}
             >
-              지금 운동 중
+              함께 운동 중
             </span>
           </div>
-          <div className="flex-1 overflow-hidden min-w-0">
-            <div className="marquee-track">
-              <span
-                className="text-[11px] font-semibold"
-                style={{ color: "var(--color-primary)" }}
-              >
-                {marqueeText}
-              </span>
+          <div className="flex flex-1 items-center overflow-hidden min-w-0">
+            <div className="marquee-track items-center" style={{ verticalAlign: "middle" }}>
+              {[...activeUsers, ...activeUsers].map((user, i) => (
+                <span key={i} style={{ display: "inline-flex", alignItems: "center", gap: "6px", margin: "0 12px" }}>
+                  <span
+                    style={{ color: "var(--color-primary)", fontSize: 18, lineHeight: 1, opacity: 0.5 }}
+                  >
+                    ·
+                  </span>
+                  <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: 24, height: 24, borderRadius: "50%", overflow: "hidden", background: "white", flexShrink: 0 }}>
+                    {user.character_image ? (
+                      <img
+                        src={user.character_image}
+                        alt=""
+                        style={{ width: "100%", height: "100%", objectFit: "contain" }}
+                      />
+                    ) : (
+                      <span style={{ fontSize: 14 }}>🏃</span>
+                    )}
+                  </span>
+                  <span
+                    className="text-[11px] font-semibold"
+                    style={{ color: "var(--color-primary)", lineHeight: 1 }}
+                  >
+                    {user.nickname}님 {ACTIVITY_LABEL[user.activity] ?? "운동 중"}&nbsp;&nbsp;{user.steps.toLocaleString()}보
+                  </span>
+                </span>
+              ))}
             </div>
           </div>
         </div>
