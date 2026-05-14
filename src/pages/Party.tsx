@@ -108,12 +108,16 @@ function PartyCard({
               </button>
             )}
           </div>
-          <p
-            className="text-xs text-gray-400 mt-0.5 line-clamp-1 cursor-pointer"
-            onClick={() => onNavigate(party.id)}
-          >
-            {party.description}
-          </p>
+          <div className="flex items-center gap-1.5 mt-0.5" onClick={() => onNavigate(party.id)}>
+            <p className="text-xs text-gray-400 line-clamp-1 cursor-pointer flex-1 min-w-0">
+              {party.description}
+            </p>
+            {party.active_count > 0 && (
+              <span className="flex-shrink-0 flex items-center gap-0.5 text-[10px] font-bold text-emerald-500 bg-emerald-50 px-1.5 py-0.5 rounded-full whitespace-nowrap">
+                🟢 {party.active_count}명 운동 중
+              </span>
+            )}
+          </div>
           <div
             className="flex flex-wrap gap-1 mt-2 cursor-pointer"
             onClick={() => onNavigate(party.id)}

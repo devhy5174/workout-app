@@ -18,6 +18,7 @@ export type Party = {
   created_at: string;
   member_count: number;
   is_active: boolean;
+  active_count: number;
 };
 
 export type PartyMember = {
@@ -39,7 +40,7 @@ export type CreatePartyInput = {
   tags: string[];
 };
 
-const PARTY_EMOJIS = ["🏃", "⛰️", "🌙", "🧘", "🚴", "🏊", "⚽", "🎯"];
+const PARTY_EMOJIS = ["👣", "🏃", "⚡", "⛰️", "🌙", "🔥", "🎯"];
 
 async function withLeaderNicknames(rows: any[]): Promise<Party[]> {
   if (rows.length === 0) return [];
@@ -57,6 +58,56 @@ async function withLeaderNicknames(rows: any[]): Promise<Party[]> {
     leader_nickname: leaderMap.get(p.created_by) ?? "알 수 없음",
     member_count: p.party_members?.[0]?.count ?? 0,
   }));
+}
+
+export async function getPartyActiveCount(partyId: string): Promise<number> {
+  const { data: members } = await supabase
+    .from("party_members")
+    .select("user_id")
+    .eq("party_id", partyId);
+
+  if (!members || members.length === 0) return 0;
+
+  const userIds = members.map((m: any) => m.user_id);
+  const { count } = await supabase
+    .from("active_sessions")
+    .select("*", { count: "exact", head: true })
+    .in("user_id", userIds)
+    .eq("is_active", true);
+
+  return count ?? 0;
+}
+
+async function withActiveCounts(parties: Party[]): Promise<Party[]> {
+  if (parties.length === 0) return parties;
+  const partyIds = parties.map((p) => p.id);
+
+  const { data: members } = await supabase
+    .from("party_members")
+    .select("party_id, user_id")
+    .in("party_id", partyIds);
+
+  if (!members || members.length === 0)
+    return parties.map((p) => ({ ...p, active_count: 0 }));
+
+  const allUserIds = [...new Set(members.map((m: any) => m.user_id))];
+
+  const { data: activeSessions } = await supabase
+    .from("active_sessions")
+    .select("user_id")
+    .in("user_id", allUserIds)
+    .eq("is_active", true);
+
+  const activeUserIds = new Set((activeSessions ?? []).map((s: any) => s.user_id));
+
+  const countMap = new Map<string, number>();
+  members.forEach((m: any) => {
+    if (activeUserIds.has(m.user_id)) {
+      countMap.set(m.party_id, (countMap.get(m.party_id) ?? 0) + 1);
+    }
+  });
+
+  return parties.map((p) => ({ ...p, active_count: countMap.get(p.id) ?? 0 }));
 }
 
 async function deletePartyIfEmpty(partyId: string): Promise<void> {
@@ -86,7 +137,8 @@ export async function getParties(): Promise<Party[]> {
     .select("*, party_members(count)")
     .order("created_at", { ascending: false });
   if (error || !data) return [];
-  return withLeaderNicknames(data);
+  const withNicknames = await withLeaderNicknames(data);
+  return withActiveCounts(withNicknames);
 }
 
 export async function getMyParties(userId: string): Promise<Party[]> {
@@ -102,7 +154,8 @@ export async function getMyParties(userId: string): Promise<Party[]> {
     .in("id", partyIds)
     .order("created_at", { ascending: false });
   if (error || !data) return [];
-  return withLeaderNicknames(data);
+  const withNicknames = await withLeaderNicknames(data);
+  return withActiveCounts(withNicknames);
 }
 
 export async function createParty(
@@ -138,7 +191,7 @@ export async function createParty(
 
   const emoji = PARTY_EMOJIS[party.name.length % PARTY_EMOJIS.length];
   return {
-    data: { ...party, emoji, leader_nickname: "나", member_count: 1 },
+    data: { ...party, emoji, leader_nickname: "나", member_count: 1, active_count: 0 },
     error: null,
   };
 }
