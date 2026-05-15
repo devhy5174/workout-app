@@ -1,5 +1,5 @@
 // toISOString()은 UTC 기준이라 UTC+9에서 하루 밀릴 수 있음 — 로컬 날짜 사용
-function localDateStr(date: Date): string {
+export function localDateStr(date: Date): string {
   const y = date.getFullYear();
   const m = String(date.getMonth() + 1).padStart(2, "0");
   const d = String(date.getDate()).padStart(2, "0");

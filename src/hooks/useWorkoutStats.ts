@@ -1,9 +1,10 @@
 import { useState, useEffect } from "react";
 import {
   fetchWeeklyStats,
-  fetchTodayHourlyStats,
   fetchMonthlyStats,
+  type WorkoutRecord,
 } from "../lib/workoutService";
+import { localDateStr } from "../utils/streak";
 
 export type StatPeriod = "day" | "week" | "month";
 
@@ -35,26 +36,41 @@ function getPeriodLabel(period: StatPeriod): string {
   return `${y}년 ${m}월 1일 ~ ${daysInMonth}일`;
 }
 
-export function useWorkoutStats(userId: string | null) {
+export function useWorkoutStats(
+  userId: string | null,
+  workoutRecords: WorkoutRecord[] = [],
+) {
   const [period, setPeriod] = useState<StatPeriod>("week");
   const [data, setData] = useState<ChartPoint[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [periodLabel, setPeriodLabel] = useState(() => getPeriodLabel("week"));
 
+  // day: workoutRecords에서 직접 계산 (실시간 반영)
   useEffect(() => {
+    if (period !== "day") return;
+    setPeriodLabel(getPeriodLabel("day"));
+    const today = localDateStr(new Date());
+    const buckets = Array(12).fill(0);
+    for (const r of workoutRecords) {
+      if (r.date !== today || !r.created_at) continue;
+      const hour = new Date(r.created_at).getHours();
+      buckets[Math.floor(hour / 2)] += r.steps ?? 0;
+    }
+    setData(buckets.map((steps, i) => ({ label: `${i * 2}시`, steps })));
+  }, [period, workoutRecords]);
+
+  // week/month: Supabase fetch
+  useEffect(() => {
+    if (period === "day") return;
     setPeriodLabel(getPeriodLabel(period));
     if (!userId) {
       setData([]);
       return;
     }
     setIsLoading(true);
-
     const load = async () => {
       try {
-        if (period === "day") {
-          const buckets = await fetchTodayHourlyStats(userId);
-          setData(buckets.map((steps, i) => ({ label: `${i * 2}시`, steps })));
-        } else if (period === "week") {
+        if (period === "week") {
           const weekly = await fetchWeeklyStats(userId);
           const labels = ["월", "화", "수", "목", "금", "토", "일"];
           setData(weekly.map((steps, i) => ({ label: labels[i], steps })));

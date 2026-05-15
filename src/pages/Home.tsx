@@ -4,7 +4,7 @@ import { useActivityType } from "../context/ActivityTypeContext";
 import { useCharacter } from "../context/CharacterContext";
 import { useUser } from "../context/UserContext";
 import { storage } from "../utils/storage";
-import { calculateStreak, getThisWeekWorkouts } from "../utils/streak";
+import { calculateStreak, getThisWeekWorkouts, localDateStr } from "../utils/streak";
 import { getRandomMessage } from "../data/characterMessages";
 import { FAKE_ACTIVE_USERS } from "../data/fakeActiveUsers";
 import { getActiveSessions } from "../lib/sessionService";
@@ -170,7 +170,7 @@ export default function Home() {
   };
 
   // 오늘 목표 진행률
-  const today = new Date().toISOString().split("T")[0];
+  const today = localDateStr(new Date());
   const todayRecords = workoutRecords.filter((r) => r.date === today);
   const todaySteps = todayRecords.reduce((s, r) => s + r.steps, 0);
   const todayCalories = todayRecords.reduce((s, r) => s + r.calories, 0);

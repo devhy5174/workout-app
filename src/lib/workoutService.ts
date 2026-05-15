@@ -1,4 +1,5 @@
 import { supabase } from "./supabase";
+import { localDateStr } from "../utils/streak";
 
 export type WorkoutRecord = {
   id?: string;
@@ -136,7 +137,7 @@ export type DayStats = {
 };
 
 export async function fetchTodayStats(userId: string): Promise<DayStats> {
-  const today = new Date().toISOString().split("T")[0];
+  const today = localDateStr(new Date());
   const { data, error } = await supabase
     .from("workout_history")
     .select("steps, distance, calories")
@@ -167,8 +168,8 @@ export async function fetchWeeklyStats(userId: string): Promise<number[]> {
   const sunday = new Date(monday);
   sunday.setDate(monday.getDate() + 6);
 
-  const startDate = monday.toISOString().split("T")[0];
-  const endDate = sunday.toISOString().split("T")[0];
+  const startDate = localDateStr(monday);
+  const endDate = localDateStr(sunday);
 
   const { data, error } = await supabase
     .from("workout_history")
@@ -189,8 +190,7 @@ export async function fetchWeeklyStats(userId: string): Promise<number[]> {
   return Array.from({ length: 7 }, (_, i) => {
     const d = new Date(monday);
     d.setDate(monday.getDate() + i);
-    const key = d.toISOString().split("T")[0];
-    return stepsByDate[key] ?? 0;
+    return stepsByDate[localDateStr(d)] ?? 0;
   });
 }
 
@@ -234,7 +234,7 @@ export async function deleteActiveGoal(
 
 // 오늘 2시간 단위 걸음수 버킷 (인덱스 0=00~01시, 1=02~03시, ..., 11=22~23시)
 export async function fetchTodayHourlyStats(userId: string): Promise<number[]> {
-  const today = new Date().toISOString().split("T")[0];
+  const today = localDateStr(new Date());
   const { data, error } = await supabase
     .from("workout_history")
     .select("steps, created_at")
@@ -269,8 +269,8 @@ export async function fetchWeeklyTop3(): Promise<WeeklyTopUser[]> {
   const sunday = new Date(monday);
   sunday.setDate(monday.getDate() + 6);
 
-  const startDate = monday.toISOString().split("T")[0];
-  const endDate = sunday.toISOString().split("T")[0];
+  const startDate = localDateStr(monday);
+  const endDate = localDateStr(sunday);
 
   const { data: workouts, error } = await supabase
     .from("workout_history")
@@ -316,8 +316,8 @@ export async function fetchMonthlyStats(userId: string): Promise<number[]> {
   const now = new Date();
   const year = now.getFullYear();
   const month = now.getMonth();
-  const firstDay = new Date(year, month, 1).toISOString().split("T")[0];
-  const lastDay = new Date(year, month + 1, 0).toISOString().split("T")[0];
+  const firstDay = localDateStr(new Date(year, month, 1));
+  const lastDay = localDateStr(new Date(year, month + 1, 0));
   const daysInMonth = new Date(year, month + 1, 0).getDate();
 
   const { data, error } = await supabase

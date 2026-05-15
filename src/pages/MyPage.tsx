@@ -16,8 +16,8 @@ import Modal from "../components/ui/Modal";
 import { activityTypes } from "../data/activityTypes";
 import { type UserGoal } from "../lib/workoutService";
 import { useWorkoutStats, type StatPeriod } from "../hooks/useWorkoutStats";
+import { localDateStr } from "../utils/streak";
 import Diet from "./Diet";
-import { useTodayStats } from "../hooks/useTodayStats";
 
 const WORKOUT_TYPE_LABEL: Record<string, { label: string; emoji: string }> = {
   walker: { label: "걷기", emoji: "🚶" },
@@ -453,11 +453,22 @@ function CharacterSheet({ onClose }: { onClose: () => void }) {
 
 // ── 내정보 탭 ───────────────────────────────────────────
 function InfoTab() {
-  const { userProfile, updateProfile, userGoal, deleteGoal } = useUser();
+  const { userProfile, updateProfile, userGoal, deleteGoal, workoutRecords } =
+    useUser();
   const { selectedActivityType } = useActivityType();
   const { selectedCharacter } = useCharacter();
-  const { user } = useUser();
-  const { todayStats } = useTodayStats(user?.id ?? null);
+
+  const today = localDateStr(new Date());
+  const todayStats = workoutRecords
+    .filter((r) => r.date === today)
+    .reduce(
+      (acc, r) => ({
+        steps: acc.steps + (r.steps ?? 0),
+        distance: acc.distance + (r.distance ?? 0),
+        calories: acc.calories + (r.calories ?? 0),
+      }),
+      { steps: 0, distance: 0, calories: 0 },
+    );
 
   const [showActivityTypeSheet, setShowActivityTypeSheet] = useState(false);
   const [showCharacterSheet, setShowCharacterSheet] = useState(false);
@@ -970,7 +981,16 @@ function WorkoutTab() {
                       className="w-7 h-7 rounded-full bg-gray-100 flex items-center justify-center text-gray-400 hover:bg-red-50 hover:text-red-400 transition-colors flex-shrink-0"
                       aria-label="기록 삭제"
                     >
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <svg
+                        width="12"
+                        height="12"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2.5"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
                         <polyline points="3 6 5 6 21 6" />
                         <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
                         <path d="M10 11v6M14 11v6" />
@@ -1007,9 +1027,9 @@ function WorkoutTab() {
 
 // ── 통계 탭 ─────────────────────────────────────────────
 function StatsTab() {
-  const { user } = useUser();
+  const { user, workoutRecords } = useUser();
   const { period, setPeriod, data, isLoading, periodLabel, totalSteps } =
-    useWorkoutStats(user?.id ?? null);
+    useWorkoutStats(user?.id ?? null, workoutRecords);
 
   const periods: { key: StatPeriod; label: string }[] = [
     { key: "day", label: "1일" },
