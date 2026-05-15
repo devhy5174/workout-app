@@ -28,6 +28,8 @@ export type PartyMember = {
   character_emoji: string;
   character_image: string | null;
   weekly_steps: number;
+  today_steps: number;
+  is_active: boolean;
   joined_at: string;
 };
 
@@ -362,20 +364,43 @@ export async function getPartyMembers(partyId: string): Promise<PartyMember[]> {
   if (error || !members) return [];
 
   const userIds = members.map((m: any) => m.user_id);
+
   const weekStart = new Date();
   weekStart.setDate(weekStart.getDate() - weekStart.getDay());
   weekStart.setHours(0, 0, 0, 0);
 
-  const { data: workouts } = await supabase
-    .from("workout_history")
-    .select("user_id, steps")
-    .in("user_id", userIds)
-    .gte("created_at", weekStart.toISOString());
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
 
-  const stepsMap = new Map<string, number>();
-  (workouts ?? []).forEach((w: any) => {
-    stepsMap.set(w.user_id, (stepsMap.get(w.user_id) ?? 0) + w.steps);
+  const [weeklyResult, todayResult, activeResult] = await Promise.all([
+    supabase
+      .from("workout_history")
+      .select("user_id, steps")
+      .in("user_id", userIds)
+      .gte("created_at", weekStart.toISOString()),
+    supabase
+      .from("workout_history")
+      .select("user_id, steps")
+      .in("user_id", userIds)
+      .gte("created_at", todayStart.toISOString()),
+    supabase
+      .from("active_sessions")
+      .select("user_id")
+      .in("user_id", userIds)
+      .eq("is_active", true),
+  ]);
+
+  const weeklyStepsMap = new Map<string, number>();
+  (weeklyResult.data ?? []).forEach((w: any) => {
+    weeklyStepsMap.set(w.user_id, (weeklyStepsMap.get(w.user_id) ?? 0) + w.steps);
   });
+
+  const todayStepsMap = new Map<string, number>();
+  (todayResult.data ?? []).forEach((w: any) => {
+    todayStepsMap.set(w.user_id, (todayStepsMap.get(w.user_id) ?? 0) + w.steps);
+  });
+
+  const activeUserIds = new Set((activeResult.data ?? []).map((s: any) => s.user_id));
 
   return members.map((m: any) => {
     const profile = m.public_profiles as any;
@@ -390,7 +415,9 @@ export async function getPartyMembers(partyId: string): Promise<PartyMember[]> {
       nickname: profile?.nickname ?? "알 수 없음",
       character_emoji: characterEmoji,
       character_image: characterImage,
-      weekly_steps: stepsMap.get(m.user_id) ?? 0,
+      weekly_steps: weeklyStepsMap.get(m.user_id) ?? 0,
+      today_steps: todayStepsMap.get(m.user_id) ?? 0,
+      is_active: activeUserIds.has(m.user_id),
       joined_at: m.joined_at,
     };
   });

@@ -22,28 +22,96 @@ const timeSlotEmoji: Record<string, string> = {
   주말: "🏖️",
 };
 
-const rankEmojis = ["🥇", "🥈", "🥉"];
-
-function MemberAvatar({
-  image,
-  fallback,
+function MemberActivityCard({
+  member,
+  isMe,
+  isPartyLeader,
+  canKick,
+  onKick,
 }: {
-  image: string | null;
-  fallback: string;
+  member: PartyMember;
+  isMe: boolean;
+  isPartyLeader: boolean;
+  canKick: boolean;
+  onKick: () => void;
 }) {
+  const { is_active, character_image, character_emoji, nickname, today_steps } = member;
+
   return (
-    <span className="w-9 h-9 rounded-full bg-white border border-gray-100 shadow-sm flex items-center justify-center overflow-hidden flex-shrink-0">
-      {image ? (
-        <img
-          src={image}
-          alt=""
-          className="w-9 h-9 object-contain"
-          draggable={false}
-        />
-      ) : (
-        <span className="text-xl">{fallback}</span>
-      )}
-    </span>
+    <div className="flex flex-col items-center gap-1">
+      {/* 말풍선 */}
+      <div className="h-5 flex items-end justify-center">
+        {is_active && (
+          <div className="flex flex-col items-center">
+            <span className="bg-emerald-500 text-white text-[7px] font-extrabold px-1.5 py-0.5 rounded-full whitespace-nowrap">
+              운동 중 💪
+            </span>
+            <div
+              className="w-0 h-0"
+              style={{
+                borderLeft: "3px solid transparent",
+                borderRight: "3px solid transparent",
+                borderTop: "3px solid #10b981",
+              }}
+            />
+          </div>
+        )}
+      </div>
+
+      {/* 캐릭터 이미지 */}
+      <div className="relative">
+        <div
+          className={`w-14 h-14 rounded-2xl flex items-center justify-center overflow-hidden ${
+            is_active ? "bg-primary-light" : "bg-gray-100 grayscale opacity-40"
+          }`}
+        >
+          {character_image ? (
+            <img
+              src={character_image}
+              alt={nickname}
+              className="w-full h-full object-contain"
+              draggable={false}
+            />
+          ) : (
+            <span className="text-2xl">{character_emoji}</span>
+          )}
+        </div>
+        {is_active && (
+          <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-400 rounded-full border-2 border-white animate-pulse" />
+        )}
+        {canKick && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onKick();
+            }}
+            aria-label={`${nickname} 퇴장`}
+            className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-red-400 text-white text-[9px] font-bold flex items-center justify-center shadow-sm"
+          >
+            ✕
+          </button>
+        )}
+      </div>
+
+      {/* 닉네임 */}
+      <p
+        className={`text-[10px] font-bold text-center w-full truncate leading-tight ${
+          isMe ? "text-primary" : "text-gray-600"
+        }`}
+      >
+        {isPartyLeader ? "👑" : ""}
+        {nickname.length > 5 ? `${nickname.slice(0, 5)}…` : nickname}
+      </p>
+
+      {/* 걸음수 / 상태 */}
+      <p
+        className={`text-[9px] font-bold ${
+          is_active ? "text-emerald-500" : "text-gray-300"
+        }`}
+      >
+        {is_active ? `${today_steps.toLocaleString()}보` : "쉬는 중"}
+      </p>
+    </div>
   );
 }
 
@@ -242,13 +310,20 @@ export default function PartyDetail() {
     setTimeout(() => setToast(null), 2500);
   };
 
+  const sortMembers = (list: PartyMember[]) =>
+    list.sort((a, b) => {
+      if (a.is_active !== b.is_active) return b.is_active ? 1 : -1;
+      if (b.today_steps !== a.today_steps) return b.today_steps - a.today_steps;
+      return b.weekly_steps - a.weekly_steps;
+    });
+
   const reloadMembers = async () => {
     if (!id) return;
     const [m, s] = await Promise.all([
       getPartyMembers(id),
       getPartyTodayStats(id),
     ]);
-    setMembers(m.sort((a, b) => b.weekly_steps - a.weekly_steps));
+    setMembers(sortMembers(m));
     setTodayStats(s);
   };
 
@@ -261,7 +336,7 @@ export default function PartyDetail() {
       getPartyTodayStats(id),
     ]).then(([p, m, s]) => {
       setParty(p);
-      setMembers(m.sort((a, b) => b.weekly_steps - a.weekly_steps));
+      setMembers(sortMembers(m));
       setTodayStats(s);
       setIsLoading(false);
     });
@@ -420,80 +495,84 @@ export default function PartyDetail() {
         </div>
 
         {/* 오늘 파티 현황 */}
-        <div className="bg-white rounded-3xl shadow-sm p-5 flex flex-col gap-2">
-          <p className="text-sm font-extrabold text-orange-400">🔥 오늘 파티 현황</p>
-          {todayStats === null ? (
-            <p className="text-xs text-gray-300 animate-pulse">불러오는 중...</p>
-          ) : todayStats.totalSteps === 0 ? (
-            <p className="text-xs text-gray-400">아직 오늘 운동 기록이 없어요</p>
-          ) : (
-            <div className="flex flex-col gap-1">
-              <p className="text-xs font-bold text-gray-700">
-                총 걸음수{" "}
-                <span className="text-orange-500">
-                  {todayStats.totalSteps.toLocaleString()} 보
+        <div className="bg-white rounded-3xl shadow-sm p-5 flex flex-col gap-3">
+          <div className="flex items-center justify-between">
+            <p className="text-sm font-extrabold text-orange-400">🔥 오늘 파티 현황</p>
+            {todayStats?.topMember && (
+              <p className="text-[10px] text-gray-400">
+                MVP{" "}
+                <span className="font-bold text-gray-600">
+                  {todayStats.topMember.nickname}
                 </span>
               </p>
-              {todayStats.topMember && (
-                <p className="text-xs text-gray-400">
-                  오늘의 MVP:{" "}
-                  <span className="font-bold text-gray-600">
-                    {todayStats.topMember.nickname}
-                  </span>{" "}
-                  ({todayStats.topMember.steps.toLocaleString()} 보)
+            )}
+          </div>
+          {todayStats === null ? (
+            <p className="text-xs text-gray-300 animate-pulse">불러오는 중...</p>
+          ) : (
+            <>
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-bold text-gray-700">
+                  <span className="text-orange-500">
+                    {todayStats.totalSteps.toLocaleString()}
+                  </span>
+                  {" / "}
+                  {((party.target_steps ?? 10000) * party.member_count).toLocaleString()}보
                 </p>
-              )}
-            </div>
+                <p className="text-xs font-extrabold text-orange-400">
+                  {Math.min(
+                    Math.round(
+                      (todayStats.totalSteps /
+                        Math.max((party.target_steps ?? 10000) * party.member_count, 1)) *
+                        100,
+                    ),
+                    100,
+                  )}%
+                </p>
+              </div>
+              <div className="w-full h-2 bg-orange-100 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-gradient-to-r from-orange-400 to-primary rounded-full transition-all duration-700"
+                  style={{
+                    width: `${Math.min(
+                      (todayStats.totalSteps /
+                        Math.max((party.target_steps ?? 10000) * party.member_count, 1)) *
+                        100,
+                      100,
+                    )}%`,
+                  }}
+                />
+              </div>
+            </>
           )}
         </div>
 
-        {/* 멤버 랭킹 */}
+        {/* 파티 멤버 활동 그리드 */}
         <div className="bg-white rounded-3xl shadow-sm p-5 flex flex-col gap-3">
-          <p className="text-sm font-extrabold text-gray-700">
-            🏆 이번 주 랭킹
-          </p>
+          <div className="flex items-center justify-between">
+            <p className="text-sm font-extrabold text-gray-700">👥 파티 멤버</p>
+            <p className="text-[10px] text-gray-400">
+              {members.filter((m) => m.is_active).length > 0
+                ? `${members.filter((m) => m.is_active).length}명 운동 중`
+                : "모두 쉬는 중"}
+            </p>
+          </div>
           {members.length === 0 ? (
             <p className="text-xs text-gray-300 text-center py-4">멤버가 없어요</p>
           ) : (
-            <div className="flex flex-col gap-2">
-              {members.map((m, i) => (
-                <div
+            <div className="grid grid-cols-4 gap-x-2 gap-y-4">
+              {members.map((m) => (
+                <MemberActivityCard
                   key={m.user_id}
-                  className="flex items-center gap-3 bg-gray-50 rounded-2xl px-4 py-3"
-                >
-                  <span className="text-xl w-7 text-center flex-shrink-0">
-                    {rankEmojis[i] ?? `${i + 1}`}
-                  </span>
-                  <MemberAvatar
-                    image={m.character_image}
-                    fallback={m.character_emoji}
-                  />
-                  <p className="flex-1 font-bold text-gray-700 text-sm truncate">
-                    {m.nickname}
-                    {m.user_id === user?.id && (
-                      <span className="ml-1 text-[10px] text-primary">(나)</span>
-                    )}
-                    {m.user_id === party.created_by && (
-                      <span className="ml-1.5 text-[9px] font-bold text-yellow-600 bg-yellow-50 px-1.5 py-0.5 rounded-full">👑방장</span>
-                    )}
-                  </p>
-                  <p className="text-xs font-extrabold text-primary flex-shrink-0">
-                    {m.weekly_steps.toLocaleString()} 보
-                  </p>
-                  {leader && m.user_id !== user?.id && (
-                    <button
-                      onClick={() => setKickTarget(m)}
-                      aria-label={`${m.nickname} 퇴장`}
-                      className="flex-shrink-0 text-[10px] font-bold text-red-400 bg-red-50 px-2 py-1 rounded-full hover:bg-red-100 transition"
-                    >
-                      퇴장
-                    </button>
-                  )}
-                </div>
+                  member={m}
+                  isMe={m.user_id === user?.id}
+                  isPartyLeader={m.user_id === party.created_by}
+                  canKick={leader && m.user_id !== user?.id}
+                  onKick={() => setKickTarget(m)}
+                />
               ))}
             </div>
           )}
-          <p className="text-[10px] text-gray-400 text-center">이번 주 누적 걸음 수 기준</p>
         </div>
 
         {/* 하단 액션 버튼 */}

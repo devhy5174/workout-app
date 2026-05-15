@@ -34,7 +34,12 @@ export async function saveWorkoutRecord(
     .single();
 
   if (error) {
-    console.error("[workout_history] insert 실패:", error.code, error.message, error.details);
+    console.error(
+      "[workout_history] insert 실패:",
+      error.code,
+      error.message,
+      error.details,
+    );
     return { data: null, error: error.message };
   }
 
@@ -66,7 +71,11 @@ export async function addUserPoints(
     .single();
 
   if (fetchError) {
-    console.error("[app_users] points 조회 실패:", fetchError.code, fetchError.message);
+    console.error(
+      "[app_users] points 조회 실패:",
+      fetchError.code,
+      fetchError.message,
+    );
     return { error: fetchError.message };
   }
 
@@ -77,7 +86,11 @@ export async function addUserPoints(
     .eq("id", userId);
 
   if (error) {
-    console.error("[app_users] points 업데이트 실패:", error.code, error.message);
+    console.error(
+      "[app_users] points 업데이트 실패:",
+      error.code,
+      error.message,
+    );
     return { error: error.message };
   }
 

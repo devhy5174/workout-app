@@ -225,7 +225,7 @@ function PartyCard({
                 </span>
                 {" / "}
                 {(
-                  (party.target_steps ?? 10000) * party.max_members
+                  (party.target_steps ?? 10000) * party.member_count
                 ).toLocaleString()}
                 보
               </p>
@@ -233,7 +233,7 @@ function PartyCard({
                 {Math.min(
                   Math.round(
                     (todayStats.totalSteps /
-                      ((party.target_steps ?? 10000) * party.max_members)) *
+                      ((party.target_steps ?? 10000) * party.member_count)) *
                       100,
                   ),
                   100,
@@ -247,7 +247,7 @@ function PartyCard({
                 style={{
                   width: `${Math.min(
                     (todayStats.totalSteps /
-                      ((party.target_steps ?? 10000) * party.max_members)) *
+                      ((party.target_steps ?? 10000) * party.member_count)) *
                       100,
                     100,
                   )}%`,

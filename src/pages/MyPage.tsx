@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import {
   BarChart,
   Bar,
@@ -14,7 +14,7 @@ import { useCharacter } from "../context/CharacterContext";
 import CharacterGrid from "../components/CharacterGrid";
 import Modal from "../components/ui/Modal";
 import { activityTypes } from "../data/activityTypes";
-import { type UserGoal, fetchTodayStats, type DayStats } from "../lib/workoutService";
+import { type UserGoal } from "../lib/workoutService";
 import { useWorkoutStats, type StatPeriod } from "../hooks/useWorkoutStats";
 import Diet from "./Diet";
 import { useTodayStats } from "../hooks/useTodayStats";
@@ -224,9 +224,9 @@ function GoalSetModal({ onClose }: { onClose: () => void }) {
 // ── 활동 유형 선택 시트 ────────────────────────────────────
 function ActivityTypeSheet({ onClose }: { onClose: () => void }) {
   const { selectedId, selectActivityType } = useActivityType();
-  const [pendingActivityTypeId, setPendingActivityTypeId] = useState<number | null>(
-    null,
-  );
+  const [pendingActivityTypeId, setPendingActivityTypeId] = useState<
+    number | null
+  >(null);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
 
   const pendingActivityType =
@@ -399,7 +399,9 @@ function CharacterSheet({ onClose }: { onClose: () => void }) {
           onClick={(e) => e.stopPropagation()}
         >
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-extrabold text-gray-800">캐릭터 변경</h3>
+            <h3 className="text-lg font-extrabold text-gray-800">
+              캐릭터 변경
+            </h3>
             <button
               onClick={onClose}
               className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 font-bold"
@@ -454,7 +456,7 @@ function InfoTab() {
   const { userProfile, updateProfile, userGoal, deleteGoal } = useUser();
   const { selectedActivityType } = useActivityType();
   const { selectedCharacter } = useCharacter();
-  const {user}=useUser();
+  const { user } = useUser();
   const { todayStats } = useTodayStats(user?.id ?? null);
 
   const [showActivityTypeSheet, setShowActivityTypeSheet] = useState(false);
@@ -463,8 +465,6 @@ function InfoTab() {
   const [deleteConfirm, setDeleteConfirm] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [showBmiInfo, setShowBmiInfo] = useState(false);
-
- 
 
   const [height, setHeight] = useState<string>(
     () => userProfile?.height?.toString() ?? "",
@@ -517,7 +517,9 @@ function InfoTab() {
               draggable={false}
             />
           ) : (
-            <span className="text-5xl">{selectedActivityType?.emoji ?? "👤"}</span>
+            <span className="text-5xl">
+              {selectedActivityType?.emoji ?? "👤"}
+            </span>
           )}
         </div>
         <div className="text-center">
@@ -561,13 +563,34 @@ function InfoTab() {
         <p className="font-extrabold text-gray-800 mb-3">오늘 현황</p>
         <div className="grid grid-cols-3 gap-2">
           {[
-            { label: "걸음수", value: todayStats.steps.toLocaleString(), unit: "보", emoji: "👟" },
-            { label: "거리", value: todayStats.distance.toFixed(2), unit: "km", emoji: "📍" },
-            { label: "칼로리", value: Math.round(todayStats.calories).toLocaleString(), unit: "kcal", emoji: "🔥" },
+            {
+              label: "걸음수",
+              value: todayStats.steps.toLocaleString(),
+              unit: "보",
+              emoji: "👟",
+            },
+            {
+              label: "거리",
+              value: todayStats.distance.toFixed(2),
+              unit: "km",
+              emoji: "📍",
+            },
+            {
+              label: "칼로리",
+              value: Math.round(todayStats.calories).toLocaleString(),
+              unit: "kcal",
+              emoji: "🔥",
+            },
           ].map(({ label, value, unit, emoji }) => (
-            <div key={label} className="flex flex-col items-center bg-gray-50 rounded-2xl py-4 gap-1">
+            <div
+              key={label}
+              className="flex flex-col items-center bg-gray-50 rounded-2xl py-4 gap-1"
+            >
               <span className="text-xl">{emoji}</span>
-              <p className="text-lg font-extrabold leading-tight" style={{ color: "var(--color-primary)" }}>
+              <p
+                className="text-lg font-extrabold leading-tight"
+                style={{ color: "var(--color-primary)" }}
+              >
                 {value}
               </p>
               <p className="text-[10px] text-gray-400 font-bold">{unit}</p>
@@ -756,8 +779,8 @@ function InfoTab() {
               </button>
             </div>
             <p className="text-xs text-gray-500 leading-relaxed">
-              체질량지수(Body Mass Index)로 체중(kg)을
-              키(m)의 제곱으로 나눈 값이에요.
+              체질량지수(Body Mass Index)로 체중(kg)을 키(m)의 제곱으로 나눈
+              값이에요.
             </p>
             <p className="text-xs font-bold text-center text-gray-600 bg-gray-50 rounded-2xl py-2.5">
               BMI = 체중(kg) ÷ 키(m)²
@@ -765,16 +788,28 @@ function InfoTab() {
             <div className="flex flex-col gap-1.5">
               {[
                 { range: "18.5 미만", label: "저체중", color: "text-blue-500" },
-                { range: "18.5 ~ 22.9", label: "정상", color: "text-green-500" },
-                { range: "23 ~ 24.9", label: "과체중", color: "text-yellow-500" },
+                {
+                  range: "18.5 ~ 22.9",
+                  label: "정상",
+                  color: "text-green-500",
+                },
+                {
+                  range: "23 ~ 24.9",
+                  label: "과체중",
+                  color: "text-yellow-500",
+                },
                 { range: "25 이상", label: "비만", color: "text-red-500" },
               ].map(({ range, label, color }) => (
                 <div
                   key={label}
                   className="flex items-center justify-between bg-gray-50 rounded-2xl px-4 py-2.5"
                 >
-                  <span className="text-xs text-gray-500 font-semibold">{range}</span>
-                  <span className={`text-sm font-extrabold ${color}`}>{label}</span>
+                  <span className="text-xs text-gray-500 font-semibold">
+                    {range}
+                  </span>
+                  <span className={`text-sm font-extrabold ${color}`}>
+                    {label}
+                  </span>
                 </div>
               ))}
             </div>
@@ -905,7 +940,6 @@ function WorkoutTab() {
                   {formatDate(record.date)}
                 </p>
                 <div className="flex items-center gap-3 mt-1.5">
-
                   <span className="text-[11px] text-gray-500 font-semibold">
                     🕐 {formatDuration(record.duration)}
                   </span>
@@ -913,7 +947,7 @@ function WorkoutTab() {
                   <span className="text-[11px] text-gray-500 font-semibold">
                     👟 {record.steps.toLocaleString()}보
                   </span>
-                  
+
                   <span className="text-[11px] text-gray-500 font-semibold">
                     📍 {record.distance.toFixed(2)}km
                   </span>
@@ -943,7 +977,11 @@ function StatsTab() {
   ];
 
   const now = new Date();
-  const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+  const daysInMonth = new Date(
+    now.getFullYear(),
+    now.getMonth() + 1,
+    0,
+  ).getDate();
   const displaySteps =
     period === "day"
       ? totalSteps
@@ -969,7 +1007,9 @@ function StatsTab() {
             key={key}
             onClick={() => setPeriod(key)}
             className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition-all ${
-              period === key ? "bg-primary text-white shadow-sm" : "text-gray-400"
+              period === key
+                ? "bg-primary text-white shadow-sm"
+                : "text-gray-400"
             }`}
           >
             {label}

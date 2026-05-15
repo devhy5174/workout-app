@@ -386,9 +386,9 @@ export default function Workout() {
   }, [state]);
 
   const stats = [
-    { label: "거리", value: distance.toFixed(2), unit: "km", icon: "📍" },
-    { label: "걸음수", value: steps.toLocaleString(), unit: "보", icon: "👟" },
     { label: "시간", value: formatTime(elapsed), unit: "", icon: "⏱️" },
+    { label: "걸음수", value: steps.toLocaleString(), unit: "보", icon: "👟" },
+    { label: "거리", value: distance.toFixed(2), unit: "km", icon: "📍" },
     { label: "칼로리", value: String(calories), unit: "kcal", icon: "🔥" },
   ];
 
@@ -893,6 +893,7 @@ export default function Workout() {
                 <div className="px-6 py-5 flex flex-col gap-3">
                   {[
                     { icon: "⏱️", label: "운동 시간", value: durationLabel },
+
                     {
                       icon: "📍",
                       label: "거리",
@@ -920,7 +921,6 @@ export default function Workout() {
                       </span>
                     </div>
                   ))}
-
                   <div
                     className="mt-1 rounded-2xl flex items-center justify-between px-4 py-3"
                     style={{ background: "var(--color-primary-light)" }}
