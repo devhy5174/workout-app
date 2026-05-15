@@ -4,7 +4,11 @@ import { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { storage, type RecommendedDiet } from "../utils/storage";
 import { calculateBMR, calculateDailyKcal } from "../utils/bmr";
-import { getMenusByMealTime, type RecommendedMenu, type MealTime } from "../data/diet";
+import {
+  getMenusByMealTime,
+  type RecommendedMenu,
+  type MealTime,
+} from "../data/diet";
 import type { ActivityTypes } from "../data/activityTypes";
 
 const DEFAULT_DIET: RecommendedDiet = {
@@ -29,7 +33,11 @@ function getBestMenu(
 ): RecommendedMenu | null {
   const menus = getMenusByMealTime(mealTime);
   if (!activityType) return menus[0] ?? null;
-  return menus.find((m) => m.forCharacters.includes(activityType)) ?? menus[0] ?? null;
+  return (
+    menus.find((m) => m.forCharacters.includes(activityType)) ??
+    menus[0] ??
+    null
+  );
 }
 
 function BmrInfoModal({ onClose }: { onClose: () => void }) {
@@ -57,10 +65,12 @@ function BmrInfoModal({ onClose }: { onClose: () => void }) {
 
         {/* 어떻게 계산되나요 */}
         <div className="flex flex-col gap-2.5">
-          <p className="text-sm font-extrabold text-gray-800">💡 어떻게 계산되나요?</p>
+          <p className="text-sm font-extrabold text-gray-800">
+            💡 어떻게 계산되나요?
+          </p>
           <p className="text-xs text-gray-500 leading-relaxed">
-            Harris-Benedict 공식으로 기초대사량(BMR)을
-            계산하고 활동 유형별 배율을 곱해요.
+            Harris-Benedict 공식으로 기초대사량(BMR)을 계산하고 활동 유형별
+            배율을 곱해요.
           </p>
           <div className="flex flex-col gap-1.5">
             {[
@@ -92,19 +102,27 @@ function BmrInfoModal({ onClose }: { onClose: () => void }) {
 
         {/* 목표별 조정 가이드 */}
         <div className="flex flex-col gap-2.5">
-          <p className="text-sm font-extrabold text-gray-800">🎯 목표별 조정 가이드</p>
+          <p className="text-sm font-extrabold text-gray-800">
+            🎯 목표별 조정 가이드
+          </p>
           <div className="flex flex-col gap-1.5">
             {[
               { label: "감량", desc: "− 300~500 kcal", color: "text-blue-500" },
               { label: "유지", desc: "그대로", color: "text-green-500" },
-              { label: "증량", desc: "+ 300~500 kcal", color: "text-orange-500" },
+              {
+                label: "증량",
+                desc: "+ 300~500 kcal",
+                color: "text-orange-500",
+              },
             ].map(({ label, desc, color }) => (
               <div
                 key={label}
                 className="flex items-center justify-between bg-gray-50 rounded-2xl px-4 py-2.5"
               >
                 <span className="text-sm font-bold text-gray-700">{label}</span>
-                <span className={`text-sm font-extrabold ${color}`}>{desc}</span>
+                <span className={`text-sm font-extrabold ${color}`}>
+                  {desc}
+                </span>
               </div>
             ))}
           </div>
@@ -145,7 +163,9 @@ export default function Diet() {
         )
       : null;
 
-  const kcalProgress = dailyKcal ? Math.min((burnedKcal / dailyKcal) * 100, 100) : 0;
+  const kcalProgress = dailyKcal
+    ? Math.min((burnedKcal / dailyKcal) * 100, 100)
+    : 0;
   const kcalRemaining = dailyKcal ? Math.max(dailyKcal - burnedKcal, 0) : 0;
 
   return (
@@ -164,7 +184,9 @@ export default function Diet() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <span className="text-2xl">🔥</span>
-              <span className="text-white font-bold text-sm">일일 권장 칼로리</span>
+              <span className="text-white font-bold text-sm">
+                일일 권장 칼로리
+              </span>
               <button
                 onClick={() => setShowBmrInfo(true)}
                 className="w-5 h-5 rounded-full bg-white/25 flex items-center justify-center text-white text-[11px] font-extrabold leading-none"
@@ -204,66 +226,12 @@ export default function Diet() {
           <div className="flex-1">
             <p className="font-bold text-gray-700 text-sm">맞춤 칼로리 계산</p>
             <p className="text-xs text-gray-400 mt-0.5">
-              내정보 탭에서 신체 정보를 입력하고 활동유형을 선택하면
-              개인 맞춤 칼로리를 계산해드려요.
+              내정보 탭에서 신체 정보를 입력하고 활동유형을 선택하면 개인 맞춤
+              칼로리를 계산해드려요.
             </p>
           </div>
         </div>
       )}
-
-      {/* 아침 / 점심 / 저녁 추천 메뉴 */}
-      {MEAL_CONFIGS.map(({ time, label }) => {
-        const menu = getBestMenu(time, activityType);
-        if (!menu) return null;
-        return (
-          <div
-            key={time}
-            className="bg-white rounded-3xl shadow-sm p-5 flex flex-col gap-3"
-          >
-            <div className="flex items-center gap-2">
-              <p className="font-extrabold text-gray-800">{label} 추천</p>
-              <span className="text-[11px] font-bold text-[var(--color-primary)] bg-[var(--color-primary)]/10 rounded-full px-2 py-0.5 ml-auto">
-                {menu.totalNutrition.kcal} kcal
-              </span>
-            </div>
-            <div className="flex items-center gap-2.5">
-              <span className="text-2xl">{menu.emoji}</span>
-              <div>
-                <p className="font-bold text-gray-800 text-sm">{menu.name}</p>
-                <p className="text-xs text-gray-400">{menu.description}</p>
-              </div>
-            </div>
-            <div className="flex gap-2 flex-wrap">
-              {menu.foods.map((food) => (
-                <span
-                  key={food.name}
-                  className="flex items-center gap-1 px-2.5 py-1.5 rounded-full text-xs font-bold bg-gray-50 border border-gray-100"
-                >
-                  {food.emoji} {food.name}
-                  <span className="text-gray-400 ml-0.5">
-                    {food.nutrition.kcal}kcal
-                  </span>
-                </span>
-              ))}
-            </div>
-            <div className="flex items-center justify-between">
-              <div className="flex gap-1 flex-wrap">
-                {menu.tags.slice(0, 3).map((tag) => (
-                  <span
-                    key={tag}
-                    className="text-[10px] font-bold text-gray-400 bg-gray-50 rounded-full px-2 py-0.5"
-                  >
-                    #{tag}
-                  </span>
-                ))}
-              </div>
-              <span className="text-[11px] font-semibold text-gray-400 flex-shrink-0">
-                ⏱ {menu.prepTime}분
-              </span>
-            </div>
-          </div>
-        );
-      })}
 
       {/* 운동 후 추천 식단 배너 */}
       <div className="rounded-2xl bg-gradient-to-r from-primary to-secondary p-4 flex items-center gap-3">
@@ -331,6 +299,60 @@ export default function Diet() {
           )}
         </div>
       )}
+
+      {/* 아침 / 점심 / 저녁 추천 메뉴 */}
+      {MEAL_CONFIGS.map(({ time, label }) => {
+        const menu = getBestMenu(time, activityType);
+        if (!menu) return null;
+        return (
+          <div
+            key={time}
+            className="bg-white rounded-3xl shadow-sm p-5 flex flex-col gap-3"
+          >
+            <div className="flex items-center gap-2">
+              <p className="font-extrabold text-gray-800">{label} 추천</p>
+              <span className="text-[11px] font-bold text-[var(--color-primary)] bg-[var(--color-primary)]/10 rounded-full px-2 py-0.5 ml-auto">
+                {menu.totalNutrition.kcal} kcal
+              </span>
+            </div>
+            <div className="flex items-center gap-2.5">
+              <span className="text-2xl">{menu.emoji}</span>
+              <div>
+                <p className="font-bold text-gray-800 text-sm">{menu.name}</p>
+                <p className="text-xs text-gray-400">{menu.description}</p>
+              </div>
+            </div>
+            <div className="flex gap-2 flex-wrap">
+              {menu.foods.map((food) => (
+                <span
+                  key={food.name}
+                  className="flex items-center gap-1 px-2.5 py-1.5 rounded-full text-xs font-bold bg-gray-50 border border-gray-100"
+                >
+                  {food.emoji} {food.name}
+                  <span className="text-gray-400 ml-0.5">
+                    {food.nutrition.kcal}kcal
+                  </span>
+                </span>
+              ))}
+            </div>
+            <div className="flex items-center justify-between">
+              <div className="flex gap-1 flex-wrap">
+                {menu.tags.slice(0, 3).map((tag) => (
+                  <span
+                    key={tag}
+                    className="text-[10px] font-bold text-gray-400 bg-gray-50 rounded-full px-2 py-0.5"
+                  >
+                    #{tag}
+                  </span>
+                ))}
+              </div>
+              <span className="text-[11px] font-semibold text-gray-400 flex-shrink-0">
+                ⏱ {menu.prepTime}분
+              </span>
+            </div>
+          </div>
+        );
+      })}
 
       {/* 하단 안내 */}
       <p className="text-[11px] text-gray-400 text-center leading-relaxed pb-2">
