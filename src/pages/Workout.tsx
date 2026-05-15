@@ -1037,7 +1037,7 @@ export default function Workout() {
                       "linear-gradient(135deg, var(--color-primary), var(--color-secondary))",
                   }}
                 >
-                  📝 오늘 기록 남기러 가기
+                  📝 운동 인증하러가기
                 </button>
               )}
             </div>

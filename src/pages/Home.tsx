@@ -318,7 +318,7 @@ export default function Home() {
               className="text-[11px] font-extrabold whitespace-nowrap"
               style={{ color: "var(--color-primary)" }}
             >
-              함께 운동 중
+              함께 운동중
             </span>
           </div>
           <div className="flex flex-1 items-center overflow-hidden min-w-0">
