@@ -100,7 +100,9 @@ async function withActiveCounts(parties: Party[]): Promise<Party[]> {
     .in("user_id", allUserIds)
     .eq("is_active", true);
 
-  const activeUserIds = new Set((activeSessions ?? []).map((s: any) => s.user_id));
+  const activeUserIds = new Set(
+    (activeSessions ?? []).map((s: any) => s.user_id),
+  );
 
   const countMap = new Map<string, number>();
   members.forEach((m: any) => {
@@ -193,7 +195,13 @@ export async function createParty(
 
   const emoji = PARTY_EMOJIS[party.name.length % PARTY_EMOJIS.length];
   return {
-    data: { ...party, emoji, leader_nickname: "나", member_count: 1, active_count: 0 },
+    data: {
+      ...party,
+      emoji,
+      leader_nickname: "나",
+      member_count: 1,
+      active_count: 0,
+    },
     error: null,
   };
 }
@@ -293,7 +301,10 @@ export async function getPartyTodayStats(
   const topNickname =
     (topMemberRow?.public_profiles as any)?.nickname ?? "알 수 없음";
 
-  return { totalSteps, topMember: { user_id: topUserId, nickname: topNickname, steps: topSteps } };
+  return {
+    totalSteps,
+    topMember: { user_id: topUserId, nickname: topNickname, steps: topSteps },
+  };
 }
 
 export type AchievedParty = {
@@ -302,7 +313,9 @@ export type AchievedParty = {
   emoji: string;
 };
 
-export async function getAchievedPartiesForUser(userId: string): Promise<AchievedParty[]> {
+export async function getAchievedPartiesForUser(
+  userId: string,
+): Promise<AchievedParty[]> {
   const { data: memberRows } = await supabase
     .from("party_members")
     .select("party_id")
@@ -341,7 +354,10 @@ export async function getAchievedPartiesForUser(userId: string): Promise<Achieve
       .in("user_id", memberUserIds)
       .gte("created_at", since24h.toISOString());
 
-    const totalSteps = (workouts ?? []).reduce((sum: number, w: any) => sum + w.steps, 0);
+    const totalSteps = (workouts ?? []).reduce(
+      (sum: number, w: any) => sum + w.steps,
+      0,
+    );
 
     if (totalSteps >= targetTotal) {
       achieved.push({
@@ -355,10 +371,49 @@ export async function getAchievedPartiesForUser(userId: string): Promise<Achieve
   return achieved;
 }
 
+export type PartyCheer = {
+  id: string;
+  party_id: string;
+  user_id: string;
+  nickname: string;
+  message: string;
+  created_at: string;
+};
+
+export async function getPartyCheers(partyId: string): Promise<PartyCheer[]> {
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
+
+  const { data, error } = await supabase
+    .from("party_cheers")
+    .select("*")
+    .eq("party_id", partyId)
+    .gte("created_at", todayStart.toISOString())
+    .order("created_at", { ascending: true })
+    .limit(20);
+
+  if (error || !data) return [];
+  return data as PartyCheer[];
+}
+
+export async function sendPartyCheer(
+  partyId: string,
+  userId: string,
+  nickname: string,
+  message: string,
+): Promise<{ error: string | null }> {
+  const { error } = await supabase
+    .from("party_cheers")
+    .insert({ party_id: partyId, user_id: userId, nickname, message });
+  return { error: error?.message ?? null };
+}
+
 export async function getPartyMembers(partyId: string): Promise<PartyMember[]> {
   const { data: members, error } = await supabase
     .from("party_members")
-    .select("user_id, party_id, joined_at, public_profiles(nickname, character_id, activity_type_id)")
+    .select(
+      "user_id, party_id, joined_at, public_profiles(nickname, character_id, activity_type_id)",
+    )
     .eq("party_id", partyId);
 
   if (error || !members) return [];
@@ -392,7 +447,10 @@ export async function getPartyMembers(partyId: string): Promise<PartyMember[]> {
 
   const weeklyStepsMap = new Map<string, number>();
   (weeklyResult.data ?? []).forEach((w: any) => {
-    weeklyStepsMap.set(w.user_id, (weeklyStepsMap.get(w.user_id) ?? 0) + w.steps);
+    weeklyStepsMap.set(
+      w.user_id,
+      (weeklyStepsMap.get(w.user_id) ?? 0) + w.steps,
+    );
   });
 
   const todayStepsMap = new Map<string, number>();
@@ -400,7 +458,9 @@ export async function getPartyMembers(partyId: string): Promise<PartyMember[]> {
     todayStepsMap.set(w.user_id, (todayStepsMap.get(w.user_id) ?? 0) + w.steps);
   });
 
-  const activeUserIds = new Set((activeResult.data ?? []).map((s: any) => s.user_id));
+  const activeUserIds = new Set(
+    (activeResult.data ?? []).map((s: any) => s.user_id),
+  );
 
   return members.map((m: any) => {
     const profile = m.public_profiles as any;
@@ -408,7 +468,8 @@ export async function getPartyMembers(partyId: string): Promise<PartyMember[]> {
       profile?.activity_type_id != null
         ? (getCharacterById(profile.activity_type_id)?.emoji ?? "🏃")
         : "🏃";
-    const characterImage = getAvatarCharacterById(profile?.character_id)?.image ?? null;
+    const characterImage =
+      getAvatarCharacterById(profile?.character_id)?.image ?? null;
     return {
       user_id: m.user_id,
       party_id: m.party_id,

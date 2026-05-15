@@ -6,8 +6,11 @@ import {
   getPartyById,
   getPartyMembers,
   getPartyTodayStats,
+  getPartyCheers,
+  sendPartyCheer,
 } from "../lib/partyService";
 import type { Party, PartyMember, PartyTodayStats } from "../lib/partyService";
+import { supabase } from "../lib/supabase";
 import { POINT_RULES } from "../data/points";
 import { addPoints } from "../lib/pointService";
 
@@ -113,7 +116,7 @@ function MemberActivityCard({
 }
 
 type CheerMessage = {
-  id: number;
+  id: string;
   nickname: string;
   text: string;
 };
@@ -456,18 +459,19 @@ export default function PartyDetail() {
   );
   const [cheerMessages, setCheerMessages] = useState<CheerMessage[]>([]);
   const [cheerInput, setCheerInput] = useState("");
-  const cheerCounterRef = useRef(0);
 
-  const sendCheer = () => {
+  const sendCheer = async () => {
     const text = cheerInput.trim();
-    if (!text) return;
-    const id = ++cheerCounterRef.current;
+    if (!text || !id || !user) return;
     const nickname =
       userProfile?.nickname ??
-      members.find((m) => m.user_id === user?.id)?.nickname ??
+      members.find((m) => m.user_id === user.id)?.nickname ??
       "나";
-    setCheerMessages((prev) => [...prev, { id, nickname, text }].slice(-20));
+    setCheerMessages((prev) =>
+      [...prev, { id: `temp-${Date.now()}`, nickname, text }].slice(-20),
+    );
     setCheerInput("");
+    await sendPartyCheer(id, user.id, nickname, text);
   };
 
   const showToast = (message: string, icon?: string) => {
@@ -514,6 +518,46 @@ export default function PartyDetail() {
       }
     }
   }, [isLoading, membershipLoading, party]);
+
+  useEffect(() => {
+    if (!id) return;
+    getPartyCheers(id).then((cheers) => {
+      setCheerMessages(
+        cheers.map((c) => ({ id: c.id, nickname: c.nickname, text: c.message })),
+      );
+    });
+  }, [id]);
+
+  useEffect(() => {
+    if (!id) return;
+    const channel = supabase
+      .channel(`party-cheers-${id}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "party_cheers",
+          filter: `party_id=eq.${id}`,
+        },
+        (payload) => {
+          const row = payload.new as {
+            id: string;
+            user_id: string;
+            nickname: string;
+            message: string;
+          };
+          if (row.user_id === user?.id) return;
+          setCheerMessages((prev) =>
+            [...prev, { id: row.id, nickname: row.nickname, text: row.message }].slice(-20),
+          );
+        },
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [id, user?.id]);
 
   const handleJoinConfirm = async () => {
     if (!party) return;
