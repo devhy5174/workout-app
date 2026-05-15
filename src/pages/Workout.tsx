@@ -547,57 +547,72 @@ export default function Workout() {
               className="absolute pointer-events-none"
               style={{ left: CX, top: CY }}
             >
-              {buddies.map((buddy, i) => (
-                <div
-                  key={buddy.nickname}
-                  className="absolute z-10"
-                  style={{
-                    left: 0,
-                    top: 0,
-                    transformOrigin: "0 0",
-                    animation: "orbit-rotate 20s linear infinite",
-                    animationDelay: i === 0 ? "0s" : "-10s",
-                  }}
-                  title={`${buddy.nickname}님 ${buddy.activity}`}
-                >
+              {buddies.map((buddy, i) => {
+                const duration = 120;
+
+                const delay = -(duration / buddies.length) * i;
+                return (
                   <div
-                    className="absolute flex flex-col items-center"
+                    key={buddy.nickname}
+                    className="absolute z-10"
                     style={{
-                      left: 112,
-                      top: -18,
-                      width: 36,
-                      height: 36,
-                      transformOrigin: "18px 18px",
-                      animation: "counter-rotate 20s linear infinite",
-                      animationDelay: i === 0 ? "0s" : "-10s",
+                      left: 0,
+
+                      top: 0,
+
+                      transformOrigin: "0 0",
+
+                      animation: `orbit-rotate ${duration}s linear infinite`,
+
+                      animationDelay: `${delay}s`,
                     }}
+                    title={`${buddy.nickname}님 ${buddy.activity}`}
                   >
-                    {/* 말풍선 - 아바타 위에 따라다님 */}
                     <div
-                      className="absolute bg-white shadow-sm rounded-full px-2 py-0.5 flex items-center gap-1 whitespace-nowrap"
+                      className="absolute flex flex-col items-center"
                       style={{
-                        bottom: "calc(100% + 4px)",
-                        left: "50%",
-                        transform: "translateX(-50%)",
+                        left: 112,
+
+                        top: -18,
+
+                        width: 36,
+
+                        height: 36,
+
+                        transformOrigin: "18px 18px",
+
+                        animation: `counter-rotate ${duration}s linear infinite`,
+
+                        animationDelay: `${delay}s`,
                       }}
                     >
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse flex-shrink-0" />
-                      <span className="text-[8px] font-bold text-gray-600">
-                        {buddy.nickname}{" "}
-                        {ACTIVITY_LABEL[buddy.activity] ?? "운동 중"}
-                      </span>
-                    </div>
-                    {/* 아바타 */}
-                    <div className="w-9 h-9 rounded-full bg-white shadow-md border-2 border-white overflow-hidden">
-                      <img
-                        src={buddy.character_image}
-                        alt={buddy.nickname}
-                        className="w-full h-full object-contain"
-                      />
+                      {/* 말풍선 - 아바타 위에 따라다님 */}
+                      <div
+                        className="absolute bg-white shadow-sm rounded-full px-2 py-0.5 flex items-center gap-1 whitespace-nowrap"
+                        style={{
+                          bottom: "calc(100% + 4px)",
+                          left: "50%",
+                          transform: "translateX(-50%)",
+                        }}
+                      >
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse flex-shrink-0" />
+                        <span className="text-[8px] font-bold text-gray-600">
+                          {buddy.nickname}{" "}
+                          {ACTIVITY_LABEL[buddy.activity] ?? "운동 중"}
+                        </span>
+                      </div>
+                      {/* 아바타 */}
+                      <div className="w-9 h-9 rounded-full bg-white shadow-md border-2 border-white overflow-hidden">
+                        <img
+                          src={buddy.character_image}
+                          alt={buddy.nickname}
+                          className="w-full h-full object-contain"
+                        />
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
 
