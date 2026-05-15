@@ -1,6 +1,7 @@
 import { supabase } from "./supabase";
 import { getCharacterById } from "../data/activityTypes";
 import { getAvatarCharacterById } from "../data/avatarCharacters";
+import { localDateStr } from "../utils/streak";
 
 export type TimeSlot = "새벽" | "아침" | "저녁" | "주말";
 
@@ -511,4 +512,108 @@ export async function getPartyMembers(partyId: string): Promise<PartyMember[]> {
   });
 
   return result;
+}
+
+export type PartyHighlight = {
+  id: string;
+  name: string;
+  emoji: string;
+  value: number;
+};
+
+export async function fetchTodayTopParties(): Promise<PartyHighlight[]> {
+  const today = localDateStr(new Date());
+
+  const { data: workouts } = await supabase
+    .from("workout_history")
+    .select("user_id, steps")
+    .eq("date", today);
+
+  if (!workouts || workouts.length === 0) return [];
+
+  const stepsPerUser = new Map<string, number>();
+  for (const w of workouts) {
+    if (!w.user_id) continue;
+    stepsPerUser.set(w.user_id, (stepsPerUser.get(w.user_id) ?? 0) + (w.steps ?? 0));
+  }
+
+  const userIds = [...stepsPerUser.keys()];
+  const { data: memberships } = await supabase
+    .from("party_members")
+    .select("user_id, party_id")
+    .in("user_id", userIds);
+
+  if (!memberships || memberships.length === 0) return [];
+
+  const stepsPerParty = new Map<string, number>();
+  for (const m of memberships) {
+    const steps = stepsPerUser.get(m.user_id) ?? 0;
+    stepsPerParty.set(m.party_id, (stepsPerParty.get(m.party_id) ?? 0) + steps);
+  }
+
+  const top3 = [...stepsPerParty.entries()]
+    .sort(([, a], [, b]) => b - a)
+    .slice(0, 3);
+
+  const partyIds = top3.map(([id]) => id);
+  const { data: parties } = await supabase
+    .from("parties")
+    .select("id, name")
+    .in("id", partyIds);
+
+  const partyMap = new Map((parties ?? []).map((p: any) => [p.id, p]));
+
+  return top3.map(([partyId, steps]) => {
+    const party = partyMap.get(partyId) as any;
+    return {
+      id: partyId,
+      name: party?.name ?? "알 수 없음",
+      emoji: PARTY_EMOJIS[(party?.name?.length ?? 0) % PARTY_EMOJIS.length],
+      value: steps,
+    };
+  });
+}
+
+export async function fetchTrendingParties(): Promise<PartyHighlight[]> {
+  const { data: sessions } = await supabase
+    .from("active_sessions")
+    .select("user_id")
+    .eq("is_active", true);
+
+  if (!sessions || sessions.length === 0) return [];
+
+  const userIds = sessions.map((s: any) => s.user_id);
+  const { data: memberships } = await supabase
+    .from("party_members")
+    .select("user_id, party_id")
+    .in("user_id", userIds);
+
+  if (!memberships || memberships.length === 0) return [];
+
+  const countPerParty = new Map<string, number>();
+  for (const m of memberships) {
+    countPerParty.set(m.party_id, (countPerParty.get(m.party_id) ?? 0) + 1);
+  }
+
+  const top3 = [...countPerParty.entries()]
+    .sort(([, a], [, b]) => b - a)
+    .slice(0, 3);
+
+  const partyIds = top3.map(([id]) => id);
+  const { data: parties } = await supabase
+    .from("parties")
+    .select("id, name")
+    .in("id", partyIds);
+
+  const partyMap = new Map((parties ?? []).map((p: any) => [p.id, p]));
+
+  return top3.map(([partyId, count]) => {
+    const party = partyMap.get(partyId) as any;
+    return {
+      id: partyId,
+      name: party?.name ?? "알 수 없음",
+      emoji: PARTY_EMOJIS[(party?.name?.length ?? 0) % PARTY_EMOJIS.length],
+      value: count,
+    };
+  });
 }
