@@ -57,9 +57,9 @@ function MemberActivityCard({
       className={`flex flex-col items-center gap-1 ${canKickInactive && inactive7 ? "cursor-pointer" : ""}`}
       onClick={canKickInactive && inactive7 ? onKick : undefined}
     >
-      {/* 말풍선 */}
+      {/* 상태 표시 (고정 높이) */}
       <div className="h-5 flex items-end justify-center">
-        {is_active && (
+        {is_active ? (
           <div className="flex flex-col items-center">
             <span className="bg-emerald-500 text-white text-[7px] font-extrabold px-1.5 py-0.5 rounded-full whitespace-nowrap">
               운동 중 💪
@@ -73,17 +73,18 @@ function MemberActivityCard({
               }}
             />
           </div>
+        ) : (
+          <p
+            className={`text-[7px] font-extrabold px-1.5 py-0.5 rounded-full whitespace-nowrap ${
+              inactive7
+                ? "bg-gray-100 text-gray-300"
+                : "bg-gray-100 text-gray-400"
+            }`}
+          >
+            {inactive7 ? "7일 비활동" : "쉬는 중"}
+          </p>
         )}
       </div>
-      {!is_active && (
-        <p
-          className={`text-[9px] font-bold ${
-            inactive7 ? "text-gray-200" : "text-gray-300"
-          }`}
-        >
-          {inactive7 ? "7일 비활동" : "쉬는 중"}
-        </p>
-      )}
       {/* 캐릭터 이미지 */}
       <div className="relative">
         <div
@@ -123,12 +124,14 @@ function MemberActivityCard({
         {nickname.length > 5 ? `${nickname.slice(0, 5)}…` : nickname}
       </p>
 
-      {/* 걸음수 */}
-      {!inactive7 && (
-        <p className={`text-[9px] font-bold ${is_active ? "text-emerald-500" : "text-gray-400"}`}>
-          {today_steps.toLocaleString()}보
-        </p>
-      )}
+      {/* 걸음수 (고정 높이) */}
+      <div className="h-4 flex items-center justify-center">
+        {!inactive7 && (
+          <p className={`text-[9px] font-bold ${is_active ? "text-emerald-500" : "text-gray-400"}`}>
+            {today_steps.toLocaleString()}보
+          </p>
+        )}
+      </div>
     </div>
   );
 }
