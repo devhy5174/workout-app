@@ -65,10 +65,10 @@ export default function CommunityWriteModal({
         <div className="flex items-center justify-between mb-5">
           <div>
             <h2 className="text-[20px] font-bold text-stone-800">
-              운동 기록 남기기 👣
+              운동 인증하기 👣
             </h2>
             <p className="text-[12px] text-stone-400 mt-1">
-              오늘의 움직임을 가볍게 기록해보세요
+              오늘의 움직임을 함께 공유해보세요
             </p>
           </div>
           <button

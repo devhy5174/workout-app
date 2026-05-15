@@ -247,11 +247,11 @@ export default function CommunityPage() {
         <div className="flex items-center gap-1.5 mb-0.5">
           <FootprintIcon className="w-[15px] h-[15px] text-orange-400" />
           <h1 className="text-[18px] font-bold text-stone-800 tracking-tight">
-            오늘의 운동 기록
+            오늘의 운동 인증
           </h1>
         </div>
         <p className="text-[12px] text-stone-400 font-light mb-3">
-          오늘의 움직임을 가볍게 기록해보세요
+          오늘의 움직임을 함께 공유해보세요
         </p>
 
         <div className="flex">
