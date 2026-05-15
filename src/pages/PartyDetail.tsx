@@ -118,17 +118,7 @@ type CheerMessage = {
   text: string;
 };
 
-function CheerFeed({
-  messages,
-  input,
-  onInputChange,
-  onSend,
-}: {
-  messages: CheerMessage[];
-  input: string;
-  onInputChange: (v: string) => void;
-  onSend: () => void;
-}) {
+function CheerTicker({ messages }: { messages: CheerMessage[] }) {
   const [currIndex, setCurrIndex] = useState(0);
   const [transitioning, setTransitioning] = useState(false);
   const currIndexRef = useRef(0);
@@ -170,7 +160,7 @@ function CheerFeed({
   const renderMsg = (msg: CheerMessage) => (
     <>
       <span
-        className="font-extrabold shrink-0 px-2 py-0.5 rounded-full text-[10px] whitespace-nowrap"
+        className="font-extrabold shrink-0 px-1.5 py-0.5 rounded-full text-[9px] whitespace-nowrap"
         style={{
           color: "var(--color-primary)",
           background: "var(--color-primary-light)",
@@ -178,13 +168,13 @@ function CheerFeed({
       >
         {msg.nickname}
       </span>
-      <span className="text-xs text-gray-600 truncate">{msg.text}</span>
+      <span className="text-[11px] text-gray-500 truncate">{msg.text}</span>
     </>
   );
 
   return (
-    <div className="bg-white rounded-3xl shadow-sm p-5 flex flex-col gap-3">
-      <p className="text-sm font-extrabold text-gray-700">💬 응원 메시지</p>
+    <div className="bg-white rounded-2xl shadow-sm px-4 h-9 flex items-center gap-2.5 overflow-hidden">
+      <span className="text-gray-300 text-xs shrink-0">💬</span>
 
       <style>{`
         @keyframes tickerExitUp {
@@ -197,12 +187,10 @@ function CheerFeed({
         }
       `}</style>
 
-      <div className="relative h-8 overflow-hidden">
+      <div className="flex-1 relative h-5 overflow-hidden">
         {!hasMessages ? (
-          <div className="absolute inset-0 flex items-center justify-center">
-            <p className="text-xs text-gray-300 font-semibold">
-              첫 번째 응원을 보내보세요! 🎉
-            </p>
+          <div className="absolute inset-0 flex items-center">
+            <p className="text-[11px] text-gray-300">응원 메시지를 보내보세요!</p>
           </div>
         ) : (
           <>
@@ -223,9 +211,7 @@ function CheerFeed({
               <div
                 key="entering"
                 className="absolute inset-0 flex items-center gap-1.5"
-                style={{
-                  animation: "tickerEnterBelow 0.38s ease-in-out forwards",
-                }}
+                style={{ animation: "tickerEnterBelow 0.38s ease-in-out forwards" }}
                 onAnimationEnd={handleEnterEnd}
               >
                 {renderMsg(nextMsg)}
@@ -234,28 +220,41 @@ function CheerFeed({
           </>
         )}
       </div>
+    </div>
+  );
+}
 
-      <div className="flex gap-2 items-center">
-        <input
-          type="text"
-          value={input}
-          onChange={(e) => onInputChange(e.target.value.slice(0, 30))}
-          onKeyDown={(e) => e.key === "Enter" && onSend()}
-          placeholder="한 줄 응원 메시지 (최대 30자)"
-          maxLength={30}
-          className="flex-1 text-xs font-semibold px-4 py-2.5 rounded-full bg-gray-50 text-gray-700 placeholder-gray-300 outline-none border border-gray-100 focus:border-primary transition"
-        />
-        <button
-          onClick={onSend}
-          disabled={!input.trim()}
-          aria-label="응원 보내기"
-          className={`w-9 h-9 rounded-full flex-shrink-0 flex items-center justify-center text-base transition active:scale-90 ${
-            input.trim() ? "bg-primary text-white" : "bg-gray-100 text-gray-300"
-          }`}
-        >
-          🚀
-        </button>
-      </div>
+function CheerInput({
+  input,
+  onInputChange,
+  onSend,
+}: {
+  input: string;
+  onInputChange: (v: string) => void;
+  onSend: () => void;
+}) {
+  return (
+    <div className="bg-white rounded-3xl shadow-sm px-4 py-3 flex items-center gap-2">
+      <span className="text-base shrink-0">💬</span>
+      <input
+        type="text"
+        value={input}
+        onChange={(e) => onInputChange(e.target.value.slice(0, 30))}
+        onKeyDown={(e) => e.key === "Enter" && onSend()}
+        placeholder="응원 메시지 보내기..."
+        maxLength={30}
+        className="flex-1 text-xs font-semibold text-gray-700 placeholder-gray-300 outline-none bg-transparent"
+      />
+      <button
+        onClick={onSend}
+        disabled={!input.trim()}
+        aria-label="응원 보내기"
+        className={`w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center text-sm transition active:scale-90 ${
+          input.trim() ? "bg-primary text-white" : "bg-gray-100 text-gray-300"
+        }`}
+      >
+        🚀
+      </button>
     </div>
   );
 }
@@ -748,13 +747,9 @@ export default function PartyDetail() {
           )}
         </div>
 
-        {/* 응원 메시지 */}
-        <CheerFeed
-          messages={cheerMessages}
-          input={cheerInput}
-          onInputChange={setCheerInput}
-          onSend={sendCheer}
-        />
+        {/* 응원 ticker bar */}
+        <CheerTicker messages={cheerMessages} />
+
         {/* 파티 멤버 활동 그리드 */}
         <div className="bg-white rounded-3xl shadow-sm p-5 flex flex-col gap-3">
           <div className="flex items-center justify-between">
@@ -814,6 +809,13 @@ export default function PartyDetail() {
             </button>
           )}
         </div>
+
+        {/* 응원 입력 */}
+        <CheerInput
+          input={cheerInput}
+          onInputChange={setCheerInput}
+          onSend={sendCheer}
+        />
       </div>
 
       {showWelcomeModal && party && (
