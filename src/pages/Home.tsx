@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useActivityType } from "../context/ActivityTypeContext";
 import { useCharacter } from "../context/CharacterContext";
 import { useUser } from "../context/UserContext";
@@ -14,6 +14,8 @@ import {
   type AchievedParty,
 } from "../lib/partyService";
 import { useWeeklyTop3 } from "../hooks/useWeeklyTop3";
+import { usePartyHighlights } from "../hooks/usePartyHighlights";
+import { PartyHighlightTicker } from "../components/ui/PartyHighlightTicker";
 
 type DisplayUser = {
   nickname: string;
@@ -91,9 +93,11 @@ function getGreeting() {
 }
 
 export default function Home() {
+  const navigate = useNavigate();
   const { selectedActivityType } = useActivityType();
   const { selectedCharacter } = useCharacter();
   const { user, userGoal, workoutRecords, userProfile } = useUser();
+  const { topParties, trendingParties, isLoading: highlightsLoading } = usePartyHighlights();
 
   const activityTypeName = selectedActivityType?.name ?? null;
 
@@ -516,8 +520,42 @@ export default function Home() {
         </div>
       </div>
 
+      {/* 파티 랭킹 ticker */}
+      <div className="mx-4 mt-6 flex flex-col gap-2">
+        <PartyHighlightTicker
+          icon="🔥"
+          badge="오늘 최다"
+          badgeStyle={{ color: "#ea580c", background: "#fff7ed" }}
+          items={
+            highlightsLoading
+              ? []
+              : topParties.map((p, i) => ({
+                  text: `${["🥇","🥈","🥉"][i]} ${p.name} · ${p.value.toLocaleString()}보`,
+                  partyId: p.id,
+                }))
+          }
+          emptyText={highlightsLoading ? "불러오는 중..." : "오늘 운동 기록이 아직 없어요"}
+          onTap={() => navigate("/party")}
+        />
+        <PartyHighlightTicker
+          icon="⚡"
+          badge="실시간"
+          badgeStyle={{ color: "#059669", background: "#ecfdf5" }}
+          items={
+            highlightsLoading
+              ? []
+              : trendingParties.map((p) => ({
+                  text: `👥 ${p.name} · ${p.value}명 운동 중`,
+                  partyId: p.id,
+                }))
+          }
+          emptyText={highlightsLoading ? "불러오는 중..." : "현재 운동 중인 파티가 없어요"}
+          onTap={() => navigate("/party")}
+        />
+      </div>
+
       {/* 이번주 TOP 3 */}
-      <div className="mx-4 mt-6 bg-white rounded-3xl shadow-sm">
+      <div className="mx-4 mt-3 bg-white rounded-3xl shadow-sm">
         <div className="px-5 py-3 flex items-center gap-2 border-b border-gray-50">
           <span className="text-lg">🏆</span>
           <span className="font-extrabold text-gray-700 text-sm">
