@@ -223,7 +223,9 @@ function CheerFeed({
               <div
                 key="entering"
                 className="absolute inset-0 flex items-center gap-1.5"
-                style={{ animation: "tickerEnterBelow 0.38s ease-in-out forwards" }}
+                style={{
+                  animation: "tickerEnterBelow 0.38s ease-in-out forwards",
+                }}
                 onAnimationEnd={handleEnterEnd}
               >
                 {renderMsg(nextMsg)}

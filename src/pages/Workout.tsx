@@ -386,7 +386,7 @@ export default function Workout() {
   }, [state]);
 
   const stats = [
-    { label: "시간", value: formatTime(elapsed), unit: "", icon: "⏱️" },
+    { label: "시간", value: formatTime(elapsed), unit: "시간", icon: "⏱️" },
     { label: "걸음수", value: steps.toLocaleString(), unit: "보", icon: "👟" },
     { label: "거리", value: distance.toFixed(2), unit: "km", icon: "📍" },
     { label: "칼로리", value: String(calories), unit: "kcal", icon: "🔥" },
@@ -733,7 +733,7 @@ export default function Workout() {
                 }}
                 className="flex-1 py-4 rounded-2xl bg-gray-100 font-extrabold text-gray-600 active:scale-95 transition"
               >
-                <FaRedo /> 다시 도전하기
+                다시 도전하기
               </button>
               <button
                 onClick={() => setShowModal(true)}
