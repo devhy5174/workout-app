@@ -243,7 +243,7 @@ export async function deleteParty(
 
 export type PartyTodayStats = {
   totalSteps: number;
-  topMember: { nickname: string; steps: number } | null;
+  topMember: { user_id: string; nickname: string; steps: number } | null;
 };
 
 export async function getPartyTodayStats(
@@ -293,7 +293,7 @@ export async function getPartyTodayStats(
   const topNickname =
     (topMemberRow?.public_profiles as any)?.nickname ?? "알 수 없음";
 
-  return { totalSteps, topMember: { nickname: topNickname, steps: topSteps } };
+  return { totalSteps, topMember: { user_id: topUserId, nickname: topNickname, steps: topSteps } };
 }
 
 export type AchievedParty = {

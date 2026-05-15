@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { useUser } from "../context/UserContext";
 import { useParty } from "../hooks/useParty";
@@ -111,6 +111,92 @@ function MemberActivityCard({
       >
         {is_active ? `${today_steps.toLocaleString()}보` : "쉬는 중"}
       </p>
+    </div>
+  );
+}
+
+type CheerMessage = {
+  id: number;
+  nickname: string;
+  text: string;
+};
+
+function CheerFeed({
+  messages,
+  input,
+  onInputChange,
+  onSend,
+}: {
+  messages: CheerMessage[];
+  input: string;
+  onInputChange: (v: string) => void;
+  onSend: () => void;
+}) {
+  return (
+    <div className="bg-white rounded-3xl shadow-sm p-5 flex flex-col gap-3">
+      <p className="text-sm font-extrabold text-gray-700">💬 응원 메시지</p>
+
+      <style>{`
+        @keyframes cheerFloat {
+          0%   { opacity: 0; transform: translateY(8px); }
+          12%  { opacity: 1; transform: translateY(0); }
+          72%  { opacity: 1; transform: translateY(0); }
+          100% { opacity: 0; transform: translateY(-14px); }
+        }
+      `}</style>
+
+      <div className="relative h-[68px] overflow-hidden">
+        {messages.length === 0 ? (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <p className="text-xs text-gray-300 font-semibold">
+              첫 번째 응원을 보내보세요! 🎉
+            </p>
+          </div>
+        ) : (
+          <div className="absolute bottom-0 left-0 right-0 flex flex-col gap-1.5">
+            {messages.slice(-3).map((msg) => (
+              <div
+                key={msg.id}
+                className="flex items-center gap-1.5 text-xs min-w-0"
+                style={{ animation: "cheerFloat 4.2s ease-in-out forwards" }}
+              >
+                <span
+                  className="font-extrabold shrink-0 px-2 py-0.5 rounded-full text-[10px] whitespace-nowrap"
+                  style={{
+                    color: "var(--color-primary)",
+                    background: "var(--color-primary-light)",
+                  }}
+                >
+                  {msg.nickname}
+                </span>
+                <span className="text-gray-600 truncate">{msg.text}</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <div className="flex gap-2 items-center">
+        <input
+          type="text"
+          value={input}
+          onChange={(e) => onInputChange(e.target.value.slice(0, 30))}
+          onKeyDown={(e) => e.key === "Enter" && onSend()}
+          placeholder="한 줄 응원 메시지 (최대 30자)"
+          maxLength={30}
+          className="flex-1 text-xs font-semibold px-4 py-2.5 rounded-full bg-gray-50 text-gray-700 placeholder-gray-300 outline-none border border-gray-100 focus:border-primary transition"
+        />
+        <button
+          onClick={onSend}
+          disabled={!input.trim()}
+          aria-label="응원 보내기"
+          className={`w-9 h-9 rounded-full flex-shrink-0 flex items-center justify-center text-base transition active:scale-90 ${
+            input.trim() ? "bg-primary text-white" : "bg-gray-100 text-gray-300"
+          }`}
+        >
+          🚀
+        </button>
+      </div>
     </div>
   );
 }
@@ -285,7 +371,7 @@ export default function PartyDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, addLocalPoints } = useUser();
+  const { user, userProfile, addLocalPoints } = useUser();
   const { isJoined, isLeader, joinParty, leaveParty, kickMember, isLoading: membershipLoading } = useParty(
     user?.id ?? null,
   );
@@ -304,6 +390,21 @@ export default function PartyDetail() {
   const [toast, setToast] = useState<{ message: string; icon?: string } | null>(
     null,
   );
+  const [cheerMessages, setCheerMessages] = useState<CheerMessage[]>([]);
+  const [cheerInput, setCheerInput] = useState("");
+  const cheerCounterRef = useRef(0);
+
+  const sendCheer = () => {
+    const text = cheerInput.trim();
+    if (!text) return;
+    const id = ++cheerCounterRef.current;
+    const nickname = userProfile?.nickname ?? members.find(m => m.user_id === user?.id)?.nickname ?? "나";
+    setCheerMessages((prev) => [...prev, { id, nickname, text }]);
+    setCheerInput("");
+    setTimeout(() => {
+      setCheerMessages((prev) => prev.filter((m) => m.id !== id));
+    }, 4700);
+  };
 
   const showToast = (message: string, icon?: string) => {
     setToast({ message, icon });
@@ -430,83 +531,57 @@ export default function PartyDetail() {
       </div>
 
       <div className="flex-1 overflow-y-auto px-4 pb-6 flex flex-col gap-4">
-        {/* 파티 기본 정보 */}
-        <div className="bg-white rounded-3xl shadow-sm p-5 flex flex-col gap-3">
-          <div className="flex items-start gap-4">
-            <div className="w-16 h-16 rounded-2xl bg-primary-light flex items-center justify-center text-4xl flex-shrink-0">
+        {/* 파티 기본 정보 - 간략 */}
+        <div className="bg-white rounded-3xl shadow-sm px-4 py-3 flex flex-col gap-2">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-primary-light flex items-center justify-center text-2xl flex-shrink-0">
               {party.emoji}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="font-extrabold text-gray-800 text-lg">{party.name}</p>
-              <p className="text-sm text-gray-400 mt-0.5">{party.description}</p>
-              <div className="flex flex-wrap gap-1 mt-2">
-                {party.tags.map((t) => (
-                  <span
-                    key={t}
-                    className="text-[10px] bg-gray-100 text-gray-500 rounded-full px-2 py-0.5 font-semibold"
-                  >
-                    #{t}
+              <div className="flex items-center gap-1.5">
+                <p className="font-extrabold text-gray-800 text-sm truncate">
+                  {party.name}
+                </p>
+                {leader && (
+                  <span className="text-[9px] font-bold text-yellow-600 bg-yellow-50 px-1.5 py-0.5 rounded-full shrink-0">
+                    👑 방장
                   </span>
-                ))}
+                )}
               </div>
+              <p className="text-[11px] text-gray-400 truncate mt-0.5">
+                {party.description}
+              </p>
             </div>
           </div>
-
-          <div className="grid grid-cols-2 gap-2">
-            <div className="bg-gray-50 rounded-2xl px-3 py-2 flex items-center gap-2">
-              <span className="text-base">👥</span>
-              <div>
-                <p className="text-[10px] text-gray-400">멤버</p>
-                <p className="text-xs font-bold text-gray-700">
-                  {party.member_count} / {party.max_members}명
-                </p>
-              </div>
-            </div>
-            <div className="bg-gray-50 rounded-2xl px-3 py-2 flex items-center gap-2">
-              <span className="text-base">📍</span>
-              <div>
-                <p className="text-[10px] text-gray-400">목표 걸음수</p>
-                <p className="text-xs font-bold text-gray-700">
-                  {party.target_steps}보
-                </p>
-              </div>
-            </div>
-            <div className="bg-gray-50 rounded-2xl px-3 py-2 flex items-center gap-2">
-              <span className="text-base">
-                {timeSlotEmoji[party.exercise_time] ?? "⏰"}
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <span className="text-[10px] text-gray-500 font-semibold bg-gray-50 px-2 py-1 rounded-full">
+              {timeSlotEmoji[party.exercise_time] ?? "⏰"} {party.exercise_time}
+            </span>
+            <span className="text-[10px] text-gray-500 font-semibold bg-gray-50 px-2 py-1 rounded-full">
+              👥 {party.member_count}/{party.max_members}명
+            </span>
+            <span className="text-[10px] text-gray-500 font-semibold bg-gray-50 px-2 py-1 rounded-full">
+              👟 {(party.target_steps ?? 10000).toLocaleString()}보
+            </span>
+            {party.tags.slice(0, 2).map((t) => (
+              <span
+                key={t}
+                className="text-[10px] bg-gray-100 text-gray-400 rounded-full px-2 py-1 font-semibold"
+              >
+                #{t}
               </span>
-              <div>
-                <p className="text-[10px] text-gray-400">운동 시간대</p>
-                <p className="text-xs font-bold text-gray-700">
-                  {party.exercise_time}
-                </p>
-              </div>
-            </div>
-            <div className="bg-gray-50 rounded-2xl px-3 py-2 flex items-center gap-2">
-              <span className="text-base">👑</span>
-              <div>
-                <p className="text-[10px] text-gray-400">파티장</p>
-                <p className="text-xs font-bold text-gray-700 truncate">
-                  {party.leader_nickname}
-                </p>
-              </div>
-            </div>
+            ))}
+            {party.tags.length > 2 && (
+              <span className="text-[10px] text-gray-400 font-semibold">
+                +{party.tags.length - 2}
+              </span>
+            )}
           </div>
         </div>
 
         {/* 오늘 파티 현황 */}
         <div className="bg-white rounded-3xl shadow-sm p-5 flex flex-col gap-3">
-          <div className="flex items-center justify-between">
-            <p className="text-sm font-extrabold text-orange-400">🔥 오늘 파티 현황</p>
-            {todayStats?.topMember && (
-              <p className="text-[10px] text-gray-400">
-                MVP{" "}
-                <span className="font-bold text-gray-600">
-                  {todayStats.topMember.nickname}
-                </span>
-              </p>
-            )}
-          </div>
+          <p className="text-sm font-extrabold text-orange-400">🔥 오늘 파티 현황</p>
           {todayStats === null ? (
             <p className="text-xs text-gray-300 animate-pulse">불러오는 중...</p>
           ) : (
@@ -543,6 +618,46 @@ export default function PartyDetail() {
                   }}
                 />
               </div>
+
+              {todayStats.topMember && (() => {
+                const mvp = members.find(
+                  (m) => m.user_id === todayStats.topMember!.user_id,
+                );
+                return (
+                  <div className="flex items-center gap-3 bg-amber-50 rounded-2xl px-4 py-3">
+                    <div className="relative flex-shrink-0">
+                      <div className="w-12 h-12 rounded-2xl bg-amber-100 flex items-center justify-center overflow-hidden">
+                        {mvp?.character_image ? (
+                          <img
+                            src={mvp.character_image}
+                            alt={todayStats.topMember.nickname}
+                            className="w-full h-full object-contain"
+                            draggable={false}
+                          />
+                        ) : (
+                          <span className="text-2xl">
+                            {mvp?.character_emoji ?? "🏃"}
+                          </span>
+                        )}
+                      </div>
+                      <span className="absolute -top-1.5 -right-1.5 text-base leading-none">
+                        🥇
+                      </span>
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-extrabold text-amber-500 uppercase tracking-wide">
+                        오늘의 MVP
+                      </p>
+                      <p className="text-sm font-extrabold text-gray-800 leading-tight">
+                        {todayStats.topMember.nickname}
+                      </p>
+                      <p className="text-xs font-bold text-amber-500">
+                        {todayStats.topMember.steps.toLocaleString()}보
+                      </p>
+                    </div>
+                  </div>
+                );
+              })()}
             </>
           )}
         </div>
@@ -574,6 +689,14 @@ export default function PartyDetail() {
             </div>
           )}
         </div>
+
+        {/* 응원 메시지 */}
+        <CheerFeed
+          messages={cheerMessages}
+          input={cheerInput}
+          onInputChange={setCheerInput}
+          onSend={sendCheer}
+        />
 
         {/* 하단 액션 버튼 */}
         <div className="bg-white rounded-3xl shadow-sm p-4 flex gap-2">
