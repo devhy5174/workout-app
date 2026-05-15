@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { FaPlay, FaPause, FaStop, FaUsers, FaRedo } from "react-icons/fa";
+import { FaPlay, FaPause, FaStop, FaUsers } from "react-icons/fa";
 import { useActivityType } from "../context/ActivityTypeContext";
 import { useUser } from "../context/UserContext";
 import { getAvatarCharacterById } from "../data/avatarCharacters";
