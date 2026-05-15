@@ -75,7 +75,15 @@ function MemberActivityCard({
           </div>
         )}
       </div>
-
+      {!is_active && (
+        <p
+          className={`text-[9px] font-bold ${
+            inactive7 ? "text-gray-200" : "text-gray-300"
+          }`}
+        >
+          {inactive7 ? "7일 비활동" : "쉬는 중"}
+        </p>
+      )}
       {/* 캐릭터 이미지 */}
       <div className="relative">
         <div
@@ -115,22 +123,12 @@ function MemberActivityCard({
         {nickname.length > 5 ? `${nickname.slice(0, 5)}…` : nickname}
       </p>
 
-      {/* 걸음수 / 상태 */}
-      <p
-        className={`text-[9px] font-bold ${
-          inactive7
-            ? "text-gray-200"
-            : is_active
-              ? "text-emerald-500"
-              : "text-gray-300"
-        }`}
-      >
-        {inactive7
-          ? "7일 비활동"
-          : is_active
-            ? `${today_steps.toLocaleString()}보`
-            : "쉬는 중"}
-      </p>
+      {/* 걸음수 */}
+      {!inactive7 && (
+        <p className={`text-[9px] font-bold ${is_active ? "text-emerald-500" : "text-gray-400"}`}>
+          {today_steps.toLocaleString()}보
+        </p>
+      )}
     </div>
   );
 }
