@@ -31,6 +31,7 @@ export type PartyMember = {
   today_steps: number;
   is_active: boolean;
   joined_at: string;
+  last_active_at: string | null;
 };
 
 export type CreatePartyInput = {
@@ -427,23 +428,33 @@ export async function getPartyMembers(partyId: string): Promise<PartyMember[]> {
   const todayStart = new Date();
   todayStart.setHours(0, 0, 0, 0);
 
-  const [weeklyResult, todayResult, activeResult] = await Promise.all([
-    supabase
-      .from("workout_history")
-      .select("user_id, steps")
-      .in("user_id", userIds)
-      .gte("created_at", weekStart.toISOString()),
-    supabase
-      .from("workout_history")
-      .select("user_id, steps")
-      .in("user_id", userIds)
-      .gte("created_at", todayStart.toISOString()),
-    supabase
-      .from("active_sessions")
-      .select("user_id")
-      .in("user_id", userIds)
-      .eq("is_active", true),
-  ]);
+  const sevenDaysAgo = new Date();
+  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+  sevenDaysAgo.setHours(0, 0, 0, 0);
+
+  const [weeklyResult, todayResult, activeResult, recentActivityResult] =
+    await Promise.all([
+      supabase
+        .from("workout_history")
+        .select("user_id, steps")
+        .in("user_id", userIds)
+        .gte("created_at", weekStart.toISOString()),
+      supabase
+        .from("workout_history")
+        .select("user_id, steps")
+        .in("user_id", userIds)
+        .gte("created_at", todayStart.toISOString()),
+      supabase
+        .from("active_sessions")
+        .select("user_id")
+        .in("user_id", userIds)
+        .eq("is_active", true),
+      supabase
+        .from("workout_history")
+        .select("user_id, date, created_at")
+        .in("user_id", userIds)
+        .order("created_at", { ascending: false }),
+    ]);
 
   const weeklyStepsMap = new Map<string, number>();
   (weeklyResult.data ?? []).forEach((w: any) => {
@@ -462,7 +473,21 @@ export async function getPartyMembers(partyId: string): Promise<PartyMember[]> {
     (activeResult.data ?? []).map((s: any) => s.user_id),
   );
 
-  return members.map((m: any) => {
+  const lastActiveMap = new Map<string, string>();
+
+  (recentActivityResult.data ?? []).forEach((w: any) => {
+    if (!lastActiveMap.has(w.user_id)) {
+      const dateStr =
+        typeof w.created_at === "string"
+          ? new Date(w.created_at).toISOString().split("T")[0]
+          : null;
+      if (dateStr) {
+        lastActiveMap.set(w.user_id, dateStr);
+      }
+    }
+  });
+
+  const result = members.map((m: any) => {
     const profile = m.public_profiles as any;
     const characterEmoji =
       profile?.activity_type_id != null
@@ -470,6 +495,7 @@ export async function getPartyMembers(partyId: string): Promise<PartyMember[]> {
         : "🏃";
     const characterImage =
       getAvatarCharacterById(profile?.character_id)?.image ?? null;
+    const last_active_at = lastActiveMap.get(m.user_id) ?? null;
     return {
       user_id: m.user_id,
       party_id: m.party_id,
@@ -480,6 +506,9 @@ export async function getPartyMembers(partyId: string): Promise<PartyMember[]> {
       today_steps: todayStepsMap.get(m.user_id) ?? 0,
       is_active: activeUserIds.has(m.user_id),
       joined_at: m.joined_at,
+      last_active_at,
     };
   });
+
+  return result;
 }

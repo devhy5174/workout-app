@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { FaUser } from "react-icons/fa";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { useUser } from "../context/UserContext";
 import { useParty } from "../hooks/useParty";
@@ -21,24 +22,41 @@ const timeSlotEmoji: Record<string, string> = {
   주말: "🏖️",
 };
 
+function isInactive7Days(member: PartyMember): boolean {
+  // 운동 기록 없으면 가입일 기준으로 판단 (가입 7일 이내면 비활동 아님)
+  const referenceDate = member.last_active_at ?? member.joined_at;
+  if (!referenceDate) return true;
+
+  const lastDate = new Date(referenceDate);
+  const sevenDaysAgo = new Date();
+  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+  sevenDaysAgo.setHours(0, 0, 0, 0);
+
+  return lastDate < sevenDaysAgo;
+}
+
 function MemberActivityCard({
   member,
   isMe,
   isPartyLeader,
-  canKick,
+  canKickInactive,
   onKick,
 }: {
   member: PartyMember;
   isMe: boolean;
   isPartyLeader: boolean;
-  canKick: boolean;
+  canKickInactive: boolean;
   onKick: () => void;
 }) {
   const { is_active, character_image, character_emoji, nickname, today_steps } =
     member;
+  const inactive7 = isInactive7Days(member);
 
   return (
-    <div className="flex flex-col items-center gap-1">
+    <div
+      className={`flex flex-col items-center gap-1 ${canKickInactive && inactive7 ? "cursor-pointer" : ""}`}
+      onClick={canKickInactive && inactive7 ? onKick : undefined}
+    >
       {/* 말풍선 */}
       <div className="h-5 flex items-end justify-center">
         {is_active && (
@@ -62,10 +80,16 @@ function MemberActivityCard({
       <div className="relative">
         <div
           className={`w-14 h-14 rounded-2xl flex items-center justify-center overflow-hidden ${
-            is_active ? "bg-primary-light" : "bg-gray-100 grayscale opacity-40"
+            inactive7
+              ? "bg-gray-100"
+              : is_active
+                ? "bg-primary-light"
+                : "bg-gray-100 grayscale opacity-40"
           }`}
         >
-          {character_image ? (
+          {inactive7 ? (
+            <FaUser className="text-gray-300 text-3xl" />
+          ) : character_image ? (
             <img
               src={character_image}
               alt={nickname}
@@ -76,27 +100,15 @@ function MemberActivityCard({
             <span className="text-2xl">{character_emoji}</span>
           )}
         </div>
-        {is_active && (
+        {is_active && !inactive7 && (
           <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-400 rounded-full border-2 border-white animate-pulse" />
-        )}
-        {canKick && (
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onKick();
-            }}
-            aria-label={`${nickname} 퇴장`}
-            className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-red-400 text-white text-[9px] font-bold flex items-center justify-center shadow-sm"
-          >
-            ✕
-          </button>
         )}
       </div>
 
       {/* 닉네임 */}
       <p
         className={`text-[10px] font-bold text-center w-full truncate leading-tight ${
-          isMe ? "text-primary" : "text-gray-600"
+          isMe ? "text-primary" : inactive7 ? "text-gray-300" : "text-gray-600"
         }`}
       >
         {isPartyLeader ? "👑" : ""}
@@ -106,10 +118,18 @@ function MemberActivityCard({
       {/* 걸음수 / 상태 */}
       <p
         className={`text-[9px] font-bold ${
-          is_active ? "text-emerald-500" : "text-gray-300"
+          inactive7
+            ? "text-gray-200"
+            : is_active
+              ? "text-emerald-500"
+              : "text-gray-300"
         }`}
       >
-        {is_active ? `${today_steps.toLocaleString()}보` : "쉬는 중"}
+        {inactive7
+          ? "7일 비활동"
+          : is_active
+            ? `${today_steps.toLocaleString()}보`
+            : "쉬는 중"}
       </p>
     </div>
   );
@@ -193,7 +213,9 @@ function CheerTicker({ messages }: { messages: CheerMessage[] }) {
       <div className="flex-1 relative h-5 overflow-hidden">
         {!hasMessages ? (
           <div className="absolute inset-0 flex items-center">
-            <p className="text-[11px] text-gray-300">응원 메시지를 보내보세요!</p>
+            <p className="text-[11px] text-gray-300">
+              응원 메시지를 보내보세요!
+            </p>
           </div>
         ) : (
           <>
@@ -214,7 +236,9 @@ function CheerTicker({ messages }: { messages: CheerMessage[] }) {
               <div
                 key="entering"
                 className="absolute inset-0 flex items-center gap-1.5"
-                style={{ animation: "tickerEnterBelow 0.38s ease-in-out forwards" }}
+                style={{
+                  animation: "tickerEnterBelow 0.38s ease-in-out forwards",
+                }}
                 onAnimationEnd={handleEnterEnd}
               >
                 {renderMsg(nextMsg)}
@@ -307,13 +331,16 @@ function KickConfirmModal({
   return (
     <div className="fixed inset-0 bg-black/40 z-[60] flex items-center justify-center px-6">
       <div className="w-full max-w-sm bg-white rounded-3xl p-7 flex flex-col items-center gap-4 shadow-xl">
-        <span className="text-5xl">⚠️</span>
+        <span className="text-5xl">🧹</span>
         <p className="font-extrabold text-gray-800 text-lg text-center">
-          정말 퇴장시킬까요?
+          파티 정리할까요?
         </p>
-        <p className="text-sm text-gray-400 text-center">
-          <span className="font-bold text-gray-600">"{nickname}"</span> 님을
-          파티에서 퇴장시켜요
+        <p className="text-sm text-gray-500 text-center leading-relaxed">
+          <span className="font-bold text-gray-700">"{nickname}"</span> 님은
+          <br />
+          7일 이상 활동하지 않은 멤버예요.
+          <br />
+          파티에서 정리하시겠어요?
         </p>
         <div className="flex gap-3 w-full">
           <button
@@ -326,7 +353,7 @@ function KickConfirmModal({
             onClick={onConfirm}
             className="flex-1 py-3 rounded-2xl bg-red-500 text-white text-sm font-extrabold active:scale-95 transition"
           >
-            퇴장
+            정리하기
           </button>
         </div>
       </div>
@@ -523,7 +550,11 @@ export default function PartyDetail() {
     if (!id) return;
     getPartyCheers(id).then((cheers) => {
       setCheerMessages(
-        cheers.map((c) => ({ id: c.id, nickname: c.nickname, text: c.message })),
+        cheers.map((c) => ({
+          id: c.id,
+          nickname: c.nickname,
+          text: c.message,
+        })),
       );
     });
   }, [id]);
@@ -549,7 +580,10 @@ export default function PartyDetail() {
           };
           if (row.user_id === user?.id) return;
           setCheerMessages((prev) =>
-            [...prev, { id: row.id, nickname: row.nickname, text: row.message }].slice(-20),
+            [
+              ...prev,
+              { id: row.id, nickname: row.nickname, text: row.message },
+            ].slice(-20),
           );
         },
       )
@@ -816,41 +850,11 @@ export default function PartyDetail() {
                   member={m}
                   isMe={m.user_id === user?.id}
                   isPartyLeader={m.user_id === party.created_by}
-                  canKick={leader && m.user_id !== user?.id}
+                  canKickInactive={leader && m.user_id !== user?.id}
                   onKick={() => setKickTarget(m)}
                 />
               ))}
             </div>
-          )}
-        </div>
-
-        {/* 하단 액션 버튼 */}
-        <div className="bg-white rounded-3xl shadow-sm p-4 flex gap-2">
-          {joined ? (
-            leader ? (
-              <div className="flex-1 py-3 rounded-2xl bg-yellow-50 text-sm font-extrabold text-yellow-600 flex items-center justify-center gap-1">
-                👑 파티장
-              </div>
-            ) : (
-              <button
-                onClick={() => setShowLeaveModal(true)}
-                className="flex-1 py-3 rounded-2xl bg-red-50 text-sm font-bold text-red-400 active:scale-95 transition"
-              >
-                👋 파티 나가기
-              </button>
-            )
-          ) : (
-            <button
-              disabled={slotFull}
-              onClick={() => !slotFull && setShowJoinModal(true)}
-              className={`flex-1 py-3 rounded-2xl text-sm font-extrabold transition active:scale-95 ${
-                slotFull
-                  ? "bg-gray-100 text-gray-300 cursor-not-allowed"
-                  : "bg-primary text-white"
-              }`}
-            >
-              {slotFull ? "모집 마감" : "🎉 참가하기"}
-            </button>
           )}
         </div>
 
@@ -860,6 +864,36 @@ export default function PartyDetail() {
           onInputChange={setCheerInput}
           onSend={sendCheer}
         />
+      </div>
+
+      {/* 하단 액션 버튼 */}
+      <div className="bg-white rounded-3xl shadow-sm p-4 flex gap-2">
+        {joined ? (
+          leader ? (
+            <div className="flex-1 py-3 rounded-2xl bg-yellow-50 text-sm font-extrabold text-yellow-600 flex items-center justify-center gap-1">
+              👑 파티장
+            </div>
+          ) : (
+            <button
+              onClick={() => setShowLeaveModal(true)}
+              className="flex-1 py-3 rounded-2xl bg-red-50 text-sm font-bold text-red-400 active:scale-95 transition"
+            >
+              👋 파티 나가기
+            </button>
+          )
+        ) : (
+          <button
+            disabled={slotFull}
+            onClick={() => !slotFull && setShowJoinModal(true)}
+            className={`flex-1 py-3 rounded-2xl text-sm font-extrabold transition active:scale-95 ${
+              slotFull
+                ? "bg-gray-100 text-gray-300 cursor-not-allowed"
+                : "bg-primary text-white"
+            }`}
+          >
+            {slotFull ? "모집 마감" : "🎉 참가하기"}
+          </button>
+        )}
       </div>
 
       {showWelcomeModal && party && (
