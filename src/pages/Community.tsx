@@ -7,8 +7,7 @@ import { getAvatarCharacterById } from "../data/avatarCharacters";
 import { getCharacterById } from "../data/activityTypes";
 import { useUser } from "../context/UserContext";
 
-// ─── 타입 ───────────────────────────────────────────────── 
-
+// ─── 타입 ─────────────────────────────────────────────────
 
 interface Post {
   id: string;
@@ -25,7 +24,6 @@ interface Post {
 }
 
 type TabType = "community" | "mine";
-
 
 function deriveTitle(activityTypeId: number | null): string {
   if (!activityTypeId) return "산책러";
@@ -44,7 +42,13 @@ function FootprintIcon({ className = "" }: { className?: string }) {
       <ellipse cx="8.5" cy="7" rx="2.5" ry="3.5" />
       <ellipse cx="15.5" cy="10" rx="2.5" ry="3.5" />
       <ellipse cx="6" cy="14" rx="2" ry="2.8" transform="rotate(-15 6 14)" />
-      <ellipse cx="12" cy="17.5" rx="2" ry="2.8" transform="rotate(10 12 17.5)" />
+      <ellipse
+        cx="12"
+        cy="17.5"
+        rx="2"
+        ry="2.8"
+        transform="rotate(10 12 17.5)"
+      />
     </svg>
   );
 }
@@ -61,11 +65,11 @@ function PostCard({
   onDelete?: () => void;
   showDelete?: boolean;
 }) {
-  const characterImage = getAvatarCharacterById(post.character_id)?.image ?? null;
+  const characterImage =
+    getAvatarCharacterById(post.character_id)?.image ?? null;
 
   return (
     <div className="flex items-start gap-2.5">
-
       {/* 아바타  */}
       <div className="flex-shrink-0 flex flex-col items-center gap-1 pt-1">
         {characterImage ? (
@@ -82,12 +86,13 @@ function PostCard({
             {post.nickname[0]}
           </div>
         )}
-        <span className="text-[10px] text-stone-400 font-light">{post.nickname}</span>
+        <span className="text-[10px] text-stone-400 font-light">
+          {post.nickname}
+        </span>
       </div>
 
       {/* 말풍선 */}
       <div className="flex-1 relative min-w-0">
-
         {/* 꼬리 삼각형 */}
         <div
           className="absolute -left-[7px] top-3.5 w-0 h-0"
@@ -100,7 +105,6 @@ function PostCard({
         />
 
         <div className="bg-white rounded-2xl border border-stone-100 shadow-sm px-3.5 pt-3 pb-2.5">
-
           {/* 태그 배지(최대 2개) + 걸음수 배지 */}
           <div className="flex items-center justify-between mb-2.5">
             <div className="flex items-center gap-1 flex-wrap">
@@ -108,7 +112,10 @@ function PostCard({
                 <span
                   key={tag}
                   className="rounded-full px-2.5 py-0.5 text-[11px] font-semibold"
-                  style={{ background: "var(--color-primary-light)", color: "var(--color-primary)" }}
+                  style={{
+                    background: "var(--color-primary-light)",
+                    color: "var(--color-primary)",
+                  }}
                 >
                   #{tag}
                 </span>
@@ -116,7 +123,9 @@ function PostCard({
             </div>
             <div className="flex items-center gap-1 bg-stone-100 rounded-full px-2.5 py-1 flex-shrink-0">
               <FootprintIcon className="w-3 h-3 text-stone-500" />
-              <span className="text-[13px] text-stone-700 font-bold">{post.steps}</span>
+              <span className="text-[13px] text-stone-700 font-bold">
+                {post.steps}
+              </span>
             </div>
           </div>
 
@@ -129,7 +138,9 @@ function PostCard({
 
           {/* 하단 바: 칭호 + 버튼 */}
           <div className="flex items-center justify-between pt-2.5 border-t border-stone-50">
-            <span className="text-[11px] text-stone-400 font-light">{post.title}</span>
+            <span className="text-[11px] text-stone-400 font-light">
+              {post.title}
+            </span>
 
             <div className="flex items-center gap-1.5">
               {showDelete && (
@@ -148,8 +159,16 @@ function PostCard({
                   className="flex items-center gap-1 rounded-full px-3 py-1.5 text-[11px] font-medium transition-all duration-150 active:scale-95 border"
                   style={
                     post.cheered
-                      ? { background: "var(--color-primary-light)", color: "var(--color-primary)", borderColor: "var(--color-primary)" }
-                      : { background: "#f8f8f7", color: "#a8a29e", borderColor: "#e7e5e4" }
+                      ? {
+                          background: "var(--color-primary-light)",
+                          color: "var(--color-primary)",
+                          borderColor: "var(--color-primary)",
+                        }
+                      : {
+                          background: "#f8f8f7",
+                          color: "#a8a29e",
+                          borderColor: "#e7e5e4",
+                        }
                   }
                 >
                   <span>🌿</span>
@@ -158,7 +177,6 @@ function PostCard({
               )}
             </div>
           </div>
-
         </div>
       </div>
     </div>
@@ -177,8 +195,8 @@ function EmptyState({ message }: { message: string }) {
 
 // ─── 메인 페이지 ───────────────────────────────────────────
 export default function CommunityPage() {
-  const [tab, setTab]                       = useState<TabType>("community");
-  const [filterTags]         = useState<string[]>([]);
+  const [tab, setTab] = useState<TabType>("community");
+  const [filterTags] = useState<string[]>([]);
   const [writeModalOpen, setWriteModalOpen] = useState(false);
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
 
@@ -195,7 +213,9 @@ export default function CommunityPage() {
   } = useCommunity();
 
   // CommunityPost → Post (뷰 모델 변환)
-  const toPost = (p: ReturnType<typeof useCommunity>["posts"][number]): Post => ({
+  const toPost = (
+    p: ReturnType<typeof useCommunity>["posts"][number],
+  ): Post => ({
     id: p.id,
     card: getCardById(p.card_id),
     tags: p.tags,
@@ -217,17 +237,18 @@ export default function CommunityPage() {
       ? enrichedPosts
       : enrichedPosts.filter((p) => p.tags.some((t) => filterTags.includes(t)));
 
-  const openWriteModal  = () => setWriteModalOpen(true);
+  const openWriteModal = () => setWriteModalOpen(true);
   const closeWriteModal = () => setWriteModalOpen(false);
 
   return (
     <div className="bg-bg min-h-screen max-w-[430px] mx-auto pb-24">
-
       {/* ── 헤더 + 탭 ── */}
       <div className="sticky top-0 z-10 bg-bg/90 backdrop-blur-sm px-5 pt-5 pb-0 border-b border-stone-100/80">
         <div className="flex items-center gap-1.5 mb-0.5">
           <FootprintIcon className="w-[15px] h-[15px] text-orange-400" />
-          <h1 className="text-[18px] font-bold text-stone-800 tracking-tight">오늘의 운동 기록</h1>
+          <h1 className="text-[18px] font-bold text-stone-800 tracking-tight">
+            오늘의 운동 기록
+          </h1>
         </div>
         <p className="text-[12px] text-stone-400 font-light mb-3">
           오늘의 움직임을 가볍게 기록해보세요
@@ -235,8 +256,8 @@ export default function CommunityPage() {
 
         <div className="flex">
           {(["community", "mine"] as TabType[]).map((t) => {
-            const label  = t === "community" ? "커뮤니티" : "내 게시글";
-            const count  = t === "mine" ? myPosts.length : undefined;
+            const label = t === "community" ? "커뮤니티" : "내 게시글";
+            const count = t === "mine" ? myPosts.length : undefined;
             const active = tab === t;
             return (
               <button
@@ -250,8 +271,10 @@ export default function CommunityPage() {
               >
                 {label}
                 {count !== undefined && (
-                  <span className={`text-[11px] rounded-full px-1.5 py-0.5 font-semibold
-                    ${active ? "bg-orange-100 text-orange-500" : "bg-stone-100 text-stone-400"}`}>
+                  <span
+                    className={`text-[11px] rounded-full px-1.5 py-0.5 font-semibold
+                    ${active ? "bg-orange-100 text-orange-500" : "bg-stone-100 text-stone-400"}`}
+                  >
                     {count}
                   </span>
                 )}
@@ -265,7 +288,6 @@ export default function CommunityPage() {
       </div>
 
       <div className="px-4 pt-4">
-
         {/* ── 커뮤니티 탭 ── */}
         {tab === "community" && (
           <>
@@ -279,20 +301,26 @@ export default function CommunityPage() {
                   <span className="text-xl">👣</span>
                 </div>
                 <div className="text-left">
-                  <p className="text-sm font-semibold text-stone-700">오늘의 운동 기록 남기기</p>
-                  <p className="text-[12px] text-stone-400 mt-0.5">오늘의 움직임을 가볍게 기록해보세요</p>
+                  <p className="text-sm font-semibold text-stone-700">
+                    오늘의 운동 기록 남기기
+                  </p>
+                  <p className="text-[12px] text-stone-400 mt-0.5">
+                    오늘의 움직임을 가볍게 기록해보세요
+                  </p>
                 </div>
               </div>
               <div className="text-orange-400 text-xl font-light">+</div>
             </button>
 
-          
-
             {/* 말풍선 피드 */}
             <div className="flex flex-col gap-5">
               {filteredPosts.length > 0 ? (
                 filteredPosts.map((post) => (
-                  <PostCard key={post.id} post={post} onCheer={() => toggleCheer(post.id)} />
+                  <PostCard
+                    key={post.id}
+                    post={post}
+                    onCheer={() => toggleCheer(post.id)}
+                  />
                 ))
               ) : (
                 <EmptyState message="해당 태그의 기록이 없어요" />
@@ -302,7 +330,9 @@ export default function CommunityPage() {
             {filteredPosts.length > 0 && (
               <div className="flex items-center justify-center gap-2 mt-6 mb-2">
                 <FootprintIcon className="w-3 h-3 text-stone-300" />
-                <span className="text-[11px] text-stone-300 font-light">더 많은 기록 불러오기</span>
+                <span className="text-[11px] text-stone-300 font-light">
+                  더 많은 기록 불러오기
+                </span>
                 <FootprintIcon className="w-3 h-3 text-stone-300" />
               </div>
             )}
@@ -315,18 +345,30 @@ export default function CommunityPage() {
             {/* 통계 요약 */}
             <div className="bg-white rounded-2xl p-4 mb-5 border border-stone-100 shadow-sm flex items-center justify-between">
               <div className="text-center flex-1">
-                <p className="text-[22px] font-bold text-stone-800">{myPosts.length}</p>
-                <p className="text-[11px] text-stone-400 font-light mt-0.5">기록</p>
+                <p className="text-[22px] font-bold text-stone-800">
+                  {myPosts.length}
+                </p>
+                <p className="text-[11px] text-stone-400 font-light mt-0.5">
+                  기록
+                </p>
               </div>
               <div className="w-px h-8 bg-stone-100" />
               <div className="text-center flex-1">
-                <p className="text-[22px] font-bold text-orange-400">{totalCheersReceived}</p>
-                <p className="text-[11px] text-stone-400 font-light mt-0.5">받은 응원</p>
+                <p className="text-[22px] font-bold text-orange-400">
+                  {totalCheersReceived}
+                </p>
+                <p className="text-[11px] text-stone-400 font-light mt-0.5">
+                  받은 응원
+                </p>
               </div>
               <div className="w-px h-8 bg-stone-100" />
               <div className="text-center flex-1">
-                <p className="text-[22px] font-bold text-stone-800">{thisWeekCount}</p>
-                <p className="text-[11px] text-stone-400 font-light mt-0.5">이번 주</p>
+                <p className="text-[22px] font-bold text-stone-800">
+                  {thisWeekCount}
+                </p>
+                <p className="text-[11px] text-stone-400 font-light mt-0.5">
+                  이번 주
+                </p>
               </div>
             </div>
 
@@ -348,7 +390,6 @@ export default function CommunityPage() {
             </div>
           </>
         )}
-
       </div>
 
       {/* ── 삭제 확인 모달 ── */}
