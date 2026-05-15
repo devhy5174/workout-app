@@ -211,6 +211,16 @@ export async function fetchRangeStats(
   return data.reduce((acc, r) => acc + (r.steps ?? 0), 0);
 }
 
+export async function deleteWorkoutRecord(
+  id: string,
+): Promise<{ error: string | null }> {
+  const { error } = await supabase
+    .from("workout_history")
+    .delete()
+    .eq("id", id);
+  return { error: error?.message ?? null };
+}
+
 export async function deleteActiveGoal(
   userId: string,
 ): Promise<{ error: string | null }> {
@@ -240,6 +250,65 @@ export async function fetchTodayHourlyStats(userId: string): Promise<number[]> {
     buckets[bucket] += r.steps ?? 0;
   }
   return buckets;
+}
+
+export type WeeklyTopUser = {
+  rank: number;
+  nickname: string;
+  steps: number;
+  character_id: string | null;
+};
+
+export async function fetchWeeklyTop3(): Promise<WeeklyTopUser[]> {
+  const now = new Date();
+  const dayOfWeek = now.getDay();
+  const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+  const monday = new Date(now);
+  monday.setDate(now.getDate() + mondayOffset);
+  monday.setHours(0, 0, 0, 0);
+  const sunday = new Date(monday);
+  sunday.setDate(monday.getDate() + 6);
+
+  const startDate = monday.toISOString().split("T")[0];
+  const endDate = sunday.toISOString().split("T")[0];
+
+  const { data: workouts, error } = await supabase
+    .from("workout_history")
+    .select("user_id, steps")
+    .gte("date", startDate)
+    .lte("date", endDate);
+
+  if (error || !workouts || workouts.length === 0) return [];
+
+  const stepsByUser: Record<string, number> = {};
+  for (const w of workouts) {
+    if (!w.user_id) continue;
+    stepsByUser[w.user_id] = (stepsByUser[w.user_id] ?? 0) + (w.steps ?? 0);
+  }
+
+  const top3Entries = Object.entries(stepsByUser)
+    .sort(([, a], [, b]) => b - a)
+    .slice(0, 3);
+
+  if (top3Entries.length === 0) return [];
+
+  const userIds = top3Entries.map(([id]) => id);
+  const { data: profiles } = await supabase
+    .from("public_profiles")
+    .select("id, nickname, character_id")
+    .in("id", userIds);
+
+  const profileMap = new Map(profiles?.map((p) => [p.id, p]) ?? []);
+
+  return top3Entries.map(([userId, steps], i) => {
+    const profile = profileMap.get(userId);
+    return {
+      rank: i + 1,
+      nickname: profile?.nickname ?? "익명",
+      steps,
+      character_id: profile?.character_id ?? null,
+    };
+  });
 }
 
 // 이번 달 일별 걸음수 (인덱스 0=1일, 1=2일, ...)

@@ -13,6 +13,7 @@ import {
   getAchievedPartiesForUser,
   type AchievedParty,
 } from "../lib/partyService";
+import { useWeeklyTop3 } from "../hooks/useWeeklyTop3";
 
 type DisplayUser = {
   nickname: string;
@@ -49,31 +50,10 @@ function useTypingEffect(text: string, speed = 40) {
   return displayed;
 }
 
-const weeklyTop3 = [
-  {
-    rank: 1,
-    name: "번개맨",
-    steps: 18430,
-    medal: "🥇",
-    bgColor: "#fefce8",
-    textColor: "#ca8a04",
-  },
-  {
-    rank: 2,
-    name: "달리기왕",
-    steps: 15220,
-    medal: "🥈",
-    bgColor: "#f9fafb",
-    textColor: "#6b7280",
-  },
-  {
-    rank: 3,
-    name: "산책러",
-    steps: 12870,
-    medal: "🥉",
-    bgColor: "#fff7ed",
-    textColor: "#fb923c",
-  },
+const MEDAL_CONFIG = [
+  { medal: "🥇", bgColor: "#fefce8", textColor: "#ca8a04" },
+  { medal: "🥈", bgColor: "#f9fafb", textColor: "#6b7280" },
+  { medal: "🥉", bgColor: "#fff7ed", textColor: "#fb923c" },
 ];
 
 const GOAL_TYPE_UNIT = {
@@ -134,6 +114,7 @@ export default function Home() {
   const [activeUsers, setActiveUsers] = useState<DisplayUser[]>([]);
   const [achievedParties, setAchievedParties] = useState<AchievedParty[]>([]);
   const [currentBannerIndex, setCurrentBannerIndex] = useState(0);
+  const { top3, isLoading: top3Loading } = useWeeklyTop3();
 
   useEffect(() => {
     if (!user?.id) return;
@@ -544,29 +525,68 @@ export default function Home() {
           </span>
         </div>
         <div className="flex flex-col">
-          {weeklyTop3.map((user) => (
-            <div
-              key={user.rank}
-              className="flex items-center gap-4 px-5 py-3.5"
-              style={{ backgroundColor: user.bgColor }}
-            >
-              <span className="text-2xl w-8 text-center">{user.medal}</span>
-              <div className="flex-1 min-w-0">
-                <p className="font-bold text-gray-800 text-sm truncate">
-                  {user.name}
-                </p>
-                <p
-                  className="text-xs font-semibold"
-                  style={{ color: user.textColor }}
-                >
-                  {user.steps.toLocaleString()} 걸음
-                </p>
+          {top3Loading ? (
+            Array.from({ length: 3 }).map((_, i) => (
+              <div
+                key={i}
+                className="flex items-center gap-4 px-5 py-3.5 animate-pulse"
+              >
+                <div className="w-8 h-8 rounded-full bg-gray-100" />
+                <div className="flex-1 flex flex-col gap-1.5">
+                  <div className="h-3 bg-gray-100 rounded w-24" />
+                  <div className="h-2.5 bg-gray-100 rounded w-16" />
+                </div>
               </div>
-              <span className="text-xs font-extrabold text-gray-300">
-                #{user.rank}
-              </span>
+            ))
+          ) : top3.length === 0 ? (
+            <div className="px-5 py-6 text-center text-xs text-gray-400 font-semibold">
+              이번주 아직 운동 기록이 없어요
             </div>
-          ))}
+          ) : (
+            top3.map((entry) => {
+              const config = MEDAL_CONFIG[entry.rank - 1];
+              const charImage =
+                getAvatarCharacterById(entry.character_id)?.image ?? null;
+              return (
+                <div
+                  key={entry.rank}
+                  className="flex items-center gap-4 px-5 py-3.5"
+                  style={{ backgroundColor: config.bgColor }}
+                >
+                  <span className="text-2xl w-8 text-center">
+                    {config.medal}
+                  </span>
+                  <div
+                    className="w-8 h-8 rounded-full bg-white flex items-center justify-center overflow-hidden flex-shrink-0 shadow-sm"
+                  >
+                    {charImage ? (
+                      <img
+                        src={charImage}
+                        alt=""
+                        className="w-full h-full object-contain"
+                      />
+                    ) : (
+                      <span className="text-base">🏃</span>
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-bold text-gray-800 text-sm truncate">
+                      {entry.nickname}
+                    </p>
+                    <p
+                      className="text-xs font-semibold"
+                      style={{ color: config.textColor }}
+                    >
+                      {entry.steps.toLocaleString()} 걸음
+                    </p>
+                  </div>
+                  <span className="text-xs font-extrabold text-gray-300">
+                    #{entry.rank}
+                  </span>
+                </div>
+              );
+            })
+          )}
         </div>
       </div>
 

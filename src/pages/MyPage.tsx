@@ -825,13 +825,22 @@ function InfoTab() {
 
 // ── 운동기록 탭 ─────────────────────────────────────────
 function WorkoutTab() {
-  const { workoutRecords, refreshWorkoutHistory } = useUser();
+  const { workoutRecords, refreshWorkoutHistory, deleteWorkout } = useUser();
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   async function handleRefresh() {
     setIsRefreshing(true);
     await refreshWorkoutHistory();
     setIsRefreshing(false);
+  }
+
+  async function handleDelete(id: string) {
+    setIsDeleting(true);
+    await deleteWorkout(id);
+    setIsDeleting(false);
+    setDeletingId(null);
   }
 
   const totalKcal = workoutRecords.reduce((s, r) => s + r.calories, 0);
@@ -903,9 +912,11 @@ function WorkoutTab() {
             label: record.workout_type,
             emoji: "🏃",
           };
+          const id = record.id ?? record.created_at ?? "";
+          const isPendingDelete = deletingId === id;
           return (
             <div
-              key={record.id ?? record.created_at}
+              key={id}
               className="bg-white rounded-3xl shadow-sm p-4 flex items-center gap-4"
             >
               <div
@@ -919,10 +930,13 @@ function WorkoutTab() {
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-1.5">
+                  <div className="flex items-center gap-1.5 flex-wrap">
                     <p className="font-extrabold text-gray-800 text-sm">
                       {typeInfo.label}
                     </p>
+                    <span className="text-[10px] font-bold text-[var(--color-primary)] bg-[var(--color-primary)]/10 rounded-full px-2 py-0.5">
+                      +{record.points_earned}P
+                    </span>
                     {record.goal_achieved && (
                       <span
                         className="text-[10px] font-bold text-white px-1.5 py-0.5 rounded-full"
@@ -932,9 +946,38 @@ function WorkoutTab() {
                       </span>
                     )}
                   </div>
-                  <span className="text-[10px] font-bold text-[var(--color-primary)] bg-[var(--color-primary)]/10 rounded-full px-2 py-0.5">
-                    +{record.points_earned}P
-                  </span>
+                  {isPendingDelete ? (
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={() => handleDelete(id)}
+                        disabled={isDeleting}
+                        className="text-[10px] font-bold text-red-500 disabled:opacity-50 px-2 py-1"
+                        aria-label="삭제 확인"
+                      >
+                        {isDeleting ? "..." : "삭제"}
+                      </button>
+                      <button
+                        onClick={() => setDeletingId(null)}
+                        className="text-[10px] font-bold text-gray-400 px-2 py-1"
+                        aria-label="취소"
+                      >
+                        취소
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => setDeletingId(id)}
+                      className="w-7 h-7 rounded-full bg-gray-100 flex items-center justify-center text-gray-400 hover:bg-red-50 hover:text-red-400 transition-colors flex-shrink-0"
+                      aria-label="기록 삭제"
+                    >
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <polyline points="3 6 5 6 21 6" />
+                        <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+                        <path d="M10 11v6M14 11v6" />
+                        <path d="M9 6V4h6v2" />
+                      </svg>
+                    </button>
+                  )}
                 </div>
                 <p className="text-xs text-gray-400 mt-0.5">
                   {formatDate(record.date)}
@@ -943,11 +986,9 @@ function WorkoutTab() {
                   <span className="text-[11px] text-gray-500 font-semibold">
                     🕐 {formatDuration(record.duration)}
                   </span>
-
                   <span className="text-[11px] text-gray-500 font-semibold">
                     👟 {record.steps.toLocaleString()}보
                   </span>
-
                   <span className="text-[11px] text-gray-500 font-semibold">
                     📍 {record.distance.toFixed(2)}km
                   </span>

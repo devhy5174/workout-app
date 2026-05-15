@@ -16,6 +16,7 @@ import {
   saveWorkoutRecord,
   saveUserGoal,
   deleteActiveGoal,
+  deleteWorkoutRecord,
 } from "../lib/workoutService";
 
 export type { WorkoutRecord, UserGoal };
@@ -47,6 +48,7 @@ type UserContextValue = {
   saveWorkout: (record: Omit<WorkoutRecord, "id" | "user_id" | "created_at">) => Promise<{ error: string | null }>;
   saveGoal: (type: UserGoal["goal_type"], value: number) => Promise<{ error: string | null }>;
   deleteGoal: () => Promise<{ error: string | null }>;
+  deleteWorkout: (id: string) => Promise<{ error: string | null }>;
   refreshWorkoutHistory: () => Promise<void>;
   addLocalPoints: (amount: number) => void;
 };
@@ -63,6 +65,7 @@ const UserContext = createContext<UserContextValue>({
   saveWorkout: async () => ({ error: null }),
   saveGoal: async () => ({ error: null }),
   deleteGoal: async () => ({ error: null }),
+  deleteWorkout: async () => ({ error: null }),
   refreshWorkoutHistory: async () => {},
   addLocalPoints: () => {},
 });
@@ -292,6 +295,14 @@ useEffect(() => {
     return result;
   };
 
+  const deleteWorkout = async (id: string) => {
+    const result = await deleteWorkoutRecord(id);
+    if (!result.error) {
+      setWorkoutRecords((prev) => prev.filter((r) => r.id !== id));
+    }
+    return result;
+  };
+
   const refreshWorkoutHistory = async () => {
     if (!user) return;
     const workouts = await fetchWorkoutHistory(user.id);
@@ -320,6 +331,7 @@ useEffect(() => {
         saveWorkout,
         saveGoal,
         deleteGoal,
+        deleteWorkout,
         refreshWorkoutHistory,
         addLocalPoints,
       }}
