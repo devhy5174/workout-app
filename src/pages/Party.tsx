@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { TAGS } from "../data/tags";
+import { PARTY_TAGS } from "../data/tags";
 import { POINT_RULES } from "../data/points";
 import { storage } from "../utils/storage";
 import { useUser } from "../context/UserContext";
@@ -81,7 +81,9 @@ function PartyCard({
 
   useEffect(() => {
     getPartyTodayStats(party.id).then(setTodayStats);
-    getPartyMembers(party.id).then((data) => setMemberPreviews(data.slice(0, 3)));
+    getPartyMembers(party.id).then((data) =>
+      setMemberPreviews(data.slice(0, 3)),
+    );
   }, [party.id]);
 
   return (
@@ -100,7 +102,10 @@ function PartyCard({
             </p>
             {isLeader && onDelete && (
               <button
-                onClick={(e) => { e.stopPropagation(); onDelete(party); }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDelete(party);
+                }}
                 aria-label="파티 삭제"
                 className="flex-shrink-0 w-7 h-7 rounded-full bg-red-50 text-red-400 text-xs font-bold flex items-center justify-center hover:bg-red-100 transition"
               >
@@ -108,13 +113,15 @@ function PartyCard({
               </button>
             )}
           </div>
-          <p className="text-xs text-gray-400 mt-0.5 line-clamp-2 cursor-pointer" onClick={() => onNavigate(party.id)}>
+          <p
+            className="text-xs text-gray-400 mt-0.5 line-clamp-2 cursor-pointer"
+            onClick={() => onNavigate(party.id)}
+          >
             {party.description}
             {party.active_count > 0 && (
               <span className="ml-2 inline-flex items-center gap-0.5 text-[10px] font-bold text-emerald-500 bg-emerald-50 px-1.5 py-0.5 rounded-full whitespace-nowrap align-middle">
-                 <span className="text-[5px]">
-              🟢  
-            </span>{party.active_count}명 운동 중
+                <span className="text-[5px]">🟢</span>
+                {party.active_count}명 운동 중
               </span>
             )}
           </p>
@@ -202,9 +209,13 @@ function PartyCard({
       </div>
 
       <div className="bg-orange-50 rounded-xl px-3 py-1.5 flex flex-col gap-1">
-        <p className="text-[10px] font-extrabold text-orange-400">🔥 오늘 파티 현황</p>
+        <p className="text-[10px] font-extrabold text-orange-400">
+          🔥 오늘 파티 현황
+        </p>
         {todayStats === null ? (
-          <p className="text-[10px] text-gray-300 animate-pulse">불러오는 중...</p>
+          <p className="text-[10px] text-gray-300 animate-pulse">
+            불러오는 중...
+          </p>
         ) : (
           <>
             <div className="flex items-center justify-between">
@@ -213,7 +224,10 @@ function PartyCard({
                   {todayStats.totalSteps.toLocaleString()}
                 </span>
                 {" / "}
-                {((party.target_steps ?? 10000) * party.max_members).toLocaleString()}보
+                {(
+                  (party.target_steps ?? 10000) * party.max_members
+                ).toLocaleString()}
+                보
               </p>
               <p className="text-[10px] font-bold text-orange-400">
                 {Math.min(
@@ -223,7 +237,8 @@ function PartyCard({
                       100,
                   ),
                   100,
-                )}%
+                )}
+                %
               </p>
             </div>
             <div className="w-full h-1.5 bg-orange-100 rounded-full overflow-hidden">
@@ -341,6 +356,7 @@ function MembersBottomSheet({
   const [members, setMembers] = useState<PartyMember[]>([]);
   const [loading, setLoading] = useState(true);
   const [kickTarget, setKickTarget] = useState<PartyMember | null>(null);
+  const [kickError, setKickError] = useState<string | null>(null);
 
   useEffect(() => {
     getPartyMembers(party.id).then((data) => {
@@ -351,7 +367,12 @@ function MembersBottomSheet({
 
   const handleKickConfirm = async () => {
     if (!kickTarget) return;
-    await onKick(party.id, kickTarget.user_id);
+    const { error } = await onKick(party.id, kickTarget.user_id);
+    if (error) {
+      setKickError("강퇴에 실패했어요. 잠시 후 다시 시도해 주세요.");
+      setKickTarget(null);
+      return;
+    }
     const updated = await getPartyMembers(party.id);
     setMembers(updated);
     setKickTarget(null);
@@ -380,6 +401,10 @@ function MembersBottomSheet({
             </button>
           </div>
 
+          {kickError && (
+            <p className="text-xs text-red-400 text-center font-bold">{kickError}</p>
+          )}
+
           {loading ? (
             <div className="py-10 flex items-center justify-center">
               <span className="text-gray-300 text-sm animate-pulse">
@@ -405,14 +430,15 @@ function MembersBottomSheet({
                   <p className="flex-1 font-bold text-gray-700 text-sm truncate">
                     {m.nickname}
                     {m.user_id === currentUserId && (
-                      <span className="ml-1 text-[10px] text-primary">
-                        (나)
-                      </span>
+                      <span className="ml-1 text-[10px] text-primary">(나)</span>
+                    )}
+                    {m.user_id === party.created_by && (
+                      <span className="ml-1.5 text-[9px] font-bold text-yellow-600 bg-yellow-50 px-1.5 py-0.5 rounded-full">👑방장</span>
                     )}
                   </p>
                   {isLeader && m.user_id !== currentUserId && (
                     <button
-                      onClick={() => setKickTarget(m)}
+                      onClick={() => { setKickError(null); setKickTarget(m); }}
                       aria-label={`${m.nickname} 퇴장`}
                       className="flex-shrink-0 text-[10px] font-bold text-red-400 bg-red-50 px-2 py-1 rounded-full hover:bg-red-100 transition"
                     >
@@ -589,7 +615,9 @@ function CreatePartyModal({
 
     const tags =
       selectedTagIds.length > 0
-        ? TAGS.filter((t) => selectedTagIds.includes(t.id)).map((t) => t.name)
+        ? PARTY_TAGS.filter((t) => selectedTagIds.includes(t.id)).map(
+            (t) => t.name,
+          )
         : [timeSlot];
 
     await onCreate({
@@ -658,7 +686,8 @@ function CreatePartyModal({
             ))}
           </div>
           <p className="text-[10px] text-gray-400">
-            총 목표 {(steps * maxMembers).toLocaleString()}보 ({maxMembers}명 × {steps.toLocaleString()}보)
+            총 목표 {(steps * maxMembers).toLocaleString()}보 ({maxMembers}명 ×{" "}
+            {steps.toLocaleString()}보)
           </p>
         </div>
 
@@ -703,7 +732,7 @@ function CreatePartyModal({
         <div className="flex flex-col gap-1.5">
           <label className="text-xs font-bold text-gray-500">태그</label>
           <div className="flex flex-wrap gap-2">
-            {TAGS.map((tag) => (
+            {PARTY_TAGS.map((tag) => (
               <button
                 key={tag.id}
                 onClick={() => toggleTag(tag.id)}
@@ -882,8 +911,8 @@ function DeleteConfirmModal({
 
 function Toast({ message, icon = "🎉" }: { message: string; icon?: string }) {
   return (
-    <div className="fixed top-6 left-0 right-0 flex justify-center z-50 pointer-events-none">
-      <div className="bg-gray-800 text-white text-sm font-bold px-5 py-3 rounded-2xl shadow-xl flex items-center gap-2 whitespace-nowrap animate-fade-in-down">
+    <div className="fixed top-6 inset-x-0 flex justify-center z-50 pointer-events-none">
+      <div className="bg-gray-800 text-white text-sm font-bold px-5 py-3 rounded-2xl shadow-xl flex items-center gap-2 whitespace-nowrap">
         <span>{icon}</span>
         <span>{message}</span>
       </div>
@@ -938,7 +967,9 @@ export default function Party() {
 
   const handleJoinConfirm = async () => {
     if (!joinTarget) return;
-    const { error } = await joinParty(joinTarget.id);
+    const { id: partyId, name: partyName } = joinTarget;
+    const { error } = await joinParty(partyId);
+    setJoinTarget(null);
     if (!error) {
       const today = new Date();
       const pad = (n: number) => String(n).padStart(2, "0");
@@ -946,13 +977,12 @@ export default function Party() {
       storage.addPoints(POINT_RULES.PARTY_JOIN);
       storage.addPointsHistory({
         date: todayStr,
-        desc: `${joinTarget.name} 파티 참가`,
+        desc: `${partyName} 파티 참가`,
         points: POINT_RULES.PARTY_JOIN,
         icon: "🎉",
       });
-      showToast(`파티에 참가했어요! +${POINT_RULES.PARTY_JOIN}P 적립`, "🎉");
+      navigate(`/party/${partyId}`, { state: { newJoin: true } });
     }
-    setJoinTarget(null);
   };
 
   const handleLeaveAttempt = (p: PartyData) => {
@@ -982,7 +1012,7 @@ export default function Party() {
     const matchesTag =
       filterTagId === null ||
       (() => {
-        const tagName = TAGS.find((t) => t.id === filterTagId)?.name;
+        const tagName = PARTY_TAGS.find((t) => t.id === filterTagId)?.name;
         return tagName ? p.tags.includes(tagName) : true;
       })();
     return matchesSearch && matchesTag;
@@ -1062,7 +1092,7 @@ export default function Party() {
           >
             전체
           </button>
-          {TAGS.map((tag) => (
+          {PARTY_TAGS.map((tag) => (
             <button
               key={tag.id}
               onClick={() =>
@@ -1119,7 +1149,13 @@ export default function Party() {
               onJoin={setJoinTarget}
               onLeave={handleLeaveAttempt}
               onDelete={setDeleteTarget}
-              onNavigate={(partyId) => navigate(`/party/${partyId}`)}
+              onNavigate={(partyId) => {
+                  if (isJoined(partyId)) {
+                    navigate(`/party/${partyId}`);
+                  } else {
+                    showToast("파티에 참가한 후 입장할 수 있어요", "🔒");
+                  }
+                }}
             />
           ))
         )}

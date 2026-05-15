@@ -9,7 +9,10 @@ import { getRandomMessage } from "../data/characterMessages";
 import { FAKE_ACTIVE_USERS } from "../data/fakeActiveUsers";
 import { getActiveSessions } from "../lib/sessionService";
 import { getAvatarCharacterById } from "../data/avatarCharacters";
-import { getAchievedPartiesForUser, type AchievedParty } from "../lib/partyService";
+import {
+  getAchievedPartiesForUser,
+  type AchievedParty,
+} from "../lib/partyService";
 
 type DisplayUser = {
   nickname: string;
@@ -123,7 +126,9 @@ export default function Home() {
 
   // 페이지 로드마다 캐릭터에 맞는 랜덤 메시지
   const activityType = selectedActivityType?.type ?? "walker";
-  const [bubbleMsg, setBubbleMsg] = useState(() => getRandomMessage(activityType));
+  const [bubbleMsg, setBubbleMsg] = useState(() =>
+    getRandomMessage(activityType),
+  );
   const displayedText = useTypingEffect(bubbleMsg);
 
   const [activeUsers, setActiveUsers] = useState<DisplayUser[]>([]);
@@ -151,7 +156,8 @@ export default function Home() {
         const shuffled = [...sessions].sort(() => Math.random() - 0.5);
         realUsers = shuffled.map((s) => ({
           nickname: s.nickname,
-          character_image: getAvatarCharacterById(s.character_id)?.image ?? null,
+          character_image:
+            getAvatarCharacterById(s.character_id)?.image ?? null,
           activity: s.exercise_type,
           steps: Math.floor(Math.random() * 5000) + 3000,
           isReal: true,
@@ -214,7 +220,10 @@ export default function Home() {
           <div
             key={currentBannerIndex}
             className="absolute inset-0 flex items-center bg-gradient-to-r from-orange-400 to-primary px-4"
-            style={{ animation: "slideUpIn 0.5s cubic-bezier(0.22, 1, 0.36, 1) forwards" }}
+            style={{
+              animation:
+                "slideUpIn 0.5s cubic-bezier(0.22, 1, 0.36, 1) forwards",
+            }}
           >
             <p className="text-white text-sm font-bold">
               🎉 {achievedParties[currentBannerIndex].emoji}{" "}
@@ -244,7 +253,9 @@ export default function Home() {
             {displayedText}
             <span
               className={`inline-block w-[2px] h-[1em] bg-gray-500 align-middle ml-[1px] transition-opacity duration-300 ${
-                displayedText.length < bubbleMsg.length ? "animate-pulse" : "opacity-0"
+                displayedText.length < bubbleMsg.length
+                  ? "animate-pulse"
+                  : "opacity-0"
               }`}
             />
           </p>
@@ -271,21 +282,22 @@ export default function Home() {
               <span className="text-8xl select-none">🏃</span>
             )}
           </div>
-             <div className="text-center mt-3">
-          <p className="text-xl font-extrabold text-gray-800">
-            {getGreeting()}, {userProfile?.nickname ?? "운동왕"}님!
-          </p>
-        {activityTypeName && (
-            <span className="absolute -bottom-6 left-1/2 -translate-x-1/2 text-xs font-bold text-primary whitespace-nowrap">
-              {activityTypeName}
-            </span>
-          )}
-        </div>
-          
+          <div className="text-center mt-3">
+            {activityTypeName && (
+              <span className="-bottom-6 left-1/2 -translate-x-1/2 text-xs font-bold text-primary whitespace-nowrap">
+                {activityTypeName}
+              </span>
+            )}
+
+            <p className="text-xl font-extrabold text-gray-800">
+              {getGreeting()}, {userProfile?.nickname ?? "운동왕"}님!
+            </p>
+          </div>
+
           <span className="absolute top-5 right-5 text-xl animate-bounce">
             ✨
           </span>
-          <span className="absolute bottom-16 left-1 text-lg animate-bounce delay-150">
+          <span className="absolute bottom-20 left-1 text-lg animate-bounce delay-150">
             ✨
           </span>
         </div>
@@ -310,20 +322,52 @@ export default function Home() {
             </span>
           </div>
           <div className="flex flex-1 items-center overflow-hidden min-w-0">
-            <div className="marquee-track items-center" style={{ verticalAlign: "middle" }}>
+            <div
+              className="marquee-track items-center"
+              style={{ verticalAlign: "middle" }}
+            >
               {[...activeUsers, ...activeUsers].map((user, i) => (
-                <span key={i} style={{ display: "inline-flex", alignItems: "center", gap: "6px", margin: "0 12px" }}>
+                <span
+                  key={i}
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "6px",
+                    margin: "0 12px",
+                  }}
+                >
                   <span
-                    style={{ color: "var(--color-primary)", fontSize: 18, lineHeight: 1, opacity: 0.5 }}
+                    style={{
+                      color: "var(--color-primary)",
+                      fontSize: 18,
+                      lineHeight: 1,
+                      opacity: 0.5,
+                    }}
                   >
                     ·
                   </span>
-                  <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: 24, height: 24, borderRadius: "50%", overflow: "hidden", background: "white", flexShrink: 0 }}>
+                  <span
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      width: 24,
+                      height: 24,
+                      borderRadius: "50%",
+                      overflow: "hidden",
+                      background: "white",
+                      flexShrink: 0,
+                    }}
+                  >
                     {user.character_image ? (
                       <img
                         src={user.character_image}
                         alt=""
-                        style={{ width: "100%", height: "100%", objectFit: "contain" }}
+                        style={{
+                          width: "100%",
+                          height: "100%",
+                          objectFit: "contain",
+                        }}
                       />
                     ) : (
                       <span style={{ fontSize: 14 }}>🏃</span>
@@ -333,7 +377,9 @@ export default function Home() {
                     className="text-[11px] font-semibold"
                     style={{ color: "var(--color-primary)", lineHeight: 1 }}
                   >
-                    {user.nickname}님 {ACTIVITY_LABEL[user.activity] ?? "운동 중"}&nbsp;&nbsp;{user.steps.toLocaleString()}보
+                    {user.nickname}님{" "}
+                    {ACTIVITY_LABEL[user.activity] ?? "운동 중"}&nbsp;&nbsp;
+                    {user.steps.toLocaleString()}보
                   </span>
                 </span>
               ))}

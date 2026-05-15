@@ -1,32 +1,12 @@
 import { useEffect, useState } from "react";
+import { COMMUNITY_TAG_GROUPS } from "../data/tags";
 
 // ───────────────── 타입 ─────────────────
-interface Tag {
-  label: string;
-}
-
 interface CommunityWriteModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit?: (data: {
-    text: string;
-    tags: string[];
-  }) => void;
+  onSubmit?: (data: { text: string; tags: string[] }) => void;
 }
-
-// ───────────────── 태그 ─────────────────
-const TAGS: Tag[] = [
-  { label: "밤산책" },
-  { label: "새벽산책" },
-  { label: "아침걷기" },
-  { label: "출근길" },
-  { label: "퇴근길산책" },
-  { label: "비오는날" },
-  { label: "목표달성" },
-  { label: "천천히걷기" },
-  { label: "귀찮았지만성공" },
-  { label: "오늘도완료" },
-];
 
 const MAX_TAGS = 2;
 
@@ -128,40 +108,57 @@ export default function CommunityWriteModal({
             "
           />
           <div className="flex justify-end mt-2">
-            <span className="text-[11px] text-stone-300">{text.length}/120</span>
+            <span className="text-[11px] text-stone-300">
+              {text.length}/120
+            </span>
           </div>
         </div>
 
         {/* 태그 - 최대 2개 */}
         <div className="mb-7">
           <div className="flex items-center gap-2 mb-3">
-            <p className="text-[13px] font-medium text-stone-600">오늘의 태그</p>
+            <p className="text-[13px] font-medium text-stone-600">
+              오늘의 태그
+            </p>
             <span className="text-[11px] text-stone-400">최대 2개</span>
           </div>
 
-          <div className="flex flex-wrap gap-2">
-            {TAGS.map((tag) => {
-              const active = selectedTags.includes(tag.label);
-              const disabled = !active && selectedTags.length >= MAX_TAGS;
-              return (
-                <button
-                  key={tag.label}
-                  onClick={() => toggleTag(tag.label)}
-                  className={`
-                    rounded-full px-4 py-2
-                    text-[12px] font-medium
-                    transition-all duration-150
-                    active:scale-95
-                    ${active
-                      ? "bg-orange-400 text-white shadow-sm shadow-orange-200"
-                      : "bg-white border border-stone-200 text-stone-500"}
-                    ${disabled ? "opacity-40 pointer-events-none" : ""}
-                  `}
-                >
-                  #{tag.label}
-                </button>
-              );
-            })}
+          <div className="flex flex-col gap-3">
+            {COMMUNITY_TAG_GROUPS.map((group) => (
+              <div key={group.title}>
+                <p className="text-[11px] font-bold text-stone-400 mb-2">
+                  {group.title}
+                </p>
+
+                <div className="flex flex-wrap gap-2">
+                  {group.tags.map((tag) => {
+                    const active = selectedTags.includes(tag);
+                    const disabled = !active && selectedTags.length >= MAX_TAGS;
+
+                    return (
+                      <button
+                        key={tag}
+                        onClick={() => toggleTag(tag)}
+                        className={`
+                rounded-full px-4 py-2
+                text-[12px] font-medium
+                transition-all duration-150
+                active:scale-95
+                ${
+                  active
+                    ? "bg-orange-400 text-white shadow-sm shadow-orange-200"
+                    : "bg-white border border-stone-200 text-stone-500"
+                }
+                ${disabled ? "opacity-40 pointer-events-none" : ""}
+              `}
+                      >
+                        #{tag}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
           </div>
         </div>
 
@@ -173,9 +170,11 @@ export default function CommunityWriteModal({
             w-full h-14 rounded-2xl
             text-sm font-bold
             transition-all duration-150
-            ${text.trim()
-              ? "bg-gradient-to-r from-orange-400 to-orange-500 text-white shadow-lg shadow-orange-200 active:scale-[0.98]"
-              : "bg-stone-200 text-stone-400"}
+            ${
+              text.trim()
+                ? "bg-gradient-to-r from-orange-400 to-orange-500 text-white shadow-lg shadow-orange-200 active:scale-[0.98]"
+                : "bg-stone-200 text-stone-400"
+            }
           `}
         >
           기록 남기기

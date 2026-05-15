@@ -17,6 +17,7 @@ import { activityTypes } from "../data/activityTypes";
 import { type UserGoal, fetchTodayStats, type DayStats } from "../lib/workoutService";
 import { useWorkoutStats, type StatPeriod } from "../hooks/useWorkoutStats";
 import Diet from "./Diet";
+import { useTodayStats } from "../hooks/useTodayStats";
 
 const WORKOUT_TYPE_LABEL: Record<string, { label: string; emoji: string }> = {
   walker: { label: "걷기", emoji: "🚶" },
@@ -453,18 +454,17 @@ function InfoTab() {
   const { userProfile, updateProfile, userGoal, deleteGoal } = useUser();
   const { selectedActivityType } = useActivityType();
   const { selectedCharacter } = useCharacter();
+  const {user}=useUser();
+  const { todayStats } = useTodayStats(user?.id ?? null);
+
   const [showActivityTypeSheet, setShowActivityTypeSheet] = useState(false);
   const [showCharacterSheet, setShowCharacterSheet] = useState(false);
   const [showGoalModal, setShowGoalModal] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [showBmiInfo, setShowBmiInfo] = useState(false);
-  const [todayStats, setTodayStats] = useState<DayStats>({ steps: 0, distance: 0, calories: 0 });
 
-  useEffect(() => {
-    if (!userProfile?.id) return;
-    fetchTodayStats(userProfile.id).then(setTodayStats);
-  }, [userProfile?.id]);
+ 
 
   const [height, setHeight] = useState<string>(
     () => userProfile?.height?.toString() ?? "",
@@ -562,7 +562,7 @@ function InfoTab() {
         <div className="grid grid-cols-3 gap-2">
           {[
             { label: "걸음수", value: todayStats.steps.toLocaleString(), unit: "보", emoji: "👟" },
-            { label: "거리", value: (todayStats.distance / 1000).toFixed(2), unit: "km", emoji: "📍" },
+            { label: "거리", value: todayStats.distance.toFixed(2), unit: "km", emoji: "📍" },
             { label: "칼로리", value: Math.round(todayStats.calories).toLocaleString(), unit: "kcal", emoji: "🔥" },
           ].map(({ label, value, unit, emoji }) => (
             <div key={label} className="flex flex-col items-center bg-gray-50 rounded-2xl py-4 gap-1">
@@ -905,9 +905,15 @@ function WorkoutTab() {
                   {formatDate(record.date)}
                 </p>
                 <div className="flex items-center gap-3 mt-1.5">
+
                   <span className="text-[11px] text-gray-500 font-semibold">
                     🕐 {formatDuration(record.duration)}
                   </span>
+
+                  <span className="text-[11px] text-gray-500 font-semibold">
+                    👟 {record.steps.toLocaleString()}보
+                  </span>
+                  
                   <span className="text-[11px] text-gray-500 font-semibold">
                     📍 {record.distance.toFixed(2)}km
                   </span>

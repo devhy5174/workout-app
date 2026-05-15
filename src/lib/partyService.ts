@@ -224,13 +224,11 @@ export async function kickMember(
   partyId: string,
   targetUserId: string,
 ): Promise<{ error: string | null }> {
-  const { error } = await supabase
-    .from("party_members")
-    .delete()
-    .eq("party_id", partyId)
-    .eq("user_id", targetUserId);
+  const { error } = await supabase.rpc("kick_party_member", {
+    p_party_id: partyId,
+    p_target_user_id: targetUserId,
+  });
   if (error) return { error: error.message };
-  await deletePartyIfEmpty(partyId);
   return { error: null };
 }
 

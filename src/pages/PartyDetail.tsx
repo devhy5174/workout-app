@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { useUser } from "../context/UserContext";
 import { useParty } from "../hooks/useParty";
 import {
@@ -44,6 +44,38 @@ function MemberAvatar({
         <span className="text-xl">{fallback}</span>
       )}
     </span>
+  );
+}
+
+function WelcomeModal({
+  partyName,
+  partyEmoji,
+  onClose,
+}: {
+  partyName: string;
+  partyEmoji: string;
+  onClose: () => void;
+}) {
+  return (
+    <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center px-6">
+      <div className="w-full max-w-sm bg-white rounded-3xl p-7 flex flex-col items-center gap-4 shadow-xl">
+        <span className="text-5xl">{partyEmoji}</span>
+        <p className="font-extrabold text-gray-800 text-xl text-center">
+          파티에 합류했어요! 🎉
+        </p>
+        <p className="text-sm text-gray-500 text-center leading-relaxed">
+          <span className="font-bold text-gray-700">"{partyName}"</span>의<br />
+          새 파티원이 되었어요!<br />
+          함께 목표를 달성해봐요 💪
+        </p>
+        <button
+          onClick={onClose}
+          className="w-full py-3 rounded-2xl bg-primary text-white text-sm font-extrabold active:scale-95 transition"
+        >
+          파티 둘러보기
+        </button>
+      </div>
+    </div>
   );
 }
 
@@ -172,8 +204,8 @@ function LeaveConfirmModal({
 
 function Toast({ message, icon = "🎉" }: { message: string; icon?: string }) {
   return (
-    <div className="fixed top-6 left-1/2 -translate-x-1/2 z-50 pointer-events-none">
-      <div className="bg-gray-800 text-white text-sm font-bold px-5 py-3 rounded-2xl shadow-xl flex items-center gap-2">
+    <div className="fixed top-6 inset-x-0 flex justify-center z-50 pointer-events-none">
+      <div className="bg-gray-800 text-white text-sm font-bold px-5 py-3 rounded-2xl shadow-xl flex items-center gap-2 whitespace-nowrap">
         <span>{icon}</span>
         <span>{message}</span>
       </div>
@@ -184,8 +216,9 @@ function Toast({ message, icon = "🎉" }: { message: string; icon?: string }) {
 export default function PartyDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
   const { user, addLocalPoints } = useUser();
-  const { isJoined, isLeader, joinParty, leaveParty, kickMember } = useParty(
+  const { isJoined, isLeader, joinParty, leaveParty, kickMember, isLoading: membershipLoading } = useParty(
     user?.id ?? null,
   );
 
@@ -194,6 +227,9 @@ export default function PartyDetail() {
   const [todayStats, setTodayStats] = useState<PartyTodayStats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  const [showWelcomeModal, setShowWelcomeModal] = useState(
+    (location.state as { newJoin?: boolean } | null)?.newJoin === true,
+  );
   const [showJoinModal, setShowJoinModal] = useState(false);
   const [showLeaveModal, setShowLeaveModal] = useState(false);
   const [kickTarget, setKickTarget] = useState<PartyMember | null>(null);
@@ -231,6 +267,14 @@ export default function PartyDetail() {
     });
   }, [id]);
 
+  useEffect(() => {
+    if (!isLoading && !membershipLoading && party) {
+      if (!isJoined(party.id) && !isLeader(party)) {
+        navigate("/party", { replace: true });
+      }
+    }
+  }, [isLoading, membershipLoading, party]);
+
   const handleJoinConfirm = async () => {
     if (!party) return;
     const { error } = await joinParty(party.id);
@@ -255,9 +299,15 @@ export default function PartyDetail() {
 
   const handleKickConfirm = async () => {
     if (!kickTarget || !party) return;
-    await kickMember(party.id, kickTarget.user_id);
+    const nickname = kickTarget.nickname;
+    const { error } = await kickMember(party.id, kickTarget.user_id);
     setKickTarget(null);
-    await reloadMembers();
+    if (error) {
+      showToast("강퇴에 실패했어요. 잠시 후 다시 시도해 주세요.", "⚠️");
+    } else {
+      showToast(`${nickname}님을 퇴장시켰어요`, "👢");
+      await reloadMembers();
+    }
   };
 
   if (isLoading) {
@@ -423,6 +473,9 @@ export default function PartyDetail() {
                     {m.user_id === user?.id && (
                       <span className="ml-1 text-[10px] text-primary">(나)</span>
                     )}
+                    {m.user_id === party.created_by && (
+                      <span className="ml-1.5 text-[9px] font-bold text-yellow-600 bg-yellow-50 px-1.5 py-0.5 rounded-full">👑방장</span>
+                    )}
                   </p>
                   <p className="text-xs font-extrabold text-primary flex-shrink-0">
                     {m.weekly_steps.toLocaleString()} 보
@@ -474,6 +527,13 @@ export default function PartyDetail() {
         </div>
       </div>
 
+      {showWelcomeModal && party && (
+        <WelcomeModal
+          partyName={party.name}
+          partyEmoji={party.emoji}
+          onClose={() => setShowWelcomeModal(false)}
+        />
+      )}
       {showJoinModal && (
         <JoinConfirmModal
           partyName={party.name}
