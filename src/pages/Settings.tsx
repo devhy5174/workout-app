@@ -24,7 +24,7 @@ export default function Settings() {
   };
 
   return (
-    <div className="flex flex-col gap-6 p-6 h-full overflow-y-auto pb-20">
+    <div className="flex flex-col gap-6 p-6 pb-24">
       <h2 className="text-2xl font-bold text-[var(--color-primary)]">설정</h2>
 
       <div className="w-full rounded-2xl bg-white shadow p-5 flex flex-col gap-4">
@@ -55,6 +55,7 @@ export default function Settings() {
           "앱 정보",
           "개인정보 처리방침",
           "이용약관",
+          "문의 하기",
         ].map((item) => (
           <button
             key={item}
