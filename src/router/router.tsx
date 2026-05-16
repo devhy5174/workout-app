@@ -6,7 +6,7 @@ import Character from "../pages/onBoarding/ActivityTypePage";
 import Party from "../pages/Party";
 import Goal from "../pages/Goal";
 import Diet from "../pages/Diet";
-import Points from "../pages/Points";
+import Step from "../pages/Step";
 import Settings from "../pages/Settings";
 import Workout from "../pages/Workout";
 import Auth from "../pages/Auth";
@@ -73,7 +73,7 @@ export default function AppRouter() {
           <Route path="/party/:id" element={<PartyDetail />} />
           <Route path="/goal" element={<Goal />} />
           <Route path="/diet" element={<Diet />} />
-          <Route path="/points" element={<Points />} />
+          <Route path="/steps" element={<Step />} />
           <Route path="/mypage" element={<MyPage />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/workout" element={<Workout />} />

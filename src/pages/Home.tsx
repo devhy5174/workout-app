@@ -4,7 +4,11 @@ import { useActivityType } from "../context/ActivityTypeContext";
 import { useCharacter } from "../context/CharacterContext";
 import { useUser } from "../context/UserContext";
 import { storage } from "../utils/storage";
-import { calculateStreak, getThisWeekWorkouts, localDateStr } from "../utils/streak";
+import {
+  calculateStreak,
+  getThisWeekWorkouts,
+  localDateStr,
+} from "../utils/streak";
 import { getRandomMessage } from "../data/characterMessages";
 import { FAKE_ACTIVE_USERS } from "../data/fakeActiveUsers";
 import { getActiveSessions } from "../lib/sessionService";
@@ -26,7 +30,6 @@ type DisplayUser = {
 };
 
 const workoutGoal = 7;
-const pointGoal = 500;
 
 const ACTIVITY_LABEL: Record<string, string> = {
   walker: "산책 중",
@@ -97,7 +100,11 @@ export default function Home() {
   const { selectedActivityType } = useActivityType();
   const { selectedCharacter } = useCharacter();
   const { user, userGoal, workoutRecords, userProfile } = useUser();
-  const { topParties, trendingParties, isLoading: highlightsLoading } = usePartyHighlights();
+  const {
+    topParties,
+    trendingParties,
+    isLoading: highlightsLoading,
+  } = usePartyHighlights();
 
   const activityTypeName = selectedActivityType?.name ?? null;
 
@@ -497,61 +504,65 @@ export default function Home() {
             </Link>
           </div>
         )}
-
-        {/* 포인트 */}
-        <div className="bg-white rounded-3xl shadow-sm p-6 flex flex-col gap-3">
-          <div className="flex justify-between items-center">
-            <div className="flex items-center gap-2">
-              <span className="font-bold text-gray-700">포인트 저금</span>
-            </div>
-            <span className="font-extrabold text-primary">
-              {points} P
-              <span className="text-gray-300 font-normal text-sm">
-                {" "}
-                / {pointGoal} P
-              </span>
-            </span>
-          </div>
-          <ProgressBar
-            value={points}
-            max={pointGoal}
-            color="bg-gradient-to-r from-accent to-primary"
-          />
-        </div>
       </div>
 
-      {/* 파티 랭킹 ticker */}
-      <div className="mx-4 mt-6 flex flex-col gap-2">
-        <PartyHighlightTicker
-          icon="🔥"
-          badge="오늘 최다"
-          badgeStyle={{ color: "#ea580c", background: "#fff7ed" }}
-          items={
-            highlightsLoading
-              ? []
-              : topParties.map((p, i) => ({
-                  text: `${["🥇","🥈","🥉"][i]} ${p.name} · ${p.value.toLocaleString()}보`,
-                  partyId: p.id,
-                }))
-          }
-          emptyText={highlightsLoading ? "불러오는 중..." : "오늘 운동 기록이 아직 없어요"}
-          onTap={() => navigate("/party")}
-        />
-        <PartyHighlightTicker
-          icon="⚡"
-          badge="실시간"
-          badgeStyle={{ color: "#059669", background: "#ecfdf5" }}
-          items={
-            highlightsLoading
-              ? []
-              : trendingParties.map((p) => ({
-                  text: `👥 ${p.name} · ${p.value}명 운동 중`,
-                  partyId: p.id,
-                }))
-          }
-          emptyText={highlightsLoading ? "불러오는 중..." : "현재 운동 중인 파티가 없어요"}
-          onTap={() => navigate("/party")}
-        />
+      {/* 파티 활동 카드 */}
+      <div className="mx-4 mt-4 bg-white rounded-3xl shadow-sm">
+        <div className="px-5 py-3 flex items-center justify-between border-b border-gray-50">
+          <div className="flex items-center gap-2">
+            <span className="text-lg">🎉</span>
+            <span className="font-extrabold text-gray-700 text-sm">
+              파티 활동
+            </span>
+          </div>
+          <button
+            onClick={() => navigate("/party")}
+            className="text-xs font-bold"
+            style={{ color: "var(--color-primary)" }}
+          >
+            전체보기 →
+          </button>
+        </div>
+        <div className="px-4 py-3 flex flex-col gap-2">
+          <PartyHighlightTicker
+            icon="🔥"
+            badge="오늘 최다"
+            badgeStyle={{ color: "#ea580c", background: "#fff7ed" }}
+            items={
+              highlightsLoading
+                ? []
+                : topParties.map((p, i) => ({
+                    text: `${["🥇", "🥈", "🥉"][i]} ${p.name} · ${p.value.toLocaleString()}보`,
+                    partyId: p.id,
+                  }))
+            }
+            emptyText={
+              highlightsLoading
+                ? "불러오는 중..."
+                : "오늘 운동 기록이 아직 없어요"
+            }
+            onTap={() => navigate("/party")}
+          />
+          <PartyHighlightTicker
+            icon="⚡"
+            badge="실시간"
+            badgeStyle={{ color: "#059669", background: "#ecfdf5" }}
+            items={
+              highlightsLoading
+                ? []
+                : trendingParties.map((p) => ({
+                    text: `👥 ${p.name} · ${p.value}명 운동 중`,
+                    partyId: p.id,
+                  }))
+            }
+            emptyText={
+              highlightsLoading
+                ? "불러오는 중..."
+                : "현재 운동 중인 파티가 없어요"
+            }
+            onTap={() => navigate("/party")}
+          />
+        </div>
       </div>
 
       {/* 이번주 TOP 3 */}
@@ -594,9 +605,7 @@ export default function Home() {
                   <span className="text-2xl w-8 text-center">
                     {config.medal}
                   </span>
-                  <div
-                    className="w-8 h-8 rounded-full bg-white flex items-center justify-center overflow-hidden flex-shrink-0 shadow-sm"
-                  >
+                  <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center overflow-hidden flex-shrink-0 shadow-sm">
                     {charImage ? (
                       <img
                         src={charImage}
