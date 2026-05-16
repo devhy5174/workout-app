@@ -27,6 +27,7 @@ type DisplayUser = {
   activity: string;
   steps: number;
   isReal: boolean;
+  title: string | null;
 };
 
 const workoutGoal = 7;
@@ -153,6 +154,7 @@ export default function Home() {
           activity: s.exercise_type,
           steps: Math.floor(Math.random() * 5000) + 3000,
           isReal: true,
+          title: s.title,
         }));
       } catch {}
 
@@ -169,6 +171,7 @@ export default function Home() {
             activity: u.activity,
             steps: u.steps,
             isReal: false,
+            title: null,
           }));
         setActiveUsers([...realUsers, ...shuffledFake]);
       }
@@ -282,7 +285,9 @@ export default function Home() {
             )}
 
             <p className="text-xl font-extrabold text-gray-800">
-              {getGreeting()}, {userProfile?.nickname ?? "운동왕"}님!
+              {getGreeting()},{" "}
+              {userProfile?.title ? `${userProfile.title.split(" ")[0]} ` : ""}
+              {userProfile?.nickname ?? "운동왕"}님!
             </p>
           </div>
 
@@ -369,6 +374,7 @@ export default function Home() {
                     className="text-[11px] font-semibold"
                     style={{ color: "var(--color-primary)", lineHeight: 1 }}
                   >
+                    {user.title ? `${user.title.split(" ")[0]} ` : ""}
                     {user.nickname}님{" "}
                     {ACTIVITY_LABEL[user.activity] ?? "운동 중"}&nbsp;&nbsp;
                     {user.steps.toLocaleString()}보

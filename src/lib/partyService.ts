@@ -26,6 +26,7 @@ export type PartyMember = {
   user_id: string;
   party_id: string;
   nickname: string;
+  title: string | null;
   character_emoji: string;
   character_image: string | null;
   weekly_steps: number;
@@ -414,7 +415,7 @@ export async function getPartyMembers(partyId: string): Promise<PartyMember[]> {
   const { data: members, error } = await supabase
     .from("party_members")
     .select(
-      "user_id, party_id, joined_at, public_profiles(nickname, character_id, activity_type_id)",
+      "user_id, party_id, joined_at, public_profiles(nickname, character_id, activity_type_id, title)",
     )
     .eq("party_id", partyId);
 
@@ -501,6 +502,7 @@ export async function getPartyMembers(partyId: string): Promise<PartyMember[]> {
       user_id: m.user_id,
       party_id: m.party_id,
       nickname: profile?.nickname ?? "알 수 없음",
+      title: profile?.title ?? null,
       character_emoji: characterEmoji,
       character_image: characterImage,
       weekly_steps: weeklyStepsMap.get(m.user_id) ?? 0,

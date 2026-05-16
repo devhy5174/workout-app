@@ -430,6 +430,7 @@ function MembersBottomSheet({
                     size="sm"
                   />
                   <p className="flex-1 font-bold text-gray-700 text-sm truncate">
+                    {m.title ? `${m.title} ` : ""}
                     {m.nickname}
                     {m.user_id === currentUserId && (
                       <span className="ml-1 text-[10px] text-primary">
@@ -557,6 +558,7 @@ function RankingModal({
                     fallback={m.character_emoji}
                   />
                   <p className="flex-1 font-bold text-gray-700 text-sm truncate">
+                    {m.title ? `${m.title} ` : ""}
                     {m.nickname}
                     {m.user_id === currentUserId && (
                       <span className="ml-1 text-[10px] text-primary">

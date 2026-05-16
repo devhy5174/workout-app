@@ -48,7 +48,7 @@ function MemberActivityCard({
   canKickInactive: boolean;
   onKick: () => void;
 }) {
-  const { is_active, character_image, character_emoji, nickname, today_steps } =
+  const { is_active, character_image, character_emoji, nickname, title, today_steps } =
     member;
   const inactive7 = isInactive7Days(member);
 
@@ -120,14 +120,17 @@ function MemberActivityCard({
           isMe ? "text-primary" : inactive7 ? "text-gray-300" : "text-gray-600"
         }`}
       >
-        {isPartyLeader ? "👑" : ""}
+        {title ? `${title.split(" ")[0]} ` : ""}
         {nickname.length > 5 ? `${nickname.slice(0, 5)}…` : nickname}
+        {isPartyLeader ? "👑" : ""}
       </p>
 
       {/* 걸음수 (고정 높이) */}
       <div className="h-4 flex items-center justify-center">
         {!inactive7 && (
-          <p className={`text-[9px] font-bold ${is_active ? "text-emerald-500" : "text-gray-400"}`}>
+          <p
+            className={`text-[9px] font-bold ${is_active ? "text-emerald-500" : "text-gray-400"}`}
+          >
             {today_steps.toLocaleString()}보
           </p>
         )}

@@ -7,6 +7,7 @@ export type ActiveSession = {
   last_seen: string;
   nickname: string;
   character_id: string | null;
+  title: string | null;
 };
 
 export async function startSession(userId: string, exerciseType: string) {
@@ -50,7 +51,7 @@ export async function getActiveSessions(): Promise<ActiveSession[]> {
 
   const { data: profiles } = await supabase
     .from("public_profiles")
-    .select("id, nickname, character_id")
+    .select("id, nickname, character_id, title")
     .in("id", userIds);
 
   const profileMap = new Map(
@@ -64,5 +65,6 @@ export async function getActiveSessions(): Promise<ActiveSession[]> {
     last_seen: s.last_seen,
     nickname: profileMap.get(s.user_id)?.nickname ?? "익명",
     character_id: profileMap.get(s.user_id)?.character_id ?? null,
+    title: (profileMap.get(s.user_id) as any)?.title ?? null,
   }));
 }

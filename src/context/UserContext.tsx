@@ -34,6 +34,7 @@ export type AppUser = {
   points: number | null;
   theme: string | null;
   created_at: string;
+  title: string | null;
 };
 
 type UserContextValue = {
@@ -44,9 +45,16 @@ type UserContextValue = {
   isLoading: boolean;
   login: (email: string, password: string) => Promise<{ error: string | null }>;
   logout: () => Promise<void>;
-  updateProfile: (updates: Partial<Omit<AppUser, "id" | "created_at">>) => Promise<{ error: string | null }>;
-  saveWorkout: (record: Omit<WorkoutRecord, "id" | "user_id" | "created_at">) => Promise<{ error: string | null }>;
-  saveGoal: (type: UserGoal["goal_type"], value: number) => Promise<{ error: string | null }>;
+  updateProfile: (
+    updates: Partial<Omit<AppUser, "id" | "created_at">>,
+  ) => Promise<{ error: string | null }>;
+  saveWorkout: (
+    record: Omit<WorkoutRecord, "id" | "user_id" | "created_at">,
+  ) => Promise<{ error: string | null }>;
+  saveGoal: (
+    type: UserGoal["goal_type"],
+    value: number,
+  ) => Promise<{ error: string | null }>;
   deleteGoal: () => Promise<{ error: string | null }>;
   deleteWorkout: (id: string) => Promise<{ error: string | null }>;
   refreshWorkoutHistory: () => Promise<void>;
@@ -77,7 +85,7 @@ async function fetchProfile(userId: string): Promise<AppUser | null> {
     .eq("id", userId)
     .single();
 
-    console.log("fetchProfile 결과", { data, error });
+  console.log("fetchProfile 결과", { data, error });
   if (error) return null;
   return data as AppUser;
 }
@@ -104,98 +112,96 @@ export function UserProvider({ children }: { children: ReactNode }) {
   const userRef = useRef<User | null>(null);
   const userProfileRef = useRef<AppUser | null>(null);
 
-// 앱 시작 시 세션 복구 + 유저 데이터 로드
-useEffect(() => {
-  // 언마운트 이후 state 업데이트 방지용
-  let mounted = true;
+  // 앱 시작 시 세션 복구 + 유저 데이터 로드
+  useEffect(() => {
+    // 언마운트 이후 state 업데이트 방지용
+    let mounted = true;
 
-  // 초기 세션 확인 함수
-  async function initSession() {
-    console.log("0. 초기 세션 확인");
+    // 초기 세션 확인 함수
+    async function initSession() {
+      console.log("0. 초기 세션 확인");
 
-    // localStorage에 저장된 세션 가져오기
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
+      // localStorage에 저장된 세션 가져오기
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
 
-    // 이미 컴포넌트 종료됐으면 중단
-    if (!mounted) return;
-
-    // 현재 로그인 유저 저장
-    const currentUser = session?.user ?? null;
-    setUser(currentUser);
-
-    // 로그인 안된 상태면 로딩 종료
-    if (!currentUser) {
-      console.log("유저 없음");
-      setIsLoading(false);
-      return;
-    }
-
-    console.log("1. loadUserData 시작");
-
-    // 유저 데이터 불러오는 동안 로딩 표시
-    setIsLoading(true);
-
-    try {
-      // 프로필 / 운동기록 / 목표 불러오기
-      const { profile, workouts, goal } = await loadUserData(
-        currentUser.id
-      );
-
-      // 언마운트됐으면 중단
+      // 이미 컴포넌트 종료됐으면 중단
       if (!mounted) return;
 
-      // 상태 저장
-      setUserProfile(profile);
-      setWorkoutRecords(workouts);
-      setUserGoalState(goal);
-    } catch (e) {
-      console.error("loadUserData 에러", e);
-    } finally {
-      // 항상 로딩 종료
-      if (mounted) {
-        console.log("5. isLoading false 설정");
+      // 현재 로그인 유저 저장
+      const currentUser = session?.user ?? null;
+      setUser(currentUser);
+
+      // 로그인 안된 상태면 로딩 종료
+      if (!currentUser) {
+        console.log("유저 없음");
         setIsLoading(false);
+        return;
+      }
+
+      console.log("1. loadUserData 시작");
+
+      // 유저 데이터 불러오는 동안 로딩 표시
+      setIsLoading(true);
+
+      try {
+        // 프로필 / 운동기록 / 목표 불러오기
+        const { profile, workouts, goal } = await loadUserData(currentUser.id);
+
+        // 언마운트됐으면 중단
+        if (!mounted) return;
+
+        // 상태 저장
+        setUserProfile(profile);
+        setWorkoutRecords(workouts);
+        setUserGoalState(goal);
+      } catch (e) {
+        console.error("loadUserData 에러", e);
+      } finally {
+        // 항상 로딩 종료
+        if (mounted) {
+          console.log("5. isLoading false 설정");
+          setIsLoading(false);
+        }
       }
     }
-  }
 
-  // 앱 시작 시 1회 실행
-  initSession();
+    // 앱 시작 시 1회 실행
+    initSession();
 
-  // 로그인 / 로그아웃 상태 변화 감지
-  const {
-    data: { subscription },
-  } = supabase.auth.onAuthStateChange((event, session) => {
-    console.log("Auth event:", event);
+    // 로그인 / 로그아웃 상태 변화 감지
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log("Auth event:", event);
 
-    // 로그아웃 시 상태 초기화
-    if (event === "SIGNED_OUT") {
-      setUser(null);
-      setUserProfile(null);
-      setWorkoutRecords([]);
-      setUserGoalState(null);
-      setIsLoading(false);
-      return;
-    }
+      // 로그아웃 시 상태 초기화
+      if (event === "SIGNED_OUT") {
+        setUser(null);
+        setUserProfile(null);
+        setWorkoutRecords([]);
+        setUserGoalState(null);
+        setIsLoading(false);
+        return;
+      }
 
-    // 로그인 성공 시 user만 갱신
-    // 실제 데이터 fetch는 initSession에서만 처리
-    if (event === "SIGNED_IN") {
-      setUser(session?.user ?? null);
-      
-       // 로그인 직후 유저 데이터 다시 불러오기
-  initSession();
-    }
-  });
+      // 로그인 성공 시 user만 갱신
+      // 실제 데이터 fetch는 initSession에서만 처리
+      if (event === "SIGNED_IN") {
+        setUser(session?.user ?? null);
 
-  // cleanup
-  return () => {
-    mounted = false;
-    subscription.unsubscribe();
-  };
-}, []);
+        // 로그인 직후 유저 데이터 다시 불러오기
+        initSession();
+      }
+    });
+
+    // cleanup
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
+  }, []);
 
   // 다른 탭 갔다 오면: 프로필 없을 때만 재로드
   useEffect(() => {
@@ -212,11 +218,15 @@ useEffect(() => {
     };
 
     document.addEventListener("visibilitychange", handleVisibility);
-    return () => document.removeEventListener("visibilitychange", handleVisibility);
+    return () =>
+      document.removeEventListener("visibilitychange", handleVisibility);
   }, []);
 
   const login = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
     return { error: error?.message ?? null };
   };
 
@@ -225,7 +235,7 @@ useEffect(() => {
   };
 
   const updateProfile = async (
-    updates: Partial<Omit<AppUser, "id" | "created_at">>
+    updates: Partial<Omit<AppUser, "id" | "created_at">>,
   ) => {
     if (!user) return { error: "로그인이 필요합니다." };
 
@@ -245,23 +255,31 @@ useEffect(() => {
     return { error: error?.message ?? null };
   };
   const saveWorkout = async (
-    record: Omit<WorkoutRecord, "id" | "user_id" | "created_at">
+    record: Omit<WorkoutRecord, "id" | "user_id" | "created_at">,
   ) => {
-    console.log("💾 saveWorkout user:", user); 
+    console.log("💾 saveWorkout user:", user);
     if (!user) return { error: "로그인이 필요합니다." };
 
-    const { data: savedRecord, error } = await saveWorkoutRecord(record, user.id);
+    const { data: savedRecord, error } = await saveWorkoutRecord(
+      record,
+      user.id,
+    );
     if (error) {
       console.error("운동 기록 저장 실패:", error);
       return { error };
     }
 
-    const newRecord: WorkoutRecord = savedRecord ?? { ...record, user_id: user.id };
+    const newRecord: WorkoutRecord = savedRecord ?? {
+      ...record,
+      user_id: user.id,
+    };
     setWorkoutRecords((prev) => [newRecord, ...prev]);
 
     // 로컬 포인트 상태 낙관적 업데이트 (Supabase 실제 업데이트는 pointService.addPoints가 담당)
     setUserProfile((prev) => {
-      const next = prev ? { ...prev, points: (prev.points ?? 0) + record.points_earned } : prev;
+      const next = prev
+        ? { ...prev, points: (prev.points ?? 0) + record.points_earned }
+        : prev;
       userProfileRef.current = next;
       return next;
     });
@@ -272,7 +290,10 @@ useEffect(() => {
   const saveGoal = async (type: UserGoal["goal_type"], value: number) => {
     if (!user) return { error: "로그인이 필요합니다." };
 
-    const result = await saveUserGoal({ goal_type: type, goal_value: value }, user.id);
+    const result = await saveUserGoal(
+      { goal_type: type, goal_value: value },
+      user.id,
+    );
     if (!result.error) {
       const newGoal: UserGoal = {
         goal_type: type,
@@ -311,7 +332,9 @@ useEffect(() => {
 
   const addLocalPoints = (amount: number) => {
     setUserProfile((prev) => {
-      const next = prev ? { ...prev, points: (prev.points ?? 0) + amount } : prev;
+      const next = prev
+        ? { ...prev, points: (prev.points ?? 0) + amount }
+        : prev;
       userProfileRef.current = next;
       return next;
     });

@@ -35,15 +35,16 @@ export type CommunityPost = {
   nickname: string;
   character_id: string | null;
   activity_type_id: number | null;
+  profile_title: string | null;
 };
 
-type ProfileMap = Map<string, { nickname: string; character_id: string | null; activity_type_id: number | null }>;
+type ProfileMap = Map<string, { nickname: string; character_id: string | null; activity_type_id: number | null; title: string | null }>;
 
 async function fetchProfileMap(userIds: string[]): Promise<ProfileMap> {
   if (userIds.length === 0) return new Map();
   const { data } = await supabase
     .from("public_profiles")
-    .select("id, nickname, character_id, activity_type_id")
+    .select("id, nickname, character_id, activity_type_id, title")
     .in("id", userIds);
   const map: ProfileMap = new Map();
   for (const p of data ?? []) {
@@ -51,6 +52,7 @@ async function fetchProfileMap(userIds: string[]): Promise<ProfileMap> {
       nickname: p.nickname ?? "익명",
       character_id: p.character_id ?? null,
       activity_type_id: p.activity_type_id ?? null,
+      title: p.title ?? null,
     });
   }
   return map;
@@ -84,6 +86,7 @@ function mergePost(row: any, profileMap: ProfileMap, cheersMap: Record<string, n
     nickname: profile?.nickname ?? "익명",
     character_id: profile?.character_id ?? null,
     activity_type_id: profile?.activity_type_id ?? null,
+    profile_title: profile?.title ?? null,
   };
 }
 

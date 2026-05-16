@@ -16,6 +16,7 @@ interface Post {
   text: string;
   nickname: string;
   title: string;
+  profileTitle: string | null;
   steps: string;
   cheers: number;
   cheered: boolean;
@@ -85,6 +86,11 @@ function PostCard({
           >
             {post.nickname[0]}
           </div>
+        )}
+        {post.profileTitle && (
+          <span className="text-[9px] text-stone-400 font-semibold text-center leading-tight">
+            {post.profileTitle}
+          </span>
         )}
         <span className="text-[10px] text-stone-400 font-light">
           {post.nickname}
@@ -222,6 +228,7 @@ export default function CommunityPage() {
     text: p.text,
     nickname: p.nickname,
     title: deriveTitle(p.activity_type_id),
+    profileTitle: p.profile_title ?? null,
     steps: formatSteps(p.steps),
     cheers: p.cheers,
     cheered: cheeredIds.has(p.id),
