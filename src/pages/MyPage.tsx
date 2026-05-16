@@ -534,14 +534,15 @@ function InfoTab() {
           )}
         </div>
         <div className="text-center">
-          <p className="text-xl font-extrabold text-gray-800">
-            {userProfile?.nickname ?? "닉네임 없음"}
-          </p>
           {userProfile?.title && (
             <span className="inline-block mt-1 px-3 py-0.5 rounded-full text-xs font-bold bg-[var(--color-primary)]/10 text-[var(--color-primary)]">
               {userProfile.title}
             </span>
           )}
+          <p className="text-xl font-extrabold text-gray-800">
+            {userProfile?.nickname ?? "닉네임 없음"}
+          </p>
+
           {selectedActivityType && (
             <p className="text-sm text-gray-400 mt-0.5">
               {selectedActivityType.name}
