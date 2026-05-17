@@ -1017,13 +1017,21 @@ export default function Workout() {
               {tooShort ? (
                 <button
                   onClick={() => {
+                    setSteps(0);
+                    setElapsed(0);
                     isSaved.current = false;
                     setTooShort(false);
                     setShowModal(false);
+                    setState("idle");
+                    clearWorkoutSession();
                   }}
-                  className="w-full py-4 rounded-2xl bg-gray-100 font-extrabold text-gray-600 text-base active:scale-95 transition"
+                  className="w-full py-4 rounded-2xl font-extrabold text-white text-base active:scale-95 transition"
+                  style={{
+                    background:
+                      "linear-gradient(135deg, var(--color-primary), var(--color-secondary))",
+                  }}
                 >
-                  닫기
+                  다시 운동하기
                 </button>
               ) : (
                 <button

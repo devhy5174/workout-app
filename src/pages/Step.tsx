@@ -65,7 +65,10 @@ const BUBBLE_PREVIEWS: Record<string, { text: string; colorClass: string }> = {
   basic_bubble: { text: "운동 중 💪", colorClass: "bg-green-500" },
   cute_bubble: { text: "오늘도 꽃길 🌸", colorClass: "bg-violet-500" },
   fire_bubble: { text: "불태워 🔥", colorClass: "bg-orange-500" },
-  premium_active_bubble: { text: "운동 중 ✨", colorClass: "bg-gradient-to-r from-violet-500 to-purple-500" },
+  premium_active_bubble: {
+    text: "운동 중 ✨",
+    colorClass: "bg-gradient-to-r from-violet-500 to-purple-500",
+  },
 };
 
 const PREMIUM_TYPE_ORDER: UnlockItemType[] = [
@@ -108,7 +111,9 @@ const SEASON_PREVIEWS: {
 export default function Step() {
   const [tab, setTab] = useState<Tab>("step");
   const [selectedPlan, setSelectedPlan] = useState<PlanType>("annual");
-  const [activePremiumItems, setActivePremiumItems] = useState<Record<string, string>>({});
+  const [activePremiumItems, setActivePremiumItems] = useState<
+    Record<string, string>
+  >({});
   const { workoutRecords } = useUser();
   const { itemsWithStatus, totalSteps, monthlyAverageSteps } =
     useUnlockItems(workoutRecords);
@@ -255,16 +260,20 @@ export default function Step() {
               {/* 말풍선 + 프레임 미리보기 */}
               <div className="flex gap-3 mb-4">
                 <div className="flex-1 bg-white/15 rounded-2xl p-3 flex flex-col items-center gap-3">
-                  <p className="text-white/70 text-[10px] font-bold tracking-wide">말풍선</p>
+                  <p className="text-white/70 text-[10px] font-bold tracking-wide">
+                    말풍선
+                  </p>
                   <div className="relative">
-                    <div className="bg-gradient-to-r from-violet-400 to-purple-500 text-white text-xs font-extrabold px-3 py-1.5 rounded-xl shadow-sm whitespace-nowrap">
-                      운동 중 ✨
+                    <div className="relative bg-gradient-to-r z-10 from-violet-400 to-purple-500 text-white text-xs font-extrabold px-3 py-1.5 rounded-xl shadow-sm whitespace-nowrap">
+                      오늘도 꽃길 🌸
                     </div>
-                    <div className="absolute -bottom-1.5 left-3 w-2.5 h-2.5 bg-violet-400 rotate-45 rounded-[2px]" />
+                    <div className="absolute -bottom-1 z-0 left-9 w-2.5 h-2.5 bg-violet-400 rotate-45 rounded-[2px]" />
                   </div>
                 </div>
                 <div className="flex-1 bg-white/15 rounded-2xl p-3 flex flex-col items-center gap-3">
-                  <p className="text-white/70 text-[10px] font-bold tracking-wide">카드 프레임</p>
+                  <p className="text-white/70 text-[10px] font-bold tracking-wide">
+                    카드 프레임
+                  </p>
                   <div className="w-10 h-14 rounded-xl border-[2.5px] border-yellow-300 flex items-center justify-center bg-white/10 shadow-sm">
                     <HiPhoto className="text-yellow-200 text-lg" />
                   </div>
@@ -439,38 +448,56 @@ export default function Step() {
                           key={item.id}
                           onClick={() => togglePremiumItem(type, item.id)}
                           className={`rounded-2xl shadow-sm px-5 py-4 flex items-center gap-4 transition-all text-left w-full border-2 ${
-                            isActive ? "bg-white border-amber-400" : "bg-gray-50 border-transparent"
+                            isActive
+                              ? "bg-white border-amber-400"
+                              : "bg-gray-50 border-transparent"
                           }`}
                         >
                           <div
                             className={`w-11 h-11 rounded-2xl flex items-center justify-center flex-shrink-0 ${
-                              type === "activeBubble" && BUBBLE_PREVIEWS[item.id]
+                              type === "activeBubble" &&
+                              BUBBLE_PREVIEWS[item.id]
                                 ? ""
                                 : isActive
                                   ? meta.bgColor
                                   : "bg-gray-100"
                             }`}
                           >
-                            {type === "activeBubble" && BUBBLE_PREVIEWS[item.id] ? (
+                            {type === "activeBubble" &&
+                            BUBBLE_PREVIEWS[item.id] ? (
                               <div className="flex flex-col items-center">
-                                <div className={`${BUBBLE_PREVIEWS[item.id].colorClass} text-white text-[7px] font-extrabold px-1.5 py-1.5 rounded-full whitespace-nowrap leading-none`}>
+                                <div
+                                  className={`${BUBBLE_PREVIEWS[item.id].colorClass} text-white text-[7px] font-extrabold px-1.5 py-1.5 rounded-full whitespace-nowrap leading-none`}
+                                >
                                   {BUBBLE_PREVIEWS[item.id].text}
                                 </div>
-                                <div className={`w-2 h-2 ${BUBBLE_PREVIEWS[item.id].colorClass} rotate-45 rounded-[1px] -mt-1`} />
+                                <div
+                                  className={`w-2 h-2 ${BUBBLE_PREVIEWS[item.id].colorClass} rotate-45 rounded-[1px] -mt-1`}
+                                />
                               </div>
                             ) : (
-                              <meta.Icon className={`text-xl ${isActive ? meta.iconColor : "text-gray-400"}`} />
+                              <meta.Icon
+                                className={`text-xl ${isActive ? meta.iconColor : "text-gray-400"}`}
+                              />
                             )}
                           </div>
                           <div className="flex-1 min-w-0">
-                            <p className={`font-bold text-sm ${isActive ? "text-gray-800" : "text-gray-400"}`}>
+                            <p
+                              className={`font-bold text-sm ${isActive ? "text-gray-800" : "text-gray-400"}`}
+                            >
                               {item.name}
                             </p>
-                            <p className="text-xs text-gray-400 mt-0.5">{item.description}</p>
+                            <p className="text-xs text-gray-400 mt-0.5">
+                              {item.description}
+                            </p>
                           </div>
-                          <div className={`w-5 h-5 rounded-full border-2 flex-shrink-0 transition-all ${
-                            isActive ? "border-amber-400 bg-amber-400" : "border-gray-200 bg-white"
-                          }`} />
+                          <div
+                            className={`w-5 h-5 rounded-full border-2 flex-shrink-0 transition-all ${
+                              isActive
+                                ? "border-amber-400 bg-amber-400"
+                                : "border-gray-200 bg-white"
+                            }`}
+                          />
                         </button>
                       );
                     })}
