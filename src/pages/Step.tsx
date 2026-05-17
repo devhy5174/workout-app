@@ -60,6 +60,12 @@ const NORMAL_TYPE_ORDER: UnlockItemType[] = [
   "postFrame",
 ];
 
+const BUBBLE_PREVIEWS: Record<string, { text: string; colorClass: string }> = {
+  basic_bubble: { text: "운동 중 💪", colorClass: "bg-green-500" },
+  cute_bubble: { text: "오늘도 꽃길 🌸", colorClass: "bg-violet-500" },
+  fire_bubble: { text: "불태워 🔥", colorClass: "bg-orange-500" },
+};
+
 const SEASON_PREVIEWS: {
   Icon: IconType;
   color: string;
@@ -147,7 +153,7 @@ export default function Step() {
             const meta = TYPE_META[type];
             return (
               <div key={type}>
-                <p className="text-xs font-bold text-gray-500 px-1 mb-2 flex items-center gap-1">
+                <p className="text-xs font-bold text-gray-500 px-1 mb-2 flex items-center gap-1.5">
                   <meta.Icon className={`text-sm ${meta.iconColor}`} />
                   {meta.label}
                 </p>
@@ -161,10 +167,27 @@ export default function Step() {
                     >
                       <div
                         className={`w-11 h-11 rounded-2xl flex items-center justify-center flex-shrink-0 ${
-                          item.unlocked ? meta.bgColor : "bg-gray-100"
+                          type === "activeBubble" && BUBBLE_PREVIEWS[item.id]
+                            ? ""
+                            : item.unlocked
+                              ? meta.bgColor
+                              : "bg-gray-100"
                         }`}
                       >
-                        {item.unlocked ? (
+                        {type === "activeBubble" && BUBBLE_PREVIEWS[item.id] ? (
+                          <div
+                            className={`flex flex-col items-center ${!item.unlocked ? "opacity-40" : ""}`}
+                          >
+                            <div
+                              className={`${BUBBLE_PREVIEWS[item.id].colorClass} text-white text-[7px] font-extrabold px-1.5 py-1.5 rounded-full whitespace-nowrap leading-none`}
+                            >
+                              {BUBBLE_PREVIEWS[item.id].text}
+                            </div>
+                            <div
+                              className={`w-2 h-2 ${BUBBLE_PREVIEWS[item.id].colorClass} rotate-45 rounded-[1px] -mt-1`}
+                            />
+                          </div>
+                        ) : item.unlocked ? (
                           <meta.Icon className={`text-xl ${meta.iconColor}`} />
                         ) : (
                           <HiLockClosed className="text-xl text-gray-400" />
@@ -172,9 +195,15 @@ export default function Step() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <p
-                          className={`font-bold text-sm ${item.unlocked ? "text-gray-800" : "text-gray-400"}`}
+                          className={`font-bold text-sm flex items-center gap-1.5 flex-wrap ${item.unlocked ? "text-gray-800" : "text-gray-400"}`}
                         >
                           {item.name}
+                          {item.premiumOnly && (
+                            <span className="inline-flex items-center gap-0.5 bg-gradient-to-r from-yellow-400 to-amber-500 text-white text-[8px] font-extrabold px-2  -py-1 rounded-full shadow-sm">
+                              <HiSparkles className="text-[8px]" />
+                              PREMIUM
+                            </span>
+                          )}
                         </p>
                         <p className="text-xs text-gray-400 mt-0.5">
                           {item.condition?.monthlyAverageStep

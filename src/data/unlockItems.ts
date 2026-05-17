@@ -15,6 +15,7 @@ export interface UnlockItem {
   name: string;
   description: string;
   premium?: boolean;
+  premiumOnly?: boolean; // 일반 목록에 표시하되 프리미엄 전용 배지 표시
   preview?: string;
   condition?: UnlockCondition;
 }
@@ -64,6 +65,7 @@ export const unlockItems: UnlockItem[] = [
     category: "normal",
     name: "귀여운 말풍선",
     description: "한달 평균 3,000보 달성",
+    premiumOnly: true,
     condition: { monthlyAverageStep: 3000 },
   },
   {
@@ -72,6 +74,7 @@ export const unlockItems: UnlockItem[] = [
     category: "normal",
     name: "불꽃 말풍선",
     description: "한달 평균 7,000보 달성",
+    premiumOnly: true,
     condition: { monthlyAverageStep: 7000 },
   },
 
@@ -91,6 +94,7 @@ export const unlockItems: UnlockItem[] = [
     category: "normal",
     name: "빛나는 프레임",
     description: "한달 평균 6,000보 달성",
+    premiumOnly: true,
     condition: { monthlyAverageStep: 6000 },
   },
 
