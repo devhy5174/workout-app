@@ -9,13 +9,15 @@ import {
   getThisWeekWorkouts,
   localDateStr,
 } from "../utils/streak";
-import { getRandomMessage } from "../data/characterMessages";
+import { getRandomMessage, getWeatherMessage } from "../data/characterMessages";
+import { useWeather } from "../hooks/useWeather";
 import { FAKE_ACTIVE_USERS } from "../data/fakeActiveUsers";
 import { getActiveSessions } from "../lib/sessionService";
 import { getAvatarCharacterById } from "../data/avatarCharacters";
 import { useWeeklyTop3 } from "../hooks/useWeeklyTop3";
 import { usePartyHighlights } from "../hooks/usePartyHighlights";
 import { PartyHighlightTicker } from "../components/ui/PartyHighlightTicker";
+import WeatherWidget from "../components/ui/WeatherWidget";
 
 type DisplayUser = {
   nickname: string;
@@ -107,17 +109,29 @@ export default function Home() {
 
   const history = storage.getWorkoutHistory();
   const streak = calculateStreak(history);
-  const points = userProfile?.points ?? 0;
   const weekWorkouts = getThisWeekWorkouts(history);
   const workoutDays = weekWorkouts.filter(Boolean).length;
   const burnedKcal = storage.getBurnedKcal();
 
   // 페이지 로드마다 캐릭터에 맞는 랜덤 메시지
   const activityType = selectedActivityType?.type ?? "walker";
+  const { weather, condition: weatherCondition } = useWeather();
   const [bubbleMsg, setBubbleMsg] = useState(() =>
     getRandomMessage(activityType),
   );
+  const [weatherMsgShown, setWeatherMsgShown] = useState(false);
   const displayedText = useTypingEffect(bubbleMsg);
+
+  // 날씨 로드 완료 시 최초 1회 날씨 문구로 교체
+  useEffect(() => {
+    if (weatherCondition && !weatherMsgShown) {
+      const msg = getWeatherMessage(weatherCondition);
+      if (msg) {
+        setBubbleMsg(msg);
+        setWeatherMsgShown(true);
+      }
+    }
+  }, [weatherCondition]);
 
   const [activeUsers, setActiveUsers] = useState<DisplayUser[]>([]);
   const { top3, isLoading: top3Loading } = useWeeklyTop3();
@@ -161,6 +175,13 @@ export default function Home() {
   }, []);
 
   const handleCharacterTap = () => {
+    if (weatherCondition && Math.random() < 0.3) {
+      const msg = getWeatherMessage(weatherCondition);
+      if (msg) {
+        setBubbleMsg(msg);
+        return;
+      }
+    }
     setBubbleMsg(getRandomMessage(activityType));
   };
 
@@ -184,7 +205,7 @@ export default function Home() {
 
   return (
     <div className="flex flex-col h-full overflow-y-auto pb-20 bg-bg">
-      {/* 상단 Streak */}
+      {/* 상단 Streak + 날씨 */}
       <div className="flex justify-between items-center px-5 pt-4 pb-2">
         <div className="flex items-center gap-2 bg-primary-light rounded-full px-4 py-1.5">
           <span className="text-lg">🔥</span>
@@ -192,9 +213,7 @@ export default function Home() {
             {streak}일 연속 운동 중!
           </span>
         </div>
-        <div className="bg-white rounded-full px-4 py-1.5 shadow-sm">
-          <span className="text-sm font-bold text-primary">{points} P</span>
-        </div>
+        <WeatherWidget weather={weather} />
       </div>
 
       {/* 캐릭터 + 말풍선 */}
@@ -217,7 +236,7 @@ export default function Home() {
             border-t-[12px] border-t-white"
           />
         </div>
-        <div className="relative mt-4">
+        <div className="relative mt-4 flex flex-col items-center">
           <div
             onClick={handleCharacterTap}
             className="w-56 h-56 rounded-full bg-white shadow-xl flex items-center justify-center overflow-hidden border border-white/80 cursor-pointer active:scale-95 transition-transform duration-150"

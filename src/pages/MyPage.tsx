@@ -861,7 +861,7 @@ function WorkoutTab() {
   }
 
   const totalKcal = workoutRecords.reduce((s, r) => s + r.calories, 0);
-  const totalPoints = workoutRecords.reduce((s, r) => s + r.points_earned, 0);
+  const totalSteps = workoutRecords.reduce((s, r) => s + (r.steps ?? 0), 0);
 
   if (workoutRecords.length === 0) {
     return (
@@ -905,10 +905,10 @@ function WorkoutTab() {
         </div>
         <div className="flex flex-col items-center gap-0.5">
           <span className="text-white/70 text-[10px] font-semibold">
-            획득 포인트
+            총 걸음수
           </span>
           <span className="text-white font-extrabold text-lg">
-            {totalPoints.toLocaleString()}
+            {totalSteps.toLocaleString()}
           </span>
         </div>
       </div>
