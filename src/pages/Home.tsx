@@ -96,7 +96,7 @@ export default function Home() {
   const navigate = useNavigate();
   const { selectedActivityType } = useActivityType();
   const { selectedCharacter } = useCharacter();
-  const { user, userGoal, workoutRecords, userProfile } = useUser();
+  const { userGoal, workoutRecords, userProfile } = useUser();
   const {
     topParties,
     trendingParties,
