@@ -17,7 +17,7 @@ import { useUser } from "../context/UserContext";
 import { useUnlockItems } from "../hooks/useUnlockItems";
 import type { UnlockItemType } from "../data/unlockItems";
 
-type Tab = "step" | "premium" | "season";
+type Tab = "step" | "premium" | "events";
 type PlanType = "monthly" | "annual";
 
 interface TypeMeta {
@@ -102,7 +102,7 @@ export default function Step() {
   const tabs: { key: Tab; label: string }[] = [
     { key: "step", label: "STEP 보상" },
     { key: "premium", label: "프리미엄" },
-    { key: "season", label: "시즌" },
+    { key: "events", label: "이벤트" },
   ];
 
   return (
@@ -358,21 +358,17 @@ export default function Step() {
         )}
 
         {/* ── 시즌 ── */}
-        {tab === "season" && (
+        {tab === "events" && (
           <div className="flex flex-col items-center justify-center py-4 gap-5">
             <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-orange-400 to-pink-500 flex items-center justify-center shadow-lg">
               <HiCalendar className="text-4xl text-white" />
             </div>
             <div className="text-center">
-              <p className="text-gray-800 font-extrabold text-xl">곧 출시</p>
-              <p className="text-gray-400 text-sm mt-1">
-                시즌 이벤트를 준비 중이에요!
+              <p className="text-gray-400 text-sm mt-2">
+                이벤트를 준비 중이에요!
               </p>
             </div>
             <div className="bg-white rounded-3xl shadow-sm px-6 py-5 w-full max-w-xs flex flex-col gap-3">
-              <p className="text-xs font-bold text-gray-500 text-center">
-                예고 보상
-              </p>
               {SEASON_PREVIEWS.map((item) => (
                 <div
                   key={item.name}
@@ -393,7 +389,7 @@ export default function Step() {
               ))}
             </div>
             <p className="text-xs text-gray-300 font-semibold flex items-center gap-1">
-              시즌 업데이트를 기대해주세요
+              이벤트를 기대해주세요
               <HiSparkles className="text-gray-300" />
             </p>
           </div>
