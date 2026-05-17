@@ -12,6 +12,7 @@ import type {
   PartyTodayStats,
   CreatePartyInput,
 } from "../lib/partyService";
+import FakePartyPreview from "../components/FakePartyPreview";
 
 type TimeSlot = "새벽" | "아침" | "저녁" | "주말";
 type StepsOption = 5000 | 10000 | 15000;
@@ -976,6 +977,22 @@ export default function Party() {
     }
   };
 
+  const handleJoinAttempt = (p: PartyData) => {
+    if (myParties.length > 0) {
+      showToast("이미 참가한 파티가 있어요. 탈퇴 후 참가해주세요.", "🔒");
+      return;
+    }
+    setJoinTarget(p);
+  };
+
+  const handleCreateAttempt = () => {
+    if (myParties.length > 0) {
+      showToast("이미 참가한 파티가 있어요. 탈퇴 후 만들 수 있어요.", "🔒");
+      return;
+    }
+    setShowCreateModal(true);
+  };
+
   const handleJoinConfirm = async () => {
     if (!joinTarget) return;
     const { id: partyId, name: partyName } = joinTarget;
@@ -1036,7 +1053,7 @@ export default function Party() {
       <div className="flex items-center justify-between px-5 pt-5 pb-3">
         <h2 className="text-2xl font-extrabold text-primary">파티</h2>
         <button
-          onClick={() => setShowCreateModal(true)}
+          onClick={handleCreateAttempt}
           className="bg-primary text-white text-sm font-bold px-4 py-2 rounded-full active:scale-95 transition"
         >
           + 파티 만들기
@@ -1147,26 +1164,29 @@ export default function Party() {
             )}
           </div>
         ) : (
-          list.map((p) => (
-            <PartyCard
-              key={p.id}
-              party={p}
-              joined={isJoined(p.id)}
-              isLeader={isLeader(p)}
-              onRanking={setRankingParty}
-              onMembers={setMembersParty}
-              onJoin={setJoinTarget}
-              onLeave={handleLeaveAttempt}
-              onDelete={setDeleteTarget}
-              onNavigate={(partyId) => {
-                if (isJoined(partyId)) {
-                  navigate(`/party/${partyId}`);
-                } else {
-                  showToast("파티에 참가한 후 입장할 수 있어요", "🔒");
-                }
-              }}
-            />
-          ))
+          <>
+            {list.map((p) => (
+              <PartyCard
+                key={p.id}
+                party={p}
+                joined={isJoined(p.id)}
+                isLeader={isLeader(p)}
+                onRanking={setRankingParty}
+                onMembers={setMembersParty}
+                onJoin={handleJoinAttempt}
+                onLeave={handleLeaveAttempt}
+                onDelete={setDeleteTarget}
+                onNavigate={(partyId) => {
+                  if (isJoined(partyId)) {
+                    navigate(`/party/${partyId}`);
+                  } else {
+                    showToast("파티에 참가한 후 입장할 수 있어요", "🔒");
+                  }
+                }}
+              />
+            ))}
+            {tab === "neighbor" && <FakePartyPreview />}
+          </>
         )}
       </div>
 

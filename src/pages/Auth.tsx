@@ -6,7 +6,8 @@ import { supabase } from "../lib/supabase";
 type Mode = "login" | "signup";
 
 const gradientStyle = {
-  background: "linear-gradient(160deg, var(--color-primary) 0%, var(--color-secondary) 100%)",
+  background:
+    "linear-gradient(160deg, var(--color-primary) 0%, var(--color-secondary) 100%)",
 };
 
 export default function Auth() {
@@ -21,7 +22,7 @@ export default function Auth() {
   const [signupDone, setSignupDone] = useState(false);
 
   const toKorean = (msg: string): string => {
-     if (msg.includes("Invalid login credentials"))
+    if (msg.includes("Invalid login credentials"))
       return "이메일 또는 비밀번호가 틀렸어요.";
     if (msg.includes("Email not confirmed"))
       return "이메일 인증을 완료해주세요. 받은 메일함을 확인하세요.";
@@ -73,13 +74,13 @@ export default function Auth() {
 
   if (signupDone) {
     return (
-       <div
+      <div
         className="min-h-screen flex items-center justify-center p-6"
         style={gradientStyle}
       >
         <div className="text-center max-w-sm w-full">
           <div className="text-7xl mb-6">📧</div>
-           <h2 className="text-2xl font-black text-white mb-3">
+          <h2 className="text-2xl font-black text-white mb-3">
             이메일을 확인해주세요
           </h2>
           <p className="text-white/70 text-sm leading-relaxed mb-8">
@@ -87,7 +88,10 @@ export default function Auth() {
             인증 메일을 보냈어요. 확인 후 로그인해주세요.
           </p>
           <button
-            onClick={() => { setMode("login"); setSignupDone(false); }}
+            onClick={() => {
+              setMode("login");
+              setSignupDone(false);
+            }}
             aria-label="로그인으로 이동"
             className="w-full py-4 rounded-2xl font-bold text-sm"
             style={{ background: "white", color: "var(--color-primary)" }}
@@ -100,14 +104,20 @@ export default function Auth() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-6" style={gradientStyle}>
+    <div
+      className="min-h-screen flex flex-col items-center justify-center p-6"
+      style={gradientStyle}
+    >
       <div className="w-full max-w-sm flex flex-col items-center">
-
         {/* 헤더 */}
         <div className="text-center mb-10">
           <div className="text-8xl mb-4 drop-shadow-lg">🏃</div>
-          <h1 className="text-3xl font-black text-white tracking-tight">Workout</h1>
-          <p className="text-white/60 text-sm mt-2">함께 걸어요</p>
+          <h1 className="text-3xl font-black text-white tracking-tight">
+            함께 걸어요
+          </h1>
+          <p className="text-white/60 text-sm mt-2">
+            걷기 · 러닝 습관 형성 커뮤니티
+          </p>
         </div>
 
         {/* 탭 전환 */}
@@ -118,7 +128,10 @@ export default function Auth() {
           {(["login", "signup"] as Mode[]).map((m) => (
             <button
               key={m}
-              onClick={() => { setMode(m); setError(null); }}
+              onClick={() => {
+                setMode(m);
+                setError(null);
+              }}
               className="flex-1 py-2.5 rounded-xl text-sm font-bold transition-all"
               style={
                 mode === m
@@ -164,7 +177,11 @@ export default function Auth() {
             className="w-full py-4 rounded-2xl font-black text-sm mt-2 disabled:opacity-50 transition-opacity shadow-sm"
             style={{ background: "white", color: "var(--color-primary)" }}
           >
-            {isSubmitting ? "처리 중..." : mode === "login" ? "로그인" : "회원가입"}
+            {isSubmitting
+              ? "처리 중..."
+              : mode === "login"
+                ? "로그인"
+                : "회원가입"}
           </button>
         </form>
       </div>
