@@ -113,7 +113,6 @@ export default function Home() {
   const streak = calculateStreak(history);
   const weekWorkouts = getThisWeekWorkouts(history);
   const workoutDays = weekWorkouts.filter(Boolean).length;
-  const burnedKcal = storage.getBurnedKcal();
 
   // 페이지 로드마다 캐릭터에 맞는 랜덤 메시지
   const activityType = selectedActivityType?.type ?? "walker";
@@ -424,7 +423,20 @@ export default function Home() {
           <div className="bg-white rounded-3xl shadow-sm p-6 flex flex-col gap-3">
             <div className="flex justify-between items-center">
               <div className="flex items-center gap-2">
-                <span className="font-bold text-gray-700">오늘 목표</span>
+                <span className="text-lg">
+                  {userGoal.goal_type === "calories"
+                    ? "🔥"
+                    : userGoal.goal_type === "distance"
+                      ? "📍"
+                      : "👣"}
+                </span>
+                <span className="font-bold text-gray-700">
+                  {userGoal.goal_type === "calories"
+                    ? "오늘 소모 칼로리"
+                    : userGoal.goal_type === "distance"
+                      ? "오늘 이동 거리"
+                      : "오늘 걸음수"}
+                </span>
               </div>
               <div className="flex items-center gap-1">
                 <span className="font-extrabold text-primary text-sm">
@@ -463,18 +475,16 @@ export default function Home() {
           <div className="bg-white rounded-3xl shadow-sm p-6 flex flex-col gap-3">
             <div className="flex justify-between items-center">
               <div className="flex items-center gap-2">
-                <span className="text-lg">🔥</span>
-                <span className="font-bold text-gray-700">
-                  오늘 소모 칼로리
-                </span>
+                <span className="text-lg">👣</span>
+                <span className="font-bold text-gray-700">오늘 걸음수</span>
               </div>
               <span className="font-extrabold text-primary">
-                {burnedKcal} kcal
+                {todaySteps.toLocaleString()} 보
               </span>
             </div>
             <ProgressBar
-              value={burnedKcal}
-              max={500}
+              value={todaySteps}
+              max={5000}
               color="bg-gradient-to-r from-primary to-secondary"
             />
             <Link
@@ -492,9 +502,8 @@ export default function Home() {
       <div className="mx-4 mt-4 bg-white rounded-3xl shadow-sm">
         <div className="px-5 py-3 flex items-center justify-between border-b border-gray-50">
           <div className="flex items-center gap-2">
-            <span className="text-lg">🎉</span>
             <span className="font-extrabold text-gray-700 text-sm">
-              파티 활동
+              파티 현황
             </span>
           </div>
           <button
@@ -507,8 +516,7 @@ export default function Home() {
         </div>
         <div className="px-4 py-3 flex flex-col gap-2">
           <PartyHighlightTicker
-            icon="🔥"
-            badge="오늘 최다"
+            badge="오늘 최다 도보수"
             badgeStyle={{ color: "#ea580c", background: "#fff7ed" }}
             items={
               highlightsLoading
@@ -526,8 +534,7 @@ export default function Home() {
             onTap={() => navigate("/party")}
           />
           <PartyHighlightTicker
-            icon="⚡"
-            badge="실시간"
+            badge="실시간 활동 멤버수"
             badgeStyle={{ color: "#059669", background: "#ecfdf5" }}
             items={
               highlightsLoading

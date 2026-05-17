@@ -3,14 +3,12 @@ import { useState, useEffect, useRef } from "react";
 export type TickerItem = { text: string; partyId: string };
 
 export function PartyHighlightTicker({
-  icon,
   badge,
   badgeStyle,
   items,
   emptyText,
   onTap,
 }: {
-  icon: string;
   badge: string;
   badgeStyle: React.CSSProperties;
   items: TickerItem[];
@@ -22,7 +20,9 @@ export function PartyHighlightTicker({
   const currIndexRef = useRef(0);
   const lenRef = useRef(items.length);
 
-  useEffect(() => { currIndexRef.current = currIndex; }, [currIndex]);
+  useEffect(() => {
+    currIndexRef.current = currIndex;
+  }, [currIndex]);
 
   useEffect(() => {
     lenRef.current = items.length;
@@ -53,7 +53,11 @@ export function PartyHighlightTicker({
   const current = hasItems ? items[safeIdx] : null;
   const next = hasItems && items.length > 1 ? items[nextIdx] : null;
 
-  const renderText = (item: TickerItem, idx: number | string, anim?: React.CSSProperties) => (
+  const renderText = (
+    item: TickerItem,
+    idx: number | string,
+    anim?: React.CSSProperties,
+  ) => (
     <button
       key={idx}
       onClick={() => onTap(item.partyId)}
@@ -76,7 +80,6 @@ export function PartyHighlightTicker({
           to   { transform: translateY(0);     opacity: 1; }
         }
       `}</style>
-      <span className="text-gray-300 text-xs shrink-0">{icon}</span>
       <span
         className="font-extrabold shrink-0 px-1.5 py-0.5 rounded-full text-[9px] whitespace-nowrap"
         style={badgeStyle}
@@ -90,20 +93,27 @@ export function PartyHighlightTicker({
           </div>
         ) : (
           <>
-            {current && renderText(
-              current,
-              safeIdx,
-              transitioning ? { animation: "tickerExitUp 0.38s ease-in-out forwards" } : undefined,
-            )}
+            {current &&
+              renderText(
+                current,
+                safeIdx,
+                transitioning
+                  ? { animation: "tickerExitUp 0.38s ease-in-out forwards" }
+                  : undefined,
+              )}
             {transitioning && next && (
               <button
                 key="entering"
                 onClick={() => onTap(next.partyId)}
                 className="absolute inset-0 flex items-center w-full text-left"
-                style={{ animation: "tickerEnterBelow 0.38s ease-in-out forwards" }}
+                style={{
+                  animation: "tickerEnterBelow 0.38s ease-in-out forwards",
+                }}
                 onAnimationEnd={handleEnterEnd}
               >
-                <span className="text-[11px] text-gray-500 truncate">{next.text}</span>
+                <span className="text-[11px] text-gray-500 truncate">
+                  {next.text}
+                </span>
               </button>
             )}
           </>
