@@ -62,20 +62,18 @@ export const unlockItems: UnlockItem[] = [
   {
     id: "cute_bubble",
     type: "activeBubble",
-    category: "normal",
+    category: "premium",
     name: "귀여운 말풍선",
-    description: "한달 평균 3,000보 달성",
-    premiumOnly: true,
-    condition: { monthlyAverageStep: 3000 },
+    description: "프리미엄 전용 말풍선",
+    premium: true,
   },
   {
     id: "fire_bubble",
     type: "activeBubble",
-    category: "normal",
+    category: "premium",
     name: "불꽃 말풍선",
-    description: "한달 평균 7,000보 달성",
-    premiumOnly: true,
-    condition: { monthlyAverageStep: 7000 },
+    description: "프리미엄 전용 말풍선",
+    premium: true,
   },
 
   // =========================
@@ -91,11 +89,10 @@ export const unlockItems: UnlockItem[] = [
   {
     id: "shining_post_frame",
     type: "postFrame",
-    category: "normal",
+    category: "premium",
     name: "빛나는 프레임",
-    description: "한달 평균 6,000보 달성",
-    premiumOnly: true,
-    condition: { monthlyAverageStep: 6000 },
+    description: "프리미엄 전용 인증카드 프레임",
+    premium: true,
   },
 
   // =========================
@@ -120,24 +117,7 @@ export const unlockItems: UnlockItem[] = [
     description: "프리미엄 전용 칭호",
     premium: true,
   },
-  {
-    id: "premium_active_bubble",
-    type: "activeBubble",
-    category: "premium",
-    name: "프리미엄 활동중 말풍선",
-    description: "파티 활동 시 특별 말풍선 표시",
-    preview: "premiumBubble",
-    premium: true,
-  },
-  {
-    id: "premium_post_frame",
-    type: "postFrame",
-    category: "premium",
-    name: "특별 인증카드 테마",
-    description: "운동 인증 카드 전용 프레임",
-    preview: "premiumFrame",
-    premium: true,
-  },
+
   {
     id: "premium_no_ads",
     type: "premium",

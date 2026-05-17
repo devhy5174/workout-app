@@ -15,6 +15,7 @@ import {
 } from "react-icons/hi2";
 import { useUser } from "../context/UserContext";
 import { useUnlockItems } from "../hooks/useUnlockItems";
+import { unlockItems } from "../data/unlockItems";
 import type { UnlockItemType } from "../data/unlockItems";
 
 type Tab = "step" | "premium" | "events";
@@ -64,7 +65,15 @@ const BUBBLE_PREVIEWS: Record<string, { text: string; colorClass: string }> = {
   basic_bubble: { text: "운동 중 💪", colorClass: "bg-green-500" },
   cute_bubble: { text: "오늘도 꽃길 🌸", colorClass: "bg-violet-500" },
   fire_bubble: { text: "불태워 🔥", colorClass: "bg-orange-500" },
+  premium_active_bubble: { text: "운동 중 ✨", colorClass: "bg-gradient-to-r from-violet-500 to-purple-500" },
 };
+
+const PREMIUM_TYPE_ORDER: UnlockItemType[] = [
+  "activeBubble",
+  "postFrame",
+  "title",
+  "premium",
+];
 
 const SEASON_PREVIEWS: {
   Icon: IconType;
@@ -99,11 +108,20 @@ const SEASON_PREVIEWS: {
 export default function Step() {
   const [tab, setTab] = useState<Tab>("step");
   const [selectedPlan, setSelectedPlan] = useState<PlanType>("annual");
+  const [activePremiumItems, setActivePremiumItems] = useState<Record<string, string>>({});
   const { workoutRecords } = useUser();
   const { itemsWithStatus, totalSteps, monthlyAverageSteps } =
     useUnlockItems(workoutRecords);
 
   const normalItems = itemsWithStatus.filter((i) => i.category === "normal");
+  const premiumItems = unlockItems.filter((i) => i.category === "premium");
+
+  const togglePremiumItem = (type: string, id: string) => {
+    setActivePremiumItems((prev) => ({
+      ...prev,
+      [type]: prev[type] === id ? "" : id,
+    }));
+  };
 
   const tabs: { key: Tab; label: string }[] = [
     { key: "step", label: "STEP 보상" },
@@ -195,15 +213,9 @@ export default function Step() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <p
-                          className={`font-bold text-sm flex items-center gap-1.5 flex-wrap ${item.unlocked ? "text-gray-800" : "text-gray-400"}`}
+                          className={`font-bold text-sm ${item.unlocked ? "text-gray-800" : "text-gray-400"}`}
                         >
                           {item.name}
-                          {item.premiumOnly && (
-                            <span className="inline-flex items-center gap-0.5 bg-gradient-to-r from-yellow-400 to-amber-500 text-white text-[8px] font-extrabold px-2  -py-1 rounded-full shadow-sm">
-                              <HiSparkles className="text-[8px]" />
-                              PREMIUM
-                            </span>
-                          )}
                         </p>
                         <p className="text-xs text-gray-400 mt-0.5">
                           {item.condition?.monthlyAverageStep
@@ -233,12 +245,32 @@ export default function Step() {
           <>
             {/* 히어로 카드 */}
             <div className="rounded-3xl bg-gradient-to-br from-primary to-secondary p-6 shadow-lg">
-              <div className="flex items-center gap-2 mb-3">
+              <div className="flex items-center gap-2 mb-4">
                 <HiSparkles className="text-xl text-white/80" />
                 <p className="text-white font-extrabold text-base tracking-wide">
                   PREMIUM MEMBER
                 </p>
               </div>
+
+              {/* 말풍선 + 프레임 미리보기 */}
+              <div className="flex gap-3 mb-4">
+                <div className="flex-1 bg-white/15 rounded-2xl p-3 flex flex-col items-center gap-3">
+                  <p className="text-white/70 text-[10px] font-bold tracking-wide">말풍선</p>
+                  <div className="relative">
+                    <div className="bg-gradient-to-r from-violet-400 to-purple-500 text-white text-xs font-extrabold px-3 py-1.5 rounded-xl shadow-sm whitespace-nowrap">
+                      운동 중 ✨
+                    </div>
+                    <div className="absolute -bottom-1.5 left-3 w-2.5 h-2.5 bg-violet-400 rotate-45 rounded-[2px]" />
+                  </div>
+                </div>
+                <div className="flex-1 bg-white/15 rounded-2xl p-3 flex flex-col items-center gap-3">
+                  <p className="text-white/70 text-[10px] font-bold tracking-wide">카드 프레임</p>
+                  <div className="w-10 h-14 rounded-xl border-[2.5px] border-yellow-300 flex items-center justify-center bg-white/10 shadow-sm">
+                    <HiPhoto className="text-yellow-200 text-lg" />
+                  </div>
+                </div>
+              </div>
+
               <div className="flex flex-col gap-2">
                 {[
                   { Icon: HiChatBubbleOvalLeft, text: "활동중 특별 말풍선" },
@@ -383,6 +415,69 @@ export default function Step() {
                 연간 시작하기 · 준비중
               </button>
             </div>
+
+            {/* 프리미엄 아이템 선택 */}
+            <p className="text-xs font-bold text-gray-500 px-1 flex items-center gap-1.5">
+              <HiSparkles className="text-amber-400 text-sm" />
+              구독 시 선택 가능 아이템
+            </p>
+            {PREMIUM_TYPE_ORDER.map((type) => {
+              const group = premiumItems.filter((i) => i.type === type);
+              if (group.length === 0) return null;
+              const meta = TYPE_META[type];
+              return (
+                <div key={type}>
+                  <p className="text-xs font-bold text-gray-400 px-1 mb-2 flex items-center gap-1">
+                    <meta.Icon className={`text-sm ${meta.iconColor}`} />
+                    {meta.label}
+                  </p>
+                  <div className="flex flex-col gap-2">
+                    {group.map((item) => {
+                      const isActive = activePremiumItems[type] === item.id;
+                      return (
+                        <button
+                          key={item.id}
+                          onClick={() => togglePremiumItem(type, item.id)}
+                          className={`rounded-2xl shadow-sm px-5 py-4 flex items-center gap-4 transition-all text-left w-full border-2 ${
+                            isActive ? "bg-white border-amber-400" : "bg-gray-50 border-transparent"
+                          }`}
+                        >
+                          <div
+                            className={`w-11 h-11 rounded-2xl flex items-center justify-center flex-shrink-0 ${
+                              type === "activeBubble" && BUBBLE_PREVIEWS[item.id]
+                                ? ""
+                                : isActive
+                                  ? meta.bgColor
+                                  : "bg-gray-100"
+                            }`}
+                          >
+                            {type === "activeBubble" && BUBBLE_PREVIEWS[item.id] ? (
+                              <div className="flex flex-col items-center">
+                                <div className={`${BUBBLE_PREVIEWS[item.id].colorClass} text-white text-[7px] font-extrabold px-1.5 py-1.5 rounded-full whitespace-nowrap leading-none`}>
+                                  {BUBBLE_PREVIEWS[item.id].text}
+                                </div>
+                                <div className={`w-2 h-2 ${BUBBLE_PREVIEWS[item.id].colorClass} rotate-45 rounded-[1px] -mt-1`} />
+                              </div>
+                            ) : (
+                              <meta.Icon className={`text-xl ${isActive ? meta.iconColor : "text-gray-400"}`} />
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className={`font-bold text-sm ${isActive ? "text-gray-800" : "text-gray-400"}`}>
+                              {item.name}
+                            </p>
+                            <p className="text-xs text-gray-400 mt-0.5">{item.description}</p>
+                          </div>
+                          <div className={`w-5 h-5 rounded-full border-2 flex-shrink-0 transition-all ${
+                            isActive ? "border-amber-400 bg-amber-400" : "border-gray-200 bg-white"
+                          }`} />
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })}
           </>
         )}
 
