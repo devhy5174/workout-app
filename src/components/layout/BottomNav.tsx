@@ -1,15 +1,10 @@
 import { Link, useLocation } from "react-router-dom";
-import {
-  HiHome,
-  HiUserGroup,
-  HiCog,
-  HiUser,
-} from "react-icons/hi";
+import { HiHome, HiUserGroup, HiCog, HiUser } from "react-icons/hi";
 import { HiChatBubbleLeftRight, HiTrophy } from "react-icons/hi2";
 
 const navItems = [
   { to: "/", icon: HiHome, label: "홈" },
-  { to: "/community", icon: HiChatBubbleLeftRight, label: "커뮤니티" },
+  { to: "/community", icon: HiChatBubbleLeftRight, label: "인증" },
   { to: "/party", icon: HiUserGroup, label: "파티" },
   { to: "/mypage", icon: HiUser, label: "마이페이지" },
   { to: "/steps", icon: HiTrophy, label: "걸음" },

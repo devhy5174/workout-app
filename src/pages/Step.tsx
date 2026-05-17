@@ -359,7 +359,7 @@ export default function Step() {
 
         {/* ── 시즌 ── */}
         {tab === "season" && (
-          <div className="flex flex-col items-center justify-center py-16 gap-5">
+          <div className="flex flex-col items-center justify-center py-4 gap-5">
             <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-orange-400 to-pink-500 flex items-center justify-center shadow-lg">
               <HiCalendar className="text-4xl text-white" />
             </div>
