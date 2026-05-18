@@ -25,6 +25,9 @@ import type { UnlockItemType } from "../data/unlockItems";
 import { BUBBLE_PREVIEWS } from "../data/bubblePreviews";
 import { POST_FRAMES } from "../data/postFrames";
 import { useActiveFrame } from "../context/ActiveFrameContext";
+import { useEvents, getRewardLabel, getConditionLabel, getEventStatus } from "../hooks/useEvents";
+import { CATEGORY_META } from "../data/events";
+import type { AppEvent } from "../data/events";
 
 type Tab = "step" | "premium" | "events";
 type PlanType = "monthly" | "annual";
@@ -122,6 +125,67 @@ const PREMIUM_PLAN_BENEFITS = [
   "내 입맛에 맞는 다른 맞춤 식단 변경",
 ] as const;
 
+// ── 이벤트 카드 ──────────────────────────────────────────
+function EventCard({ event }: { event: AppEvent }) {
+  const catMeta = CATEGORY_META[event.category];
+  const status = getEventStatus(event);
+  const rewardLabel = getRewardLabel(event);
+  const conditionLabel = getConditionLabel(event);
+
+  // 남은 일수 계산
+  const today = new Date().toISOString().slice(0, 10);
+  const endMs = new Date(event.endDate).getTime();
+  const todayMs = new Date(today).getTime();
+  const daysLeft = Math.ceil((endMs - todayMs) / (1000 * 60 * 60 * 24));
+
+  return (
+    <div className="bg-white rounded-2xl shadow-sm p-4 border border-gray-50">
+      {/* 상단: 배지 + 남은 일수 */}
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <span
+            className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${catMeta.bg} ${catMeta.color}`}
+          >
+            {catMeta.emoji} {catMeta.label}
+          </span>
+          <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${status.color}`}>
+            {status.label}
+          </span>
+        </div>
+        {daysLeft > 0 && (
+          <span className="text-[11px] font-bold text-gray-400">
+            D-{daysLeft}
+          </span>
+        )}
+      </div>
+
+      {/* 제목 + 설명 */}
+      <p className="font-extrabold text-gray-800 text-sm mb-1">{event.title}</p>
+      {event.description && (
+        <p className="text-xs text-gray-500 mb-3 leading-relaxed">{event.description}</p>
+      )}
+
+      {/* 조건 + 보상 */}
+      <div className="bg-gray-50 rounded-xl px-3 py-2.5 flex flex-col gap-1.5">
+        <div className="flex items-center gap-2">
+          <span className="text-[11px] text-gray-400 font-bold w-8 flex-shrink-0">목표</span>
+          <span className="text-[11px] text-gray-700 font-semibold">{conditionLabel}</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-[11px] text-gray-400 font-bold w-8 flex-shrink-0">보상</span>
+          <span className="text-[11px] text-[var(--color-primary)] font-semibold">{rewardLabel}</span>
+        </div>
+      </div>
+
+      {/* 날짜 */}
+      <div className="flex items-center gap-1.5 mt-2.5 text-[10px] text-gray-300 font-semibold">
+        <HiCalendar className="text-xs" />
+        <span>{event.startDate} ~ {event.endDate}</span>
+      </div>
+    </div>
+  );
+}
+
 export default function Step() {
   const [searchParams, setSearchParams] = useSearchParams();
   const tabFromUrl = searchParams.get("tab");
@@ -135,6 +199,7 @@ export default function Step() {
   const { workoutRecords, userProfile, updateProfile } = useUser();
   const { itemsWithStatus, totalSteps, monthlyAverageSteps, consecutiveStreak } =
     useUnlockItems(workoutRecords);
+  const { byCategory, activeEvents } = useEvents();
 
   const { isPremium, togglePremium } = usePremium();
   const { selectedBubbleId, setSelectedBubbleId } = useActiveBubble();
@@ -713,39 +778,72 @@ export default function Step() {
 
         {/* ── 이벤트 ── */}
         {tab === "events" && (
-          <div className="flex flex-col items-center justify-center py-4 gap-5">
-            <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-orange-400 to-pink-500 flex items-center justify-center shadow-lg">
-              <HiCalendar className="text-4xl text-white" />
-            </div>
-            <div className="text-center">
-              <p className="text-gray-400 text-sm mt-2">
-                이벤트를 준비 중이에요!
+          <div className="flex flex-col gap-4 pb-4">
+            {/* 헤더 */}
+            <div className="flex items-center justify-between px-1">
+              <p className="text-xs font-bold text-gray-400">
+                진행 중인 이벤트{" "}
+                <span className="text-[var(--color-primary)]">
+                  {activeEvents.length}개
+                </span>
               </p>
             </div>
-            <div className="bg-white rounded-3xl shadow-sm px-6 py-5 w-full max-w-xs flex flex-col gap-3">
-              {SEASON_PREVIEWS.map((item) => (
-                <div
-                  key={item.name}
-                  className="flex items-center gap-3 opacity-60"
-                >
-                  <div
-                    className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 ${item.bg}`}
-                  >
-                    <item.Icon className={`text-lg ${item.color}`} />
+
+            {/* 이벤트 없음 */}
+            {activeEvents.length === 0 && (
+              <div className="flex flex-col items-center py-12 gap-3">
+                <div className="w-16 h-16 rounded-3xl bg-gradient-to-br from-orange-400 to-pink-500 flex items-center justify-center shadow-lg">
+                  <HiCalendar className="text-3xl text-white" />
+                </div>
+                <p className="text-sm font-bold text-gray-400">
+                  현재 진행 중인 이벤트가 없어요
+                </p>
+                <p className="text-xs text-gray-300 flex items-center gap-1">
+                  이벤트를 기대해주세요 <HiSparkles className="text-gray-300" />
+                </p>
+                {/* 예고 프리뷰 */}
+                <div className="bg-white rounded-3xl shadow-sm px-6 py-5 w-full flex flex-col gap-3 mt-2">
+                  {SEASON_PREVIEWS.map((item) => (
+                    <div key={item.name} className="flex items-center gap-3 opacity-50">
+                      <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 ${item.bg}`}>
+                        <item.Icon className={`text-lg ${item.color}`} />
+                      </div>
+                      <div>
+                        <p className="text-sm font-bold text-gray-600">{item.name}</p>
+                        <p className="text-xs text-gray-400">{item.desc}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* 카테고리별 이벤트 섹션 */}
+            {(["personal", "party", "streak"] as const).map((cat) => {
+              const catEvents = byCategory[cat];
+              if (catEvents.length === 0) return null;
+              const catMeta = CATEGORY_META[cat];
+              return (
+                <div key={cat}>
+                  {/* 섹션 헤더 */}
+                  <div className="flex items-center gap-2 mb-2 px-1">
+                    <span
+                      className={`text-xs font-extrabold px-2.5 py-1 rounded-full ${catMeta.bg} ${catMeta.color}`}
+                    >
+                      {catMeta.emoji} {catMeta.label}
+                    </span>
+                    <span className="text-[11px] text-gray-400 font-semibold">
+                      {catEvents.length}개 진행 중
+                    </span>
                   </div>
-                  <div>
-                    <p className="text-sm font-bold text-gray-600">
-                      {item.name}
-                    </p>
-                    <p className="text-xs text-gray-400">{item.desc}</p>
+                  <div className="flex flex-col gap-3">
+                    {catEvents.map((event) => (
+                      <EventCard key={event.id} event={event} />
+                    ))}
                   </div>
                 </div>
-              ))}
-            </div>
-            <p className="text-xs text-gray-300 font-semibold flex items-center gap-1">
-              이벤트를 기대해주세요
-              <HiSparkles className="text-gray-300" />
-            </p>
+              );
+            })}
           </div>
         )}
       </div>

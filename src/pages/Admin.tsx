@@ -21,51 +21,23 @@ import {
   HiVolumeOff,
 } from "react-icons/hi";
 import { useAdminStats, type SubscriberStats } from "../hooks/useAdminStats";
+import { useEvents, getEventStatus } from "../hooks/useEvents";
+import {
+  CATEGORY_META,
+  CATEGORY_CONDITIONS,
+  CONDITION_META,
+  REWARD_TYPE_META,
+} from "../data/events";
+import type {
+  AppEvent,
+  EventCategory,
+  EventConditionType,
+  EventRewardType,
+} from "../data/events";
+import { BUBBLE_PREVIEWS } from "../data/bubblePreviews";
 
 // ── 공통 타입 ─────────────────────────────────────────────
 type AdminTab = "dashboard" | "premium" | "events";
-
-type EventType = "challenge" | "promotion" | "notice" | "maintenance";
-type AppEvent = {
-  id: string;
-  title: string;
-  description: string;
-  startDate: string;
-  endDate: string;
-  type: EventType;
-  isActive: boolean;
-};
-
-const EVENT_TYPE_META: Record<
-  EventType,
-  { label: string; color: string; bg: string }
-> = {
-  challenge: { label: "챌린지", color: "text-orange-600", bg: "bg-orange-50" },
-  promotion: { label: "프로모션", color: "text-blue-600", bg: "bg-blue-50" },
-  notice: { label: "공지", color: "text-gray-600", bg: "bg-gray-100" },
-  maintenance: { label: "점검", color: "text-red-600", bg: "bg-red-50" },
-};
-
-const INITIAL_EVENTS: AppEvent[] = [
-  {
-    id: "1",
-    title: "5월 걷기 챌린지",
-    description: "5월 한 달간 매일 8,000보 달성하면 특별 보상!",
-    startDate: "2026-05-01",
-    endDate: "2026-05-31",
-    type: "challenge",
-    isActive: true,
-  },
-  {
-    id: "2",
-    title: "신규 가입 혜택",
-    description: "5월 신규 가입자 첫 운동 시 특별 말풍선 즉시 지급",
-    startDate: "2026-05-01",
-    endDate: "2026-05-20",
-    type: "promotion",
-    isActive: true,
-  },
-];
 
 const PREMIUM_BENEFITS = [
   {
@@ -137,39 +109,67 @@ function EventFormSheet({
   onClose,
 }: {
   initial?: AppEvent;
-  onSave: (event: Omit<AppEvent, "id">) => void;
+  onSave: (data: Omit<AppEvent, "id" | "createdAt">) => void;
   onClose: () => void;
 }) {
+  const todayStr = new Date().toISOString().slice(0, 10);
   const [title, setTitle] = useState(initial?.title ?? "");
   const [description, setDescription] = useState(initial?.description ?? "");
-  const [startDate, setStartDate] = useState(
-    initial?.startDate ?? new Date().toISOString().slice(0, 10),
+  const [startDate, setStartDate] = useState(initial?.startDate ?? todayStr);
+  const [endDate, setEndDate] = useState(initial?.endDate ?? todayStr);
+  const [category, setCategory] = useState<EventCategory>(
+    initial?.category ?? "personal",
   );
-  const [endDate, setEndDate] = useState(
-    initial?.endDate ?? new Date().toISOString().slice(0, 10),
+  const [conditionType, setConditionType] = useState<EventConditionType>(
+    initial?.conditionType ?? "avg_steps",
   );
-  const [type, setType] = useState<EventType>(initial?.type ?? "challenge");
+  const [conditionValue, setConditionValue] = useState(
+    initial?.conditionValue?.toString() ?? "",
+  );
+  const [rewardType, setRewardType] = useState<EventRewardType>(
+    initial?.reward.type ?? "bubble",
+  );
+  const [bubbleId, setBubbleId] = useState(initial?.reward.bubbleId ?? "");
+  const [titleText, setTitleText] = useState(initial?.reward.titleText ?? "");
   const [error, setError] = useState<string | null>(null);
 
+  // 카테고리 변경 시 조건 타입 초기화
+  function handleCategoryChange(cat: EventCategory) {
+    setCategory(cat);
+    setConditionType(CATEGORY_CONDITIONS[cat][0]);
+    setError(null);
+  }
+
   function handleSave() {
-    if (!title.trim()) {
-      setError("이벤트 제목을 입력해주세요.");
-      return;
-    }
-    if (endDate < startDate) {
-      setError("종료일이 시작일보다 빠를 수 없어요.");
-      return;
-    }
+    if (!title.trim()) return setError("이벤트 제목을 입력해주세요.");
+    if (endDate < startDate) return setError("종료일이 시작일보다 빠를 수 없어요.");
+    const val = parseInt(conditionValue, 10);
+    if (!conditionValue || isNaN(val) || val <= 0)
+      return setError("목표 값을 올바르게 입력해주세요.");
+    if ((rewardType === "bubble" || rewardType === "both") && !bubbleId)
+      return setError("말풍선을 선택해주세요.");
+    if ((rewardType === "title" || rewardType === "both") && !titleText.trim())
+      return setError("칭호 텍스트를 입력해주세요.");
+
     onSave({
       title: title.trim(),
       description: description.trim(),
       startDate,
       endDate,
-      type,
+      category,
+      conditionType,
+      conditionValue: val,
+      reward: {
+        type: rewardType,
+        bubbleId: rewardType !== "title" ? bubbleId : undefined,
+        titleText: rewardType !== "bubble" ? titleText.trim() : undefined,
+      },
       isActive: initial?.isActive ?? true,
     });
     onClose();
   }
+
+  const availableConditions = CATEGORY_CONDITIONS[category];
 
   return (
     <div
@@ -177,7 +177,7 @@ function EventFormSheet({
       onClick={onClose}
     >
       <div
-        className="w-full max-w-md mx-auto bg-white rounded-t-3xl p-6 pb-10 shadow-2xl max-h-[90vh] overflow-y-auto"
+        className="w-full max-w-md mx-auto bg-white rounded-t-3xl p-6 pb-10 shadow-2xl max-h-[92vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between mb-5">
@@ -193,51 +193,140 @@ function EventFormSheet({
           </button>
         </div>
 
+        {/* 카테고리 */}
         <p className="text-xs font-bold text-gray-400 mb-2">이벤트 유형</p>
         <div className="flex gap-2 mb-4">
-          {(Object.keys(EVENT_TYPE_META) as EventType[]).map((t) => {
-            const meta = EVENT_TYPE_META[t];
+          {(Object.keys(CATEGORY_META) as EventCategory[]).map((cat) => {
+            const meta = CATEGORY_META[cat];
             return (
               <button
-                key={t}
-                onClick={() => setType(t)}
+                key={cat}
+                onClick={() => handleCategoryChange(cat)}
                 className={`flex-1 py-2 rounded-xl text-xs font-bold transition-all border-2 ${
-                  type === t
-                    ? `${meta.bg} ${meta.color} border-current`
+                  category === cat
+                    ? `${meta.bg} ${meta.color} ${meta.border}`
                     : "bg-gray-50 text-gray-400 border-transparent"
                 }`}
               >
-                {meta.label}
+                {meta.emoji} {meta.label.replace(" 이벤트", "").replace(" 챌린지", "")}
               </button>
             );
           })}
         </div>
 
+        {/* 제목 */}
         <p className="text-xs font-bold text-gray-400 mb-2">제목</p>
         <input
           type="text"
           value={title}
-          onChange={(e) => {
-            setTitle(e.target.value);
-            setError(null);
-          }}
+          onChange={(e) => { setTitle(e.target.value); setError(null); }}
           placeholder="이벤트 제목"
           maxLength={40}
           className="w-full bg-gray-50 rounded-2xl px-4 py-3 text-sm font-semibold text-gray-800 outline-none mb-4 placeholder:text-gray-300 focus:ring-2 focus:ring-[var(--color-primary)]/30"
         />
 
-        <p className="text-xs font-bold text-gray-400 mb-2">설명</p>
+        {/* 설명 */}
+        <p className="text-xs font-bold text-gray-400 mb-2">설명 (선택)</p>
         <textarea
           value={description}
           onChange={(e) => setDescription(e.target.value)}
-          placeholder="이벤트 설명 (선택)"
-          maxLength={100}
+          placeholder="이벤트 설명"
+          maxLength={120}
           rows={2}
           className="w-full bg-gray-50 rounded-2xl px-4 py-3 text-sm text-gray-700 outline-none mb-4 resize-none placeholder:text-gray-300 focus:ring-2 focus:ring-[var(--color-primary)]/30"
         />
 
-        <p className="text-xs font-bold text-gray-400 mb-2">기간</p>
-        <div className="flex gap-2 mb-4">
+        {/* 달성 조건 */}
+        <p className="text-xs font-bold text-gray-400 mb-2">달성 조건</p>
+        {availableConditions.length > 1 && (
+          <div className="flex gap-2 mb-2">
+            {availableConditions.map((ct) => (
+              <button
+                key={ct}
+                onClick={() => setConditionType(ct)}
+                className={`flex-1 py-1.5 rounded-xl text-xs font-bold border-2 transition-all ${
+                  conditionType === ct
+                    ? "bg-[var(--color-primary)]/10 text-[var(--color-primary)] border-[var(--color-primary)]/30"
+                    : "bg-gray-50 text-gray-400 border-transparent"
+                }`}
+              >
+                {CONDITION_META[ct].label}
+              </button>
+            ))}
+          </div>
+        )}
+        <div className="flex items-center gap-2 mb-4">
+          <input
+            type="number"
+            value={conditionValue}
+            onChange={(e) => { setConditionValue(e.target.value); setError(null); }}
+            placeholder={CONDITION_META[conditionType].placeholder}
+            min={1}
+            className="flex-1 bg-gray-50 rounded-2xl px-4 py-3 text-sm font-semibold text-gray-800 outline-none placeholder:text-gray-300 focus:ring-2 focus:ring-[var(--color-primary)]/30"
+          />
+          <span className="text-xs font-bold text-gray-400 whitespace-nowrap pr-1">
+            {CONDITION_META[conditionType].unit}
+          </span>
+        </div>
+
+        {/* 보상 유형 */}
+        <p className="text-xs font-bold text-gray-400 mb-2">보상 유형</p>
+        <div className="flex gap-2 mb-3">
+          {(Object.keys(REWARD_TYPE_META) as EventRewardType[]).map((rt) => {
+            const meta = REWARD_TYPE_META[rt];
+            return (
+              <button
+                key={rt}
+                onClick={() => setRewardType(rt)}
+                className={`flex-1 py-2 rounded-xl text-xs font-bold border-2 transition-all ${
+                  rewardType === rt
+                    ? "bg-violet-50 text-violet-600 border-violet-200"
+                    : "bg-gray-50 text-gray-400 border-transparent"
+                }`}
+              >
+                {meta.emoji} {meta.label}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* 말풍선 선택 */}
+        {(rewardType === "bubble" || rewardType === "both") && (
+          <>
+            <p className="text-xs font-bold text-gray-400 mb-2">말풍선 선택</p>
+            <select
+              value={bubbleId}
+              onChange={(e) => { setBubbleId(e.target.value); setError(null); }}
+              className="w-full bg-gray-50 rounded-2xl px-4 py-3 text-sm font-semibold text-gray-800 outline-none mb-4 focus:ring-2 focus:ring-[var(--color-primary)]/30"
+            >
+              <option value="">말풍선을 선택하세요</option>
+              {Object.entries(BUBBLE_PREVIEWS).map(([id, bubble]) => (
+                <option key={id} value={id}>
+                  {bubble.text} {bubble.premium ? "(프리미엄)" : "(일반)"}
+                </option>
+              ))}
+            </select>
+          </>
+        )}
+
+        {/* 칭호 텍스트 */}
+        {(rewardType === "title" || rewardType === "both") && (
+          <>
+            <p className="text-xs font-bold text-gray-400 mb-2">칭호 텍스트</p>
+            <input
+              type="text"
+              value={titleText}
+              onChange={(e) => { setTitleText(e.target.value); setError(null); }}
+              placeholder="예: 🔥 30일 완주자"
+              maxLength={20}
+              className="w-full bg-gray-50 rounded-2xl px-4 py-3 text-sm font-semibold text-gray-800 outline-none mb-4 placeholder:text-gray-300 focus:ring-2 focus:ring-[var(--color-primary)]/30"
+            />
+          </>
+        )}
+
+        {/* 기간 */}
+        <p className="text-xs font-bold text-gray-400 mb-2">이벤트 기간</p>
+        <div className="flex gap-2 mb-5">
           <div className="flex-1">
             <p className="text-[11px] text-gray-400 mb-1 px-1">시작일</p>
             <input
@@ -262,8 +351,7 @@ function EventFormSheet({
 
         <button
           onClick={handleSave}
-          disabled={!title.trim()}
-          className="w-full py-4 rounded-2xl text-white font-extrabold text-base active:scale-95 transition shadow-md disabled:opacity-50"
+          className="w-full py-4 rounded-2xl text-white font-extrabold text-base active:scale-95 transition shadow-md"
           style={{
             background:
               "linear-gradient(135deg, var(--color-primary), var(--color-secondary))",
@@ -505,39 +593,19 @@ function PremiumTab({
 
 // ── 탭: 이벤트 관리 ───────────────────────────────────────
 function EventsTab() {
-  const [events, setEvents] = useState<AppEvent[]>(INITIAL_EVENTS);
+  const { events, activeEvents, addEvent, updateEvent, deleteEvent, toggleEvent } =
+    useEvents();
   const [showForm, setShowForm] = useState(false);
   const [editingEvent, setEditingEvent] = useState<AppEvent | undefined>();
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
-  const today = new Date().toISOString().slice(0, 10);
-  const activeEvents = events.filter(
-    (e) => e.isActive && e.startDate <= today && e.endDate >= today,
-  );
-
-  function handleAdd(data: Omit<AppEvent, "id">) {
-    setEvents((prev) => [{ ...data, id: Date.now().toString() }, ...prev]);
-  }
-
-  function handleEdit(data: Omit<AppEvent, "id">) {
-    if (!editingEvent) return;
-    setEvents((prev) =>
-      prev.map((e) =>
-        e.id === editingEvent.id ? { ...data, id: editingEvent.id } : e,
-      ),
-    );
+  function handleSave(data: Omit<AppEvent, "id" | "createdAt">) {
+    if (editingEvent) {
+      updateEvent(editingEvent.id, data);
+    } else {
+      addEvent(data);
+    }
     setEditingEvent(undefined);
-  }
-
-  function handleToggle(id: string) {
-    setEvents((prev) =>
-      prev.map((e) => (e.id === id ? { ...e, isActive: !e.isActive } : e)),
-    );
-  }
-
-  function handleDelete(id: string) {
-    setEvents((prev) => prev.filter((e) => e.id !== id));
-    setDeletingId(null);
   }
 
   return (
@@ -551,10 +619,7 @@ function EventsTab() {
           </span>
         </p>
         <button
-          onClick={() => {
-            setEditingEvent(undefined);
-            setShowForm(true);
-          }}
+          onClick={() => { setEditingEvent(undefined); setShowForm(true); }}
           className="flex items-center gap-1 text-xs font-bold text-[var(--color-primary)] bg-[var(--color-primary)]/10 px-3 py-1.5 rounded-full active:scale-95 transition"
         >
           <HiPlus size={14} />
@@ -565,9 +630,7 @@ function EventsTab() {
       {events.length === 0 ? (
         <div className="bg-white rounded-2xl shadow-sm flex flex-col items-center justify-center py-16 gap-3">
           <HiSpeakerphone size={40} className="text-gray-200" />
-          <p className="text-sm font-bold text-gray-400">
-            등록된 이벤트가 없어요
-          </p>
+          <p className="text-sm font-bold text-gray-400">등록된 이벤트가 없어요</p>
           <button
             onClick={() => setShowForm(true)}
             className="text-xs font-bold text-[var(--color-primary)] bg-[var(--color-primary)]/10 px-4 py-2 rounded-full"
@@ -577,23 +640,9 @@ function EventsTab() {
         </div>
       ) : (
         events.map((event) => {
-          const meta = EVENT_TYPE_META[event.type];
-          const isExpired = event.endDate < today;
-          const isPending = event.startDate > today;
-          const statusLabel = isExpired
-            ? "종료"
-            : isPending
-              ? "예정"
-              : event.isActive
-                ? "진행 중"
-                : "비활성";
-          const statusColor = isExpired
-            ? "text-gray-400 bg-gray-100"
-            : isPending
-              ? "text-blue-500 bg-blue-50"
-              : event.isActive
-                ? "text-emerald-600 bg-emerald-50"
-                : "text-gray-400 bg-gray-100";
+          const catMeta = CATEGORY_META[event.category];
+          const status = getEventStatus(event);
+          const isExpired = event.endDate < new Date().toISOString().slice(0, 10);
 
           return (
             <div
@@ -602,26 +651,27 @@ function EventsTab() {
                 !event.isActive || isExpired ? "opacity-60" : ""
               }`}
             >
+              {/* 배지 행 */}
               <div className="flex items-start justify-between gap-2 mb-2">
                 <div className="flex items-center gap-2 flex-wrap">
                   <span
-                    className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${meta.bg} ${meta.color}`}
+                    className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${catMeta.bg} ${catMeta.color}`}
                   >
-                    {meta.label}
+                    {catMeta.emoji} {catMeta.label}
                   </span>
                   <span
-                    className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${statusColor}`}
+                    className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${status.color}`}
                   >
-                    {statusLabel}
+                    {status.label}
                   </span>
                 </div>
                 <div className="flex items-center gap-1 flex-shrink-0">
                   {!isExpired && (
                     <button
-                      onClick={() => handleToggle(event.id)}
+                      onClick={() => toggleEvent(event.id)}
                       className={`text-[11px] font-bold px-2 py-1 rounded-lg transition-colors ${
                         event.isActive
-                          ? "text-gray-400 bg-gray-100 hover:bg-gray-200"
+                          ? "text-gray-400 bg-gray-100"
                           : "text-[var(--color-primary)] bg-[var(--color-primary)]/10"
                       }`}
                       aria-label={event.isActive ? "비활성화" : "활성화"}
@@ -630,10 +680,7 @@ function EventsTab() {
                     </button>
                   )}
                   <button
-                    onClick={() => {
-                      setEditingEvent(event);
-                      setShowForm(true);
-                    }}
+                    onClick={() => { setEditingEvent(event); setShowForm(true); }}
                     className="w-7 h-7 rounded-lg bg-gray-100 flex items-center justify-center text-gray-400 hover:bg-blue-50 hover:text-blue-400 transition-colors"
                     aria-label="이벤트 수정"
                   >
@@ -642,7 +689,7 @@ function EventsTab() {
                   {deletingId === event.id ? (
                     <div className="flex items-center gap-1">
                       <button
-                        onClick={() => handleDelete(event.id)}
+                        onClick={() => { deleteEvent(event.id); setDeletingId(null); }}
                         className="text-[11px] font-bold text-red-500 px-2 py-1"
                         aria-label="삭제 확인"
                       >
@@ -668,12 +715,30 @@ function EventsTab() {
                 </div>
               </div>
 
+              {/* 내용 */}
               <p className="font-extrabold text-gray-800 text-sm mb-0.5">
                 {event.title}
               </p>
               {event.description && (
                 <p className="text-xs text-gray-500 mb-2">{event.description}</p>
               )}
+
+              {/* 조건 + 보상 */}
+              <div className="flex flex-wrap gap-x-4 gap-y-1 mb-2">
+                <p className="text-[11px] text-gray-400 font-semibold">
+                  🎯 {event.conditionValue.toLocaleString()}
+                  {CONDITION_META[event.conditionType].unit}{" "}
+                  {CONDITION_META[event.conditionType].label}
+                </p>
+                <p className="text-[11px] text-gray-400 font-semibold">
+                  🎁 {REWARD_TYPE_META[event.reward.type].label}
+                  {event.reward.bubbleId
+                    ? ` · ${BUBBLE_PREVIEWS[event.reward.bubbleId]?.text ?? event.reward.bubbleId}`
+                    : ""}
+                  {event.reward.titleText ? ` · ${event.reward.titleText}` : ""}
+                </p>
+              </div>
+
               <div className="flex items-center gap-1.5 text-[11px] text-gray-400 font-semibold">
                 <HiCalendar size={12} />
                 <span>
@@ -688,11 +753,8 @@ function EventsTab() {
       {showForm && (
         <EventFormSheet
           initial={editingEvent}
-          onSave={editingEvent ? handleEdit : handleAdd}
-          onClose={() => {
-            setShowForm(false);
-            setEditingEvent(undefined);
-          }}
+          onSave={handleSave}
+          onClose={() => { setShowForm(false); setEditingEvent(undefined); }}
         />
       )}
     </div>

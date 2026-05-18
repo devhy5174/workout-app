@@ -22,6 +22,7 @@ import PartyDetail from "../pages/PartyDetail";
 import MyPage from "../pages/MyPage";
 import Admin from "../pages/Admin";
 import { useUser } from "../context/UserContext";
+import { EventsProvider } from "../context/EventsContext";
 import LoadingScreen from "../components/ui/LoadingScreen";
 
 function AuthGuard({ children }: { children: React.ReactNode }) {
@@ -66,6 +67,7 @@ function IntroGuard() {
 
 export default function AppRouter() {
   return (
+    <EventsProvider>
     <BrowserRouter>
       <Routes>
         <Route path="/intro" element={<Intro />} />
@@ -95,5 +97,6 @@ export default function AppRouter() {
         <Route path="*" element={<IntroGuard />} />
       </Routes>
     </BrowserRouter>
+    </EventsProvider>
   );
 }
