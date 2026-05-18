@@ -88,19 +88,18 @@ function PostCard({
           {post.tags.slice(0, 2).map((tag) => (
             <span
               key={tag}
-              className="rounded-full px-2.5 py-0.5 text-[11px] font-semibold"
-              style={{
-                background: "var(--color-primary-light)",
-                color: "var(--color-primary)",
-              }}
+              className="rounded-full px-2.5 py-0.5 text-[11px] font-semibold bg-stone-100 text-stone-500"
             >
               #{tag}
             </span>
           ))}
         </div>
-        <div className="flex items-center gap-1 bg-stone-100 rounded-full px-2.5 py-1 flex-shrink-0">
-          <FootprintIcon className="w-3 h-3 text-stone-500" />
-          <span className="text-[13px] text-stone-700 font-bold">
+        <div
+          className="flex items-center gap-1.5 rounded-full px-3 py-1.5 flex-shrink-0"
+          style={{ background: "var(--color-primary-light)" }}
+        >
+          <FootprintIcon className="w-3.5 h-3.5" style={{ color: "var(--color-primary)" }} />
+          <span className="text-[14px] font-extrabold" style={{ color: "var(--color-primary)" }}>
             {post.steps}
           </span>
         </div>

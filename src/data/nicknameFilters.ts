@@ -36,10 +36,45 @@ export function hasInvalidChars(value: string): boolean {
   return !NICKNAME_ALLOWED_PATTERN.test(value);
 }
 
-/** 금지어 포함 여부 */
+/** 닉네임 금지어 포함 여부 (욕설 + 시스템 예약어) */
 export function hasBannedWord(value: string): boolean {
   const lower = value.toLowerCase();
   return BLOCKED_WORDS.some((word) => lower.includes(word.toLowerCase()));
+}
+
+// 게시글용 금지어 - 시스템 예약어 제외, 욕설만
+const POST_BLOCKED_WORDS = BLOCKED_WORDS.filter(
+  (w) => !["admin", "관리자", "운영자", "master", "system"].includes(w)
+);
+
+/** 게시글 금지어 포함 여부 (욕설만, 시스템 예약어 허용) */
+export function hasPostBannedWord(value: string): boolean {
+  const lower = value.toLowerCase();
+  return POST_BLOCKED_WORDS.some((word) => lower.includes(word.toLowerCase()));
+}
+
+/** 자모(초성·중성·종성)가 전체 글자의 30% 초과인지 검사 */
+export function hasExcessiveJamo(value: string): boolean {
+  const nonSpace = value.replace(/\s/g, "");
+  if (nonSpace.length === 0) return false;
+  const jamoCount = (nonSpace.match(/[ㄱ-ㅎㅏ-ㅣ]/g) ?? []).length;
+  return jamoCount / nonSpace.length > 0.3;
+}
+
+/** 3칸 이상 연속 공백 포함 여부 */
+export function hasExcessiveSpaces(value: string): boolean {
+  return / {3,}/.test(value);
+}
+
+/**
+ * 게시글 통합 검사
+ * @returns 오류 메시지 또는 null
+ */
+export function validatePostText(value: string): string | null {
+  if (hasPostBannedWord(value)) return "사용할 수 없는 단어가 포함되어 있어요.";
+  if (hasExcessiveJamo(value)) return "초성·자모만으로는 작성할 수 없어요.";
+  if (hasExcessiveSpaces(value)) return "공백을 너무 많이 사용했어요.";
+  return null;
 }
 
 /**

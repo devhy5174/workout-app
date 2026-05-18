@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { GiFootprint } from "react-icons/gi";
 import { COMMUNITY_TAG_GROUPS } from "../data/tags";
+import { validatePostText } from "../data/nicknameFilters";
 
 interface CommunityWriteModalProps {
   isOpen: boolean;
@@ -9,6 +9,14 @@ interface CommunityWriteModalProps {
 }
 
 const MAX_TAGS = 2;
+
+const QUICK_PHRASES = [
+  "오늘 운동 인증 완료! 💪",
+  "오늘도 꾸준히 걸었어요 🚶",
+  "목표 달성! 뿌듯한 하루 🎯",
+  "땀 흘린 만큼 보람차요 🔥",
+  "오늘도 포기하지 않았어요 🏃",
+];
 
 export default function CommunityWriteModal({
   isOpen,
@@ -35,8 +43,12 @@ export default function CommunityWriteModal({
     });
   };
 
+  const validationError =
+    text.trim().length > 0 ? validatePostText(text) : null;
+  const canSubmit = text.trim().length > 0 && validationError === null;
+
   const handleSubmit = () => {
-    if (!text.trim()) return;
+    if (!canSubmit) return;
     onSubmit?.({ text, tags: selectedTags });
     onClose();
   };
@@ -85,6 +97,28 @@ export default function CommunityWriteModal({
           </button>
         </div>
 
+        {/* 빠른 인증 문구 */}
+        <div className="flex gap-2 overflow-x-auto scrollbar-hide mb-3 -mx-1 px-1">
+          {QUICK_PHRASES.map((phrase) => (
+            <button
+              key={phrase}
+              onClick={() => setText(phrase)}
+              className="flex-shrink-0 text-[11px] font-medium rounded-full px-3 py-1.5 transition-all duration-150 active:scale-95"
+              style={
+                text === phrase
+                  ? { background: "var(--color-primary)", color: "white" }
+                  : {
+                      background: "white",
+                      border: "1px solid #e7e5e4",
+                      color: "#78716c",
+                    }
+              }
+            >
+              {phrase}
+            </button>
+          ))}
+        </div>
+
         {/* 글 작성 */}
         <div className="mb-5">
           <textarea
@@ -116,7 +150,14 @@ export default function CommunityWriteModal({
               e.target.style.boxShadow = "";
             }}
           />
-          <div className="flex justify-end mt-2">
+          <div className="flex items-center justify-between mt-2">
+            {validationError ? (
+              <span className="text-[11px] text-red-400">
+                {validationError}
+              </span>
+            ) : (
+              <span />
+            )}
             <span className="text-[11px] text-stone-300">
               {text.length}/120
             </span>
@@ -183,10 +224,10 @@ export default function CommunityWriteModal({
         {/* 등록 버튼 */}
         <button
           onClick={handleSubmit}
-          disabled={!text.trim()}
+          disabled={!canSubmit}
           className="w-full h-14 rounded-2xl text-sm font-bold transition-all duration-150 active:scale-[0.98]"
           style={
-            text.trim()
+            canSubmit
               ? {
                   background: "var(--color-primary)",
                   color: "white",
