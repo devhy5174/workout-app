@@ -12,20 +12,26 @@ import {
   HiMoon,
   HiCloud,
   HiCheckCircle,
-  HiNoSymbol,
-  HiArrowPath,
 } from "react-icons/hi2";
 import { isPremiumStepsTab } from "../utils/premiumNavigation";
 import { useUser } from "../context/UserContext";
 import { usePremium } from "../context/PremiumContext";
-import { useActiveBubble, PREMIUM_BUBBLE_IDS } from "../context/ActiveBubbleContext";
+import {
+  useActiveBubble,
+  PREMIUM_BUBBLE_IDS,
+} from "../context/ActiveBubbleContext";
 import { useUnlockItems } from "../hooks/useUnlockItems";
 import { unlockItems } from "../data/unlockItems";
 import type { UnlockItemType } from "../data/unlockItems";
 import { BUBBLE_PREVIEWS } from "../data/bubblePreviews";
 import { POST_FRAMES } from "../data/postFrames";
 import { useActiveFrame } from "../context/ActiveFrameContext";
-import { useEvents, getRewardLabel, getConditionLabel, getEventStatus } from "../hooks/useEvents";
+import {
+  useEvents,
+  getRewardLabel,
+  getConditionLabel,
+  getEventStatus,
+} from "../hooks/useEvents";
 import { CATEGORY_META } from "../data/events";
 import type { AppEvent } from "../data/events";
 
@@ -109,20 +115,13 @@ const SEASON_PREVIEWS: {
   },
 ];
 
-const PREMIUM_HERO_BENEFITS = [
-  { Icon: HiChatBubbleOvalLeft, text: "활동중 특별 말풍선" },
-  { Icon: HiNoSymbol, text: "광고 없는 경험" },
-  { Icon: HiPhoto, text: "전용 카드 테마" },
-  { Icon: HiStar, text: "프리미엄 칭호" },
-  { Icon: HiArrowPath, text: "나만의 대체 식단 새로고침" },
-] as const;
 
 const PREMIUM_PLAN_BENEFITS = [
-  "활동중 프리미엄 말풍선",
+  "다양한 활동중 프리미엄 말풍선",
   "광고 제거",
   "인증 카드 테마",
   "프리미엄 칭호",
-  "내 입맛에 맞는 다른 맞춤 식단 변경",
+  "나만의 대체 식단 새로고침",
 ] as const;
 
 // ── 이벤트 카드 ──────────────────────────────────────────
@@ -148,7 +147,9 @@ function EventCard({ event }: { event: AppEvent }) {
           >
             {catMeta.emoji} {catMeta.label}
           </span>
-          <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${status.color}`}>
+          <span
+            className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${status.color}`}
+          >
             {status.label}
           </span>
         </div>
@@ -162,25 +163,37 @@ function EventCard({ event }: { event: AppEvent }) {
       {/* 제목 + 설명 */}
       <p className="font-extrabold text-gray-800 text-sm mb-1">{event.title}</p>
       {event.description && (
-        <p className="text-xs text-gray-500 mb-3 leading-relaxed">{event.description}</p>
+        <p className="text-xs text-gray-500 mb-3 leading-relaxed">
+          {event.description}
+        </p>
       )}
 
       {/* 조건 + 보상 */}
       <div className="bg-gray-50 rounded-xl px-3 py-2.5 flex flex-col gap-1.5">
         <div className="flex items-center gap-2">
-          <span className="text-[11px] text-gray-400 font-bold w-8 flex-shrink-0">목표</span>
-          <span className="text-[11px] text-gray-700 font-semibold">{conditionLabel}</span>
+          <span className="text-[11px] text-gray-400 font-bold w-8 flex-shrink-0">
+            목표
+          </span>
+          <span className="text-[11px] text-gray-700 font-semibold">
+            {conditionLabel}
+          </span>
         </div>
         <div className="flex items-center gap-2">
-          <span className="text-[11px] text-gray-400 font-bold w-8 flex-shrink-0">보상</span>
-          <span className="text-[11px] text-[var(--color-primary)] font-semibold">{rewardLabel}</span>
+          <span className="text-[11px] text-gray-400 font-bold w-8 flex-shrink-0">
+            보상
+          </span>
+          <span className="text-[11px] text-[var(--color-primary)] font-semibold">
+            {rewardLabel}
+          </span>
         </div>
       </div>
 
       {/* 날짜 */}
       <div className="flex items-center gap-1.5 mt-2.5 text-[10px] text-gray-300 font-semibold">
         <HiCalendar className="text-xs" />
-        <span>{event.startDate} ~ {event.endDate}</span>
+        <span>
+          {event.startDate} ~ {event.endDate}
+        </span>
       </div>
     </div>
   );
@@ -197,8 +210,12 @@ export default function Step() {
     Record<string, string>
   >({});
   const { workoutRecords, userProfile, updateProfile } = useUser();
-  const { itemsWithStatus, totalSteps, monthlyAverageSteps, consecutiveStreak } =
-    useUnlockItems(workoutRecords);
+  const {
+    itemsWithStatus,
+    totalSteps,
+    monthlyAverageSteps,
+    consecutiveStreak,
+  } = useUnlockItems(workoutRecords);
   const { byCategory, activeEvents } = useEvents();
 
   const { isPremium, togglePremium } = usePremium();
@@ -207,8 +224,10 @@ export default function Step() {
 
   useEffect(() => {
     if (!isPremium) {
-      if (PREMIUM_BUBBLE_IDS.has(selectedBubbleId)) setSelectedBubbleId("basic_bubble");
-      if (POST_FRAMES[selectedFrameId]?.premium) setSelectedFrameId("basic_post_frame");
+      if (PREMIUM_BUBBLE_IDS.has(selectedBubbleId))
+        setSelectedBubbleId("basic_bubble");
+      if (POST_FRAMES[selectedFrameId]?.premium)
+        setSelectedFrameId("basic_post_frame");
     }
   }, [isPremium]);
 
@@ -285,14 +304,24 @@ export default function Step() {
             <div className="rounded-2xl bg-white shadow-sm p-5">
               <div className="flex items-start justify-between mb-3">
                 <div>
-                  <p className="font-extrabold text-gray-800 text-sm">🔥 30일 연속 챌린지</p>
-                  <p className="text-[11px] text-gray-400 mt-0.5">하루라도 빠지면 처음부터 다시 시작돼요</p>
+                  <p className="font-extrabold text-gray-800 text-sm">
+                    🔥 30일 연속 챌린지
+                  </p>
+                  <p className="text-[11px] text-gray-400 mt-0.5">
+                    하루라도 빠지면 처음부터 다시 시작돼요
+                  </p>
                 </div>
                 <div className="text-right flex-shrink-0 ml-2">
-                  <span className="text-xl font-extrabold" style={{ color: "var(--color-primary)" }}>
+                  <span
+                    className="text-xl font-extrabold"
+                    style={{ color: "var(--color-primary)" }}
+                  >
                     {Math.min(consecutiveStreak, 30)}
                   </span>
-                  <span className="text-xs text-gray-400 font-bold"> / 30일</span>
+                  <span className="text-xs text-gray-400 font-bold">
+                    {" "}
+                    / 30일
+                  </span>
                 </div>
               </div>
 
@@ -314,7 +343,9 @@ export default function Step() {
                               ? "bg-gray-100"
                               : ""
                         }`}
-                        style={isFilled ? { background: "var(--color-primary)" } : {}}
+                        style={
+                          isFilled ? { background: "var(--color-primary)" } : {}
+                        }
                       >
                         {isGoal && (
                           <span className="text-[10px]">
@@ -328,7 +359,9 @@ export default function Step() {
               </div>
 
               {/* 보상 말풍선 미리보기 + 상태 메시지 */}
-              <div className={`flex items-center gap-3 rounded-xl p-3 ${consecutiveStreak >= 30 ? "bg-amber-50" : "bg-gray-50"}`}>
+              <div
+                className={`flex items-center gap-3 rounded-xl p-3 ${consecutiveStreak >= 30 ? "bg-amber-50" : "bg-gray-50"}`}
+              >
                 <div className="flex flex-col items-center flex-shrink-0">
                   <div className="bg-gradient-to-r from-amber-400 to-orange-500 text-white text-[9px] font-extrabold px-2 py-1 rounded-full whitespace-nowrap leading-tight">
                     꾸준한 30일 🏆
@@ -336,8 +369,12 @@ export default function Step() {
                   <div className="w-2 h-2 bg-amber-500 rotate-45 rounded-[1px] -mt-1" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className={`text-xs font-bold ${consecutiveStreak >= 30 ? "text-amber-700" : "text-gray-600"}`}>
-                    {consecutiveStreak >= 30 ? "말풍선 해금됨! 🎉" : "30일 달성 보상 말풍선"}
+                  <p
+                    className={`text-xs font-bold ${consecutiveStreak >= 30 ? "text-amber-700" : "text-gray-600"}`}
+                  >
+                    {consecutiveStreak >= 30
+                      ? "말풍선 해금됨! 🎉"
+                      : "30일 달성 보상 말풍선"}
                   </p>
                   <p className="text-[10px] text-gray-400 mt-0.5">
                     {consecutiveStreak >= 30
@@ -371,7 +408,9 @@ export default function Step() {
                 <div className="flex flex-col gap-2">
                   {group.map((item) => {
                     const isSelectable =
-                      (type === "activeBubble" || type === "title" || type === "postFrame") &&
+                      (type === "activeBubble" ||
+                        type === "title" ||
+                        type === "postFrame") &&
                       item.unlocked;
                     const isSelected =
                       type === "activeBubble"
@@ -384,7 +423,8 @@ export default function Step() {
                     const handleSelect = () => {
                       if (type === "activeBubble") setSelectedBubbleId(item.id);
                       else if (type === "title") handleTitleSelect(item.name);
-                      else if (type === "postFrame") setSelectedFrameId(item.id);
+                      else if (type === "postFrame")
+                        setSelectedFrameId(item.id);
                     };
                     return (
                       <div
@@ -404,7 +444,8 @@ export default function Step() {
                       >
                         <div
                           className={`w-11 h-11 rounded-2xl flex items-center justify-center flex-shrink-0 ${
-                            (type === "activeBubble" && BUBBLE_PREVIEWS[item.id]) ||
+                            (type === "activeBubble" &&
+                              BUBBLE_PREVIEWS[item.id]) ||
                             (type === "postFrame" && POST_FRAMES[item.id])
                               ? ""
                               : item.unlocked
@@ -412,27 +453,44 @@ export default function Step() {
                                 : "bg-gray-100"
                           }`}
                         >
-                          {type === "activeBubble" && BUBBLE_PREVIEWS[item.id] ? (
-                            <div className={`flex flex-col items-center ${!item.unlocked ? "opacity-40" : ""}`}>
-                              <div className={`${BUBBLE_PREVIEWS[item.id].colorClass} ${BUBBLE_PREVIEWS[item.id].premium ? "animate-premium-bubble" : ""} ${BUBBLE_PREVIEWS[item.id].darkText ? "text-stone-800" : "text-white"} text-[7px] font-extrabold px-1.5 py-1.5 rounded-full whitespace-nowrap leading-none`}>
+                          {type === "activeBubble" &&
+                          BUBBLE_PREVIEWS[item.id] ? (
+                            <div
+                              className={`flex flex-col items-center ${!item.unlocked ? "opacity-40" : ""}`}
+                            >
+                              <div
+                                className={`${BUBBLE_PREVIEWS[item.id].colorClass} ${BUBBLE_PREVIEWS[item.id].premium ? "animate-premium-bubble" : ""} ${BUBBLE_PREVIEWS[item.id].darkText ? "text-stone-800" : "text-white"} text-[7px] font-extrabold px-1.5 py-1.5 rounded-full whitespace-nowrap leading-none`}
+                              >
                                 {BUBBLE_PREVIEWS[item.id].text}
                               </div>
-                              <div className={`w-2 h-2 ${BUBBLE_PREVIEWS[item.id].colorClass} ${BUBBLE_PREVIEWS[item.id].premium ? "animate-premium-bubble" : ""} rotate-45 rounded-[1px] -mt-1`} />
+                              <div
+                                className={`w-2 h-2 ${BUBBLE_PREVIEWS[item.id].colorClass} ${BUBBLE_PREVIEWS[item.id].premium ? "animate-premium-bubble" : ""} rotate-45 rounded-[1px] -mt-1`}
+                              />
                             </div>
                           ) : type === "postFrame" && POST_FRAMES[item.id] ? (
-                            <div className={`${!item.unlocked ? "opacity-40" : ""} ${
-                              POST_FRAMES[item.id].premium
-                                ? `p-[2px] rounded-xl ${POST_FRAMES[item.id].wrapperClass}`
-                                : ""
-                            }`}>
-                              <div className={`w-8 h-10 rounded-[9px] flex items-center justify-center ${
-                                POST_FRAMES[item.id].premium ? "bg-white" : "border-2 border-stone-200 bg-stone-50"
-                              }`}>
-                                <HiPhoto className={`text-base ${isSelected ? meta.iconColor : "text-stone-300"}`} />
+                            <div
+                              className={`${!item.unlocked ? "opacity-40" : ""} ${
+                                POST_FRAMES[item.id].premium
+                                  ? `p-[2px] rounded-xl ${POST_FRAMES[item.id].wrapperClass}`
+                                  : ""
+                              }`}
+                            >
+                              <div
+                                className={`w-8 h-10 rounded-[9px] flex items-center justify-center ${
+                                  POST_FRAMES[item.id].premium
+                                    ? "bg-white"
+                                    : "border-2 border-stone-200 bg-stone-50"
+                                }`}
+                              >
+                                <HiPhoto
+                                  className={`text-base ${isSelected ? meta.iconColor : "text-stone-300"}`}
+                                />
                               </div>
                             </div>
                           ) : item.unlocked ? (
-                            <meta.Icon className={`text-xl ${meta.iconColor}`} />
+                            <meta.Icon
+                              className={`text-xl ${meta.iconColor}`}
+                            />
                           ) : (
                             <HiLockClosed className="text-xl text-gray-400" />
                           )}
@@ -510,44 +568,51 @@ export default function Step() {
               </span>
             </button>
             {/* 히어로 카드 */}
-            <div className="rounded-3xl bg-gradient-to-br from-primary to-secondary p-6 shadow-lg">
-              <div className="flex items-center gap-2 mb-4">
-                <HiSparkles className="text-xl text-white/80" />
-                <p className="text-white font-extrabold text-base tracking-wide">
+            <div className="rounded-3xl bg-gradient-to-br from-primary to-secondary p-5 shadow-lg">
+              <div className="flex items-center gap-2 mb-3">
+                <HiSparkles className="text-lg text-white/80" />
+                <p className="text-white font-extrabold text-sm tracking-wide">
                   PREMIUM MEMBER
                 </p>
               </div>
-
-              {/* 말풍선 + 프레임 미리보기 */}
-              <div className="flex gap-3 mb-4">
-                <div className="flex-1 bg-white/15 rounded-2xl p-3 flex flex-col items-center gap-3">
-                  <p className="text-white/70 text-[10px] font-bold tracking-wide">
-                    말풍선
-                  </p>
-                  <div className="relative">
-                    <div className="relative bg-gradient-to-r z-10 from-violet-400 to-purple-500 text-white text-xs font-extrabold px-3 py-1.5 rounded-xl shadow-sm whitespace-nowrap">
-                      오늘도 꽃길 🌸
+              <p className="text-white/60 text-[10px] font-bold mb-3 tracking-wide">
+                활동 중 말풍선 미리보기
+              </p>
+              <div className="flex flex-wrap gap-x-3 gap-y-3">
+                {Object.entries(BUBBLE_PREVIEWS)
+                  .filter(([, v]) => v.premium)
+                  .map(([id, bubble]) => (
+                    <div key={id} className="flex flex-col items-center">
+                      <div
+                        className={`${bubble.colorClass} animate-premium-bubble ${bubble.darkText ? "text-stone-800" : "text-white"} text-[9px] font-extrabold px-2 py-1 rounded-full whitespace-nowrap leading-none`}
+                      >
+                        {bubble.text}
+                      </div>
+                      <div
+                        className={`w-2 h-2 ${bubble.colorClass} animate-premium-bubble rotate-45 rounded-[1px] -mt-1`}
+                      />
                     </div>
-                    <div className="absolute -bottom-1 z-0 left-9 w-2.5 h-2.5 bg-violet-400 rotate-45 rounded-[2px]" />
-                  </div>
-                </div>
-                <div className="flex-1 bg-white/15 rounded-2xl p-3 flex flex-col items-center gap-3">
-                  <p className="text-white/70 text-[10px] font-bold tracking-wide">
-                    카드 프레임
-                  </p>
-                  <div className="w-10 h-14 rounded-xl border-[2.5px] border-yellow-300 flex items-center justify-center bg-white/10 shadow-sm">
-                    <HiPhoto className="text-yellow-200 text-lg" />
-                  </div>
-                </div>
+                  ))}
               </div>
 
-              <div className="flex flex-col gap-2">
-                {PREMIUM_HERO_BENEFITS.map(({ Icon, text }) => (
-                  <div key={text} className="flex items-center gap-2">
-                    <Icon className="text-white/70 text-base flex-shrink-0" />
-                    <p className="text-white/90 text-sm font-medium">{text}</p>
-                  </div>
-                ))}
+              {/* 프리미엄 칭호 */}
+              <p className="text-white/60 text-[10px] font-bold mt-4 mb-2.5 tracking-wide">
+                프리미엄 칭호
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {unlockItems
+                  .filter((i) => i.type === "title" && i.category === "premium")
+                  .map((item) => (
+                    <div
+                      key={item.id}
+                      className="flex items-center gap-1 bg-white/20 rounded-full px-2.5 py-1"
+                    >
+                      <HiStar className="text-yellow-300 text-[10px] flex-shrink-0" />
+                      <span className="text-white text-[10px] font-extrabold whitespace-nowrap">
+                        {item.name}
+                      </span>
+                    </div>
+                  ))}
               </div>
             </div>
 
@@ -672,11 +737,13 @@ export default function Step() {
             </div>
 
             {/* 프리미엄 아이템 선택 */}
+            {isPremium && (
             <p className="text-xs font-bold text-gray-500 px-1 flex items-center gap-1.5">
               <HiSparkles className="text-amber-400 text-sm" />
               구독 시 선택 가능 아이템
             </p>
-            {PREMIUM_TYPE_ORDER.map((type) => {
+            )}
+            {isPremium && PREMIUM_TYPE_ORDER.map((type) => {
               const group = premiumItems.filter((i) => i.type === type);
               if (group.length === 0) return null;
               const meta = TYPE_META[type];
@@ -689,7 +756,9 @@ export default function Step() {
                   <div className="flex flex-col gap-2">
                     {group.map((item) => {
                       const isUserSelectable =
-                        type === "activeBubble" || type === "title" || type === "postFrame";
+                        type === "activeBubble" ||
+                        type === "title" ||
+                        type === "postFrame";
                       const isActive =
                         type === "activeBubble"
                           ? selectedBubbleId === item.id
@@ -700,9 +769,11 @@ export default function Step() {
                               : activePremiumItems[type] === item.id;
                       const handlePremiumItemClick = () => {
                         if (!isPremium && isUserSelectable) return;
-                        if (type === "activeBubble") setSelectedBubbleId(item.id);
+                        if (type === "activeBubble")
+                          setSelectedBubbleId(item.id);
                         else if (type === "title") handleTitleSelect(item.name);
-                        else if (type === "postFrame") setSelectedFrameId(item.id);
+                        else if (type === "postFrame")
+                          setSelectedFrameId(item.id);
                         else togglePremiumItem(type, item.id);
                       };
                       return (
@@ -722,7 +793,8 @@ export default function Step() {
                         >
                           <div
                             className={`w-11 h-11 rounded-2xl flex items-center justify-center flex-shrink-0 ${
-                              (type === "activeBubble" && BUBBLE_PREVIEWS[item.id]) ||
+                              (type === "activeBubble" &&
+                                BUBBLE_PREVIEWS[item.id]) ||
                               (type === "postFrame" && POST_FRAMES[item.id])
                                 ? ""
                                 : isActive
@@ -730,17 +802,26 @@ export default function Step() {
                                   : "bg-gray-100"
                             }`}
                           >
-                            {type === "activeBubble" && BUBBLE_PREVIEWS[item.id] ? (
+                            {type === "activeBubble" &&
+                            BUBBLE_PREVIEWS[item.id] ? (
                               <div className="flex flex-col items-center">
-                                <div className={`${BUBBLE_PREVIEWS[item.id].colorClass} ${BUBBLE_PREVIEWS[item.id].premium ? "animate-premium-bubble" : ""} ${BUBBLE_PREVIEWS[item.id].darkText ? "text-stone-800" : "text-white"} text-[7px] font-extrabold px-1.5 py-1.5 rounded-full whitespace-nowrap leading-none`}>
+                                <div
+                                  className={`${BUBBLE_PREVIEWS[item.id].colorClass} ${BUBBLE_PREVIEWS[item.id].premium ? "animate-premium-bubble" : ""} ${BUBBLE_PREVIEWS[item.id].darkText ? "text-stone-800" : "text-white"} text-[7px] font-extrabold px-1.5 py-1.5 rounded-full whitespace-nowrap leading-none`}
+                                >
                                   {BUBBLE_PREVIEWS[item.id].text}
                                 </div>
-                                <div className={`w-2 h-2 ${BUBBLE_PREVIEWS[item.id].colorClass} ${BUBBLE_PREVIEWS[item.id].premium ? "animate-premium-bubble" : ""} rotate-45 rounded-[1px] -mt-1`} />
+                                <div
+                                  className={`w-2 h-2 ${BUBBLE_PREVIEWS[item.id].colorClass} ${BUBBLE_PREVIEWS[item.id].premium ? "animate-premium-bubble" : ""} rotate-45 rounded-[1px] -mt-1`}
+                                />
                               </div>
                             ) : type === "postFrame" && POST_FRAMES[item.id] ? (
-                              <div className={`p-[2px] rounded-xl ${POST_FRAMES[item.id].wrapperClass} ${isActive ? POST_FRAMES[item.id].animationClass : ""}`}>
+                              <div
+                                className={`p-[2px] rounded-xl ${POST_FRAMES[item.id].wrapperClass} ${isActive ? POST_FRAMES[item.id].animationClass : ""}`}
+                              >
                                 <div className="w-8 h-10 rounded-[9px] bg-white flex items-center justify-center">
-                                  <HiPhoto className={`text-base ${isActive ? meta.iconColor : "text-gray-300"}`} />
+                                  <HiPhoto
+                                    className={`text-base ${isActive ? meta.iconColor : "text-gray-300"}`}
+                                  />
                                 </div>
                               </div>
                             ) : (
@@ -804,12 +885,19 @@ export default function Step() {
                 {/* 예고 프리뷰 */}
                 <div className="bg-white rounded-3xl shadow-sm px-6 py-5 w-full flex flex-col gap-3 mt-2">
                   {SEASON_PREVIEWS.map((item) => (
-                    <div key={item.name} className="flex items-center gap-3 opacity-50">
-                      <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 ${item.bg}`}>
+                    <div
+                      key={item.name}
+                      className="flex items-center gap-3 opacity-50"
+                    >
+                      <div
+                        className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 ${item.bg}`}
+                      >
                         <item.Icon className={`text-lg ${item.color}`} />
                       </div>
                       <div>
-                        <p className="text-sm font-bold text-gray-600">{item.name}</p>
+                        <p className="text-sm font-bold text-gray-600">
+                          {item.name}
+                        </p>
                         <p className="text-xs text-gray-400">{item.desc}</p>
                       </div>
                     </div>
