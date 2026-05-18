@@ -1,23 +1,12 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { MdDirectionsRun } from "react-icons/md";
-import { useTheme } from "../context/ThemeContext";
 
-const THEME_GRADIENTS = {
-  energy: "linear-gradient(160deg, #1a0500 0%, #7c1a08 30%, #d4461a 60%, #ff7433 85%, #ffac60 100%)",
-  nature: "linear-gradient(160deg, #002210 0%, #0a5c28 30%, #1a9950 60%, #2ecc71 85%, #a8e063 100%)",
-  cosmo:  "linear-gradient(160deg, #050018 0%, #1a1060 30%, #3040c0 60%, #5b6cf9 85%, #818cf8 100%)",
-};
-
-const THEME_GLOW = {
-  energy: "radial-gradient(ellipse 60% 50% at 50% 52%, rgba(255,180,100,0.18) 0%, transparent 70%)",
-  nature: "radial-gradient(ellipse 60% 50% at 50% 52%, rgba(168,224,99,0.18) 0%, transparent 70%)",
-  cosmo:  "radial-gradient(ellipse 60% 50% at 50% 52%, rgba(129,140,248,0.18) 0%, transparent 70%)",
-};
+const BG = "linear-gradient(150deg, #ffac60 0%, #ff7433 40%, #ff5733 75%, #e8401a 100%)";
+const GLOW = "radial-gradient(ellipse 60% 50% at 50% 40%, rgba(255,255,255,0.18) 0%, transparent 65%)";
 
 export default function Intro() {
   const navigate = useNavigate();
-  const { theme } = useTheme();
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -29,12 +18,12 @@ export default function Intro() {
   return (
     <div
       className="h-screen w-full flex flex-col items-center justify-center relative"
-      style={{ background: THEME_GRADIENTS[theme] }}
+      style={{ background: BG }}
     >
       {/* 배경 방사형 글로우 */}
       <div
         className="absolute inset-0 flex items-center justify-center pointer-events-none"
-        style={{ background: THEME_GLOW[theme] }}
+        style={{ background: GLOW }}
       />
 
       {/* 서클 장식 */}

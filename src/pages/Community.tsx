@@ -275,7 +275,7 @@ export default function CommunityPage() {
       {/* ── 헤더 + 탭 ── */}
       <div className="sticky top-0 z-10 bg-bg/90 backdrop-blur-sm px-5 pt-5 pb-0 border-b border-stone-100/80">
         <div className="flex items-center gap-1.5 mb-0.5">
-          <FootprintIcon className="w-[15px] h-[15px] text-orange-400" />
+          <FootprintIcon className="w-[15px] h-[15px] text-[var(--color-primary)]" />
           <h1 className="text-[18px] font-bold text-stone-800 tracking-tight">
             오늘의 운동 인증
           </h1>
@@ -294,22 +294,22 @@ export default function CommunityPage() {
                 key={t}
                 onClick={() => setTab(t)}
                 className={`
-                  relative flex items-center gap-1.5 px-4 py-2.5 text-[14px] font-medium
-                  transition-colors duration-150
-                  ${active ? "text-stone-800" : "text-stone-400"}
+                  relative flex items-center gap-1.5 px-4 py-2.5 text-[14px] font-bold 
+                  transition-colors duration-150 
+                  ${active ? "text-[var(--color-primary)]" : "text-stone-400"}
                 `}
               >
                 {label}
                 {count !== undefined && (
                   <span
                     className={`text-[11px] rounded-full px-1.5 py-0.5 font-semibold
-                    ${active ? "bg-orange-100 text-orange-500" : "bg-stone-100 text-stone-400"}`}
+                    ${active ? "bg-[var(--color-primary-light)] text-[var(--color-primary)]" : "bg-stone-100 text-stone-400"}`}
                   >
                     {count}
                   </span>
                 )}
                 {active && (
-                  <span className="absolute bottom-0 left-4 right-4 h-[2px] bg-orange-400 rounded-full" />
+                  <span className="absolute bottom-0 left-4 right-4 h-[2px] bg-[var(--color-primary)] rounded-full" />
                 )}
               </button>
             );
@@ -339,7 +339,9 @@ export default function CommunityPage() {
                   </p>
                 </div>
               </div>
-              <div className="text-orange-400 text-xl font-light">+</div>
+              <div className="text-[var(--color-primary)] text-xl font-light">
+                +
+              </div>
             </button>
 
             {/* 말풍선 피드 */}
@@ -385,7 +387,7 @@ export default function CommunityPage() {
               </div>
               <div className="w-px h-8 bg-stone-100" />
               <div className="text-center flex-1">
-                <p className="text-[22px] font-bold text-orange-400">
+                <p className="text-[22px] font-bold text-[var(--color-primary)]">
                   {totalCheersReceived}
                 </p>
                 <p className="text-[11px] text-stone-400 font-light mt-0.5">

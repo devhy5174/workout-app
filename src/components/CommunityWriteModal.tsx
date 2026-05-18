@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
+import { GiFootprint } from "react-icons/gi";
 import { COMMUNITY_TAG_GROUPS } from "../data/tags";
 
-// ───────────────── 타입 ─────────────────
 interface CommunityWriteModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -64,8 +64,8 @@ export default function CommunityWriteModal({
         {/* 헤더 */}
         <div className="flex items-center justify-between mb-5">
           <div>
-            <h2 className="text-[20px] font-bold text-stone-800">
-              운동 인증하기 👣
+            <h2 className="text-[20px] font-bold text-stone-800 flex items-center gap-2">
+              운동 인증하기
             </h2>
             <p className="text-[12px] text-stone-400 mt-1">
               오늘의 움직임을 함께 공유해보세요
@@ -101,11 +101,20 @@ export default function CommunityWriteModal({
               placeholder:text-stone-300
               resize-none
               outline-none
-              focus:border-orange-300
-              focus:ring-4
-              focus:ring-orange-100
               transition-all
             "
+            style={{
+              // @ts-expect-error CSS custom property
+              "--tw-ring-color": "var(--color-primary-light)",
+            }}
+            onFocus={(e) => {
+              e.target.style.borderColor = "var(--color-primary)";
+              e.target.style.boxShadow = "0 0 0 4px var(--color-primary-light)";
+            }}
+            onBlur={(e) => {
+              e.target.style.borderColor = "";
+              e.target.style.boxShadow = "";
+            }}
           />
           <div className="flex justify-end mt-2">
             <span className="text-[11px] text-stone-300">
@@ -140,17 +149,26 @@ export default function CommunityWriteModal({
                         key={tag}
                         onClick={() => toggleTag(tag)}
                         className={`
-                rounded-full px-4 py-2
-                text-[12px] font-medium
-                transition-all duration-150
-                active:scale-95
-                ${
-                  active
-                    ? "bg-orange-400 text-white shadow-sm shadow-orange-200"
-                    : "bg-white border border-stone-200 text-stone-500"
-                }
-                ${disabled ? "opacity-40 pointer-events-none" : ""}
-              `}
+                          rounded-full px-4 py-2
+                          text-[12px] font-medium
+                          transition-all duration-150
+                          active:scale-95
+                          ${disabled ? "opacity-40 pointer-events-none" : ""}
+                        `}
+                        style={
+                          active
+                            ? {
+                                background: "var(--color-primary)",
+                                color: "white",
+                                boxShadow:
+                                  "0 1px 4px var(--color-primary-light)",
+                              }
+                            : {
+                                background: "white",
+                                border: "1px solid #e7e5e4",
+                                color: "#78716c",
+                              }
+                        }
                       >
                         #{tag}
                       </button>
@@ -166,16 +184,19 @@ export default function CommunityWriteModal({
         <button
           onClick={handleSubmit}
           disabled={!text.trim()}
-          className={`
-            w-full h-14 rounded-2xl
-            text-sm font-bold
-            transition-all duration-150
-            ${
-              text.trim()
-                ? "bg-gradient-to-r from-orange-400 to-orange-500 text-white shadow-lg shadow-orange-200 active:scale-[0.98]"
-                : "bg-stone-200 text-stone-400"
-            }
-          `}
+          className="w-full h-14 rounded-2xl text-sm font-bold transition-all duration-150 active:scale-[0.98]"
+          style={
+            text.trim()
+              ? {
+                  background: "var(--color-primary)",
+                  color: "white",
+                  boxShadow: "0 4px 12px var(--color-primary-light)",
+                }
+              : {
+                  background: "#e7e5e4",
+                  color: "#a8a29e",
+                }
+          }
         >
           기록 남기기
         </button>

@@ -1331,7 +1331,7 @@ export default function MyPage() {
   const [activeTab, setActiveTab] = useState<Tab>("info");
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full bg-bg">
       <div className="bg-white border-b border-gray-100 px-4 pt-4 flex gap-1">
         {tabs.map((t) => (
           <button

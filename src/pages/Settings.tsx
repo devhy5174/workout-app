@@ -380,7 +380,7 @@ export default function Settings() {
   };
 
   return (
-    <div className="flex flex-col gap-1 p-4 pb-28">
+    <div className="flex flex-col gap-1 p-4 pb-28 bg-bg min-h-full">
       <h2 className="text-xl font-extrabold text-gray-800 px-1 mb-2">설정</h2>
 
       {/* 테마 */}
