@@ -71,7 +71,7 @@ function MemberActivityCard({
         {is_active ? (
           <div className="flex flex-col items-center">
             <span
-              className={`relative z-10 ${bubble.colorClass} ${bubble.premium ? "animate-premium-bubble" : ""} text-white text-[7px] font-extrabold px-1.5 py-0.5 rounded-full whitespace-nowrap`}
+              className={`relative z-10 ${bubble.colorClass} ${bubble.premium ? "animate-premium-bubble" : ""} ${bubble.darkText ? "text-stone-800" : "text-white"} text-[7px] font-extrabold px-1.5 py-0.5 rounded-full whitespace-nowrap`}
             >
               {bubble.text}
             </span>

@@ -271,7 +271,7 @@ export default function Step() {
                         >
                           {type === "activeBubble" && BUBBLE_PREVIEWS[item.id] ? (
                             <div className={`flex flex-col items-center ${!item.unlocked ? "opacity-40" : ""}`}>
-                              <div className={`${BUBBLE_PREVIEWS[item.id].colorClass} ${BUBBLE_PREVIEWS[item.id].premium ? "animate-premium-bubble" : ""} text-white text-[7px] font-extrabold px-1.5 py-1.5 rounded-full whitespace-nowrap leading-none`}>
+                              <div className={`${BUBBLE_PREVIEWS[item.id].colorClass} ${BUBBLE_PREVIEWS[item.id].premium ? "animate-premium-bubble" : ""} ${BUBBLE_PREVIEWS[item.id].darkText ? "text-stone-800" : "text-white"} text-[7px] font-extrabold px-1.5 py-1.5 rounded-full whitespace-nowrap leading-none`}>
                                 {BUBBLE_PREVIEWS[item.id].text}
                               </div>
                               <div className={`w-2 h-2 ${BUBBLE_PREVIEWS[item.id].colorClass} ${BUBBLE_PREVIEWS[item.id].premium ? "animate-premium-bubble" : ""} rotate-45 rounded-[1px] -mt-1`} />
@@ -584,7 +584,7 @@ export default function Step() {
                           >
                             {type === "activeBubble" && BUBBLE_PREVIEWS[item.id] ? (
                               <div className="flex flex-col items-center">
-                                <div className={`${BUBBLE_PREVIEWS[item.id].colorClass} ${BUBBLE_PREVIEWS[item.id].premium ? "animate-premium-bubble" : ""} text-white text-[7px] font-extrabold px-1.5 py-1.5 rounded-full whitespace-nowrap leading-none`}>
+                                <div className={`${BUBBLE_PREVIEWS[item.id].colorClass} ${BUBBLE_PREVIEWS[item.id].premium ? "animate-premium-bubble" : ""} ${BUBBLE_PREVIEWS[item.id].darkText ? "text-stone-800" : "text-white"} text-[7px] font-extrabold px-1.5 py-1.5 rounded-full whitespace-nowrap leading-none`}>
                                   {BUBBLE_PREVIEWS[item.id].text}
                                 </div>
                                 <div className={`w-2 h-2 ${BUBBLE_PREVIEWS[item.id].colorClass} ${BUBBLE_PREVIEWS[item.id].premium ? "animate-premium-bubble" : ""} rotate-45 rounded-[1px] -mt-1`} />

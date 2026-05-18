@@ -5,6 +5,8 @@ export interface BubblePreview {
   colorClass: string;
   /** true → 프리미엄 전용 (반짝이 효과 적용) */
   premium: boolean;
+  /** true → 배경이 밝아 텍스트를 어둡게 표시 */
+  darkText?: boolean;
 }
 
 export const BUBBLE_PREVIEWS: Record<string, BubblePreview> = {
@@ -30,21 +32,25 @@ export const BUBBLE_PREVIEWS: Record<string, BubblePreview> = {
     text: "땀나는 중 💦",
     colorClass: "bg-gradient-to-r from-sky-400 to-cyan-500",
     premium: true,
+    darkText: true,
   },
   health_bubble: {
     text: "건강 적립중 💚",
     colorClass: "bg-gradient-to-r from-teal-400 to-green-500",
     premium: true,
+    darkText: true,
   },
   walk_bubble: {
     text: "산책 중 🌿",
     colorClass: "bg-gradient-to-r from-lime-400 to-emerald-400",
     premium: true,
+    darkText: true,
   },
   commute_home_bubble: {
     text: "퇴근 중 🎒",
     colorClass: "bg-gradient-to-r from-amber-400 to-yellow-400",
     premium: true,
+    darkText: true,
   },
   commute_work_bubble: {
     text: "출근 중 ☕",
