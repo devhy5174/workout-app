@@ -16,6 +16,11 @@ export const BUBBLE_PREVIEWS: Record<string, BubblePreview> = {
     colorClass: "bg-emerald-500",
     premium: false,
   },
+  streak30_bubble: {
+    text: "꾸준한 30일 🏆",
+    colorClass: "bg-gradient-to-r from-amber-400 to-orange-500",
+    premium: false,
+  },
 
   // ── 프리미엄 전용 ──────────────────────────────
   cute_bubble: {

@@ -6,6 +6,7 @@ export type UnlockCategory = "normal" | "premium" | "season";
 
 export interface UnlockCondition {
   monthlyAverageStep?: number;
+  consecutiveDays?: number;
 }
 
 export interface UnlockItem {
@@ -58,6 +59,14 @@ export const unlockItems: UnlockItem[] = [
     category: "normal",
     name: "기본 말풍선",
     description: "기본 제공 말풍선 디자인",
+  },
+  {
+    id: "streak30_bubble",
+    type: "activeBubble",
+    category: "normal",
+    name: "🏆 30일 챌린지",
+    description: "30일 연속 운동 달성 보상 말풍선",
+    condition: { consecutiveDays: 30 },
   },
   {
     id: "cute_bubble",

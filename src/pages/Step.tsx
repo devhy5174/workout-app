@@ -133,7 +133,7 @@ export default function Step() {
     Record<string, string>
   >({});
   const { workoutRecords, userProfile, updateProfile } = useUser();
-  const { itemsWithStatus, totalSteps, monthlyAverageSteps } =
+  const { itemsWithStatus, totalSteps, monthlyAverageSteps, consecutiveStreak } =
     useUnlockItems(workoutRecords);
 
   const { isPremium, togglePremium } = usePremium();
@@ -214,6 +214,84 @@ export default function Step() {
 
       <div className="flex-1 overflow-y-auto px-4 mt-4 pb-24 flex flex-col gap-5">
         {/* ── STEP 보상 ── */}
+        {tab === "step" && (
+          <>
+            {/* 30일 연속 챌린지 카드 */}
+            <div className="rounded-2xl bg-white shadow-sm p-5">
+              <div className="flex items-start justify-between mb-3">
+                <div>
+                  <p className="font-extrabold text-gray-800 text-sm">🔥 30일 연속 챌린지</p>
+                  <p className="text-[11px] text-gray-400 mt-0.5">하루라도 빠지면 처음부터 다시 시작돼요</p>
+                </div>
+                <div className="text-right flex-shrink-0 ml-2">
+                  <span className="text-xl font-extrabold" style={{ color: "var(--color-primary)" }}>
+                    {Math.min(consecutiveStreak, 30)}
+                  </span>
+                  <span className="text-xs text-gray-400 font-bold"> / 30일</span>
+                </div>
+              </div>
+
+              {/* 30 dots grid */}
+              <div className="grid grid-cols-10 gap-1 mb-3">
+                {Array.from({ length: 30 }, (_, i) => {
+                  const dayNum = i + 1;
+                  const isFilled = dayNum <= consecutiveStreak;
+                  const isGoal = dayNum === 30;
+                  return (
+                    <div key={i} className="flex items-center justify-center">
+                      <div
+                        className={`w-6 h-6 rounded-full flex items-center justify-center transition-all ${
+                          isGoal
+                            ? consecutiveStreak >= 30
+                              ? "ring-2 ring-amber-400 ring-offset-1"
+                              : "ring-2 ring-amber-200 ring-offset-1 bg-gray-50"
+                            : !isFilled
+                              ? "bg-gray-100"
+                              : ""
+                        }`}
+                        style={isFilled ? { background: "var(--color-primary)" } : {}}
+                      >
+                        {isGoal && (
+                          <span className="text-[10px]">
+                            {consecutiveStreak >= 30 ? "🏆" : "🎯"}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* 보상 말풍선 미리보기 + 상태 메시지 */}
+              <div className={`flex items-center gap-3 rounded-xl p-3 ${consecutiveStreak >= 30 ? "bg-amber-50" : "bg-gray-50"}`}>
+                <div className="flex flex-col items-center flex-shrink-0">
+                  <div className="bg-gradient-to-r from-amber-400 to-orange-500 text-white text-[9px] font-extrabold px-2 py-1 rounded-full whitespace-nowrap leading-tight">
+                    꾸준한 30일 🏆
+                  </div>
+                  <div className="w-2 h-2 bg-amber-500 rotate-45 rounded-[1px] -mt-1" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className={`text-xs font-bold ${consecutiveStreak >= 30 ? "text-amber-700" : "text-gray-600"}`}>
+                    {consecutiveStreak >= 30 ? "말풍선 해금됨! 🎉" : "30일 달성 보상 말풍선"}
+                  </p>
+                  <p className="text-[10px] text-gray-400 mt-0.5">
+                    {consecutiveStreak >= 30
+                      ? "아래 말풍선 목록에서 선택하세요"
+                      : consecutiveStreak > 0
+                        ? `${30 - consecutiveStreak}일 더 연속 운동하면 해금!`
+                        : "오늘부터 시작해보세요 💪"}
+                  </p>
+                </div>
+                {consecutiveStreak >= 30 && (
+                  <span className="flex-shrink-0 bg-amber-400 text-white text-[10px] font-extrabold px-2.5 py-1 rounded-full">
+                    해금 ✓
+                  </span>
+                )}
+              </div>
+            </div>
+          </>
+        )}
+
         {tab === "step" &&
           NORMAL_TYPE_ORDER.map((type) => {
             const group = normalItems.filter((i) => i.type === type);
@@ -303,7 +381,9 @@ export default function Step() {
                           <p className="text-xs text-gray-400 mt-0.5">
                             {item.condition?.monthlyAverageStep
                               ? `월 평균 ${item.condition.monthlyAverageStep.toLocaleString()}보 필요`
-                              : item.description}
+                              : item.condition?.consecutiveDays
+                                ? `${consecutiveStreak} / ${item.condition.consecutiveDays}일 연속 운동`
+                                : item.description}
                           </p>
                         </div>
                         {isSelectable ? (
@@ -322,8 +402,11 @@ export default function Step() {
                           </span>
                         ) : (
                           <span className="flex-shrink-0 text-xs text-gray-400 font-bold">
-                            {item.condition?.monthlyAverageStep?.toLocaleString()}
-                            보
+                            {item.condition?.monthlyAverageStep
+                              ? `${item.condition.monthlyAverageStep.toLocaleString()}보`
+                              : item.condition?.consecutiveDays
+                                ? `${consecutiveStreak}/${item.condition.consecutiveDays}일`
+                                : ""}
                           </span>
                         )}
                       </div>

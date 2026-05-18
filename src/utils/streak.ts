@@ -15,6 +15,28 @@ export function getBonusPoints(date: Date): number {
   return isWeekend(date) ? 5 : 0;
 }
 
+// 실제 달력 기준 연속 스트릭 (토일 포함, 30일 챌린지용)
+export function calcConsecutiveStreak(dates: string[]): number {
+  if (dates.length === 0) return 0;
+  const set = new Set(dates);
+  const today = localDateStr(new Date());
+  const yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
+  const yesterdayStr = localDateStr(yesterday);
+
+  // 오늘 기록 있으면 오늘부터, 없으면 어제부터 (오늘 아직 안 걸을 수 있음)
+  const startStr = set.has(today) ? today : set.has(yesterdayStr) ? yesterdayStr : null;
+  if (!startStr) return 0;
+
+  let count = 0;
+  const d = new Date(startStr);
+  while (set.has(localDateStr(d))) {
+    count++;
+    d.setDate(d.getDate() - 1);
+  }
+  return count;
+}
+
 // 월~금 기준 연속 스트릭. 토일은 패스(끊기지 않음).
 export function calculateStreak(history: string[]): number {
   const set = new Set(history);

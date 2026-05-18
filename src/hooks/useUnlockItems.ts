@@ -1,18 +1,14 @@
 import { useMemo } from "react";
 import { unlockItems, type UnlockItem } from "../data/unlockItems";
 import type { WorkoutRecord } from "../lib/workoutService";
+import { calcConsecutiveStreak } from "../utils/streak";
 
 export type UnlockItemWithStatus = UnlockItem & { unlocked: boolean };
 
 function calcMonthlyAverageSteps(records: WorkoutRecord[]): number {
   if (records.length === 0) return 0;
-  const byMonth: Record<string, number> = {};
-  for (const r of records) {
-    const key = r.date.slice(0, 7); // "YYYY-MM"
-    byMonth[key] = (byMonth[key] ?? 0) + r.steps;
-  }
-  const totals = Object.values(byMonth);
-  return Math.round(totals.reduce((a, b) => a + b, 0) / totals.length);
+  const totalSteps = records.reduce((acc, r) => acc + r.steps, 0);
+  return Math.round(totalSteps / records.length);
 }
 
 export function useUnlockItems(workoutRecords: WorkoutRecord[]) {
@@ -26,6 +22,11 @@ export function useUnlockItems(workoutRecords: WorkoutRecord[]) {
     [workoutRecords]
   );
 
+  const consecutiveStreak = useMemo(
+    () => calcConsecutiveStreak(workoutRecords.map((r) => r.date)),
+    [workoutRecords]
+  );
+
   const itemsWithStatus = useMemo<UnlockItemWithStatus[]>(
     () =>
       unlockItems.map((item) => {
@@ -35,10 +36,13 @@ export function useUnlockItems(workoutRecords: WorkoutRecord[]) {
         if (condition.monthlyAverageStep !== undefined) {
           unlocked = monthlyAverageSteps >= condition.monthlyAverageStep;
         }
+        if (condition.consecutiveDays !== undefined) {
+          unlocked = consecutiveStreak >= condition.consecutiveDays;
+        }
         return { ...item, unlocked };
       }),
-    [monthlyAverageSteps]
+    [monthlyAverageSteps, consecutiveStreak]
   );
 
-  return { itemsWithStatus, totalSteps, monthlyAverageSteps };
+  return { itemsWithStatus, totalSteps, monthlyAverageSteps, consecutiveStreak };
 }
