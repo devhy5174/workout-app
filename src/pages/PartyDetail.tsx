@@ -2,6 +2,8 @@ import { useState, useEffect, useRef } from "react";
 import { FaUser } from "react-icons/fa";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { useUser } from "../context/UserContext";
+import { useActiveBubble } from "../context/ActiveBubbleContext";
+import { resolveBubblePreview } from "../data/bubblePreviews";
 import { useParty } from "../hooks/useParty";
 import {
   getPartyById,
@@ -39,16 +41,25 @@ function MemberActivityCard({
   isPartyLeader,
   canKickInactive,
   onKick,
+  activeBubbleId,
 }: {
   member: PartyMember;
   isMe: boolean;
   isPartyLeader: boolean;
   canKickInactive: boolean;
   onKick: () => void;
+  activeBubbleId: string | null;
 }) {
-  const { is_active, character_image, character_emoji, nickname, title, today_steps } =
-    member;
+  const {
+    is_active,
+    character_image,
+    character_emoji,
+    nickname,
+    title,
+    today_steps,
+  } = member;
   const inactive7 = isInactive7Days(member);
+  const bubble = resolveBubblePreview(activeBubbleId);
 
   return (
     <div
@@ -59,16 +70,13 @@ function MemberActivityCard({
       <div className="h-5 flex items-end justify-center">
         {is_active ? (
           <div className="flex flex-col items-center">
-            <span className="bg-emerald-500 text-white text-[7px] font-extrabold px-1.5 py-0.5 rounded-full whitespace-nowrap">
-              운동 중 💪
+            <span
+              className={`relative z-10 ${bubble.colorClass} ${bubble.premium ? "animate-premium-bubble" : ""} text-white text-[7px] font-extrabold px-1.5 py-0.5 rounded-full whitespace-nowrap`}
+            >
+              {bubble.text}
             </span>
             <div
-              className="w-0 h-0"
-              style={{
-                borderLeft: "3px solid transparent",
-                borderRight: "3px solid transparent",
-                borderTop: "3px solid #10b981",
-              }}
+              className={`w-1.5 h-1.5 ${bubble.colorClass} ${bubble.premium ? "animate-premium-bubble" : ""} rotate-45 rounded-[1px] -mt-1`}
             />
           </div>
         ) : (
@@ -457,6 +465,7 @@ export default function PartyDetail() {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, userProfile } = useUser();
+  const { selectedBubbleId } = useActiveBubble();
   const {
     isJoined,
     isLeader,
@@ -838,6 +847,11 @@ export default function PartyDetail() {
                   isPartyLeader={m.user_id === party.created_by}
                   canKickInactive={leader && m.user_id !== user?.id}
                   onKick={() => setKickTarget(m)}
+                  activeBubbleId={
+                    m.user_id === user?.id
+                      ? selectedBubbleId
+                      : m.active_bubble_id
+                  }
                 />
               ))}
             </div>

@@ -19,7 +19,6 @@ export default function Diet() {
     setShowDietInfo,
     userProfile,
     isPremium,
-    togglePremium,
     rotateMealMenu,
     charDiet,
   } = useDiet();
@@ -27,31 +26,6 @@ export default function Diet() {
   return (
     <div className="flex flex-col gap-4 px-4 pt-5 pb-20 h-full overflow-y-auto bg-bg">
       <h2 className="text-2xl font-extrabold text-primary px-1">오늘의 식단</h2>
-
-      {/* QA: DEV_IS_PREMIUM(useDiet.ts) 또는 아래 토글로 프리미엄·대체 식단 동작 테스트 */}
-      <button
-        type="button"
-        onClick={togglePremium}
-        className="rounded-2xl border border-primary/25 bg-white shadow-sm px-4 py-3 flex items-center justify-between gap-3 min-h-[44px]"
-        aria-pressed={isPremium}
-        aria-label="프리미엄 구독 테스트 모드 전환"
-      >
-        <span className="text-xs font-bold text-gray-600 text-left leading-snug">
-          프리미엄 구독
-          <span className="block text-[10px] font-semibold text-gray-400 mt-0.5">
-            테스트 토글 (Supabase 연동 전)
-          </span>
-        </span>
-        <span
-          className={`text-xs font-extrabold px-2.5 py-1 rounded-full flex-shrink-0 ${
-            isPremium
-              ? "text-primary bg-primary/10"
-              : "text-gray-400 bg-gray-100"
-          }`}
-        >
-          {isPremium ? "ON" : "OFF"}
-        </span>
-      </button>
 
       <WorkoutGoalTracker
         burnedKcal={burnedKcal}

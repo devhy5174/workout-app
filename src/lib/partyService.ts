@@ -34,6 +34,8 @@ export type PartyMember = {
   is_active: boolean;
   joined_at: string;
   last_active_at: string | null;
+  /** active_sessions.active_bubble — SQL 마이그레이션 후 DB에서 채워짐 */
+  active_bubble_id: string | null;
 };
 
 export type CreatePartyInput = {
@@ -510,6 +512,7 @@ export async function getPartyMembers(partyId: string): Promise<PartyMember[]> {
       is_active: activeUserIds.has(m.user_id),
       joined_at: m.joined_at,
       last_active_at,
+      active_bubble_id: null, // TODO: active_sessions.active_bubble 마이그레이션 후 연동
     };
   });
 

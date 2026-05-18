@@ -17,9 +17,14 @@ import {
 } from "react-icons/hi2";
 import { isPremiumStepsTab } from "../utils/premiumNavigation";
 import { useUser } from "../context/UserContext";
+import { usePremium } from "../context/PremiumContext";
+import { useActiveBubble, PREMIUM_BUBBLE_IDS } from "../context/ActiveBubbleContext";
 import { useUnlockItems } from "../hooks/useUnlockItems";
 import { unlockItems } from "../data/unlockItems";
 import type { UnlockItemType } from "../data/unlockItems";
+import { BUBBLE_PREVIEWS } from "../data/bubblePreviews";
+import { POST_FRAMES } from "../data/postFrames";
+import { useActiveFrame } from "../context/ActiveFrameContext";
 
 type Tab = "step" | "premium" | "events";
 type PlanType = "monthly" | "annual";
@@ -63,16 +68,6 @@ const NORMAL_TYPE_ORDER: UnlockItemType[] = [
   "activeBubble",
   "postFrame",
 ];
-
-const BUBBLE_PREVIEWS: Record<string, { text: string; colorClass: string }> = {
-  basic_bubble: { text: "운동 중 💪", colorClass: "bg-green-500" },
-  cute_bubble: { text: "오늘도 꽃길 🌸", colorClass: "bg-violet-500" },
-  fire_bubble: { text: "불태워 🔥", colorClass: "bg-orange-500" },
-  premium_active_bubble: {
-    text: "운동 중 ✨",
-    colorClass: "bg-gradient-to-r from-violet-500 to-purple-500",
-  },
-};
 
 const PREMIUM_TYPE_ORDER: UnlockItemType[] = [
   "activeBubble",
@@ -137,9 +132,25 @@ export default function Step() {
   const [activePremiumItems, setActivePremiumItems] = useState<
     Record<string, string>
   >({});
-  const { workoutRecords } = useUser();
+  const { workoutRecords, userProfile, updateProfile } = useUser();
   const { itemsWithStatus, totalSteps, monthlyAverageSteps } =
     useUnlockItems(workoutRecords);
+
+  const { isPremium, togglePremium } = usePremium();
+  const { selectedBubbleId, setSelectedBubbleId } = useActiveBubble();
+  const { selectedFrameId, setSelectedFrameId } = useActiveFrame();
+
+  useEffect(() => {
+    if (!isPremium) {
+      if (PREMIUM_BUBBLE_IDS.has(selectedBubbleId)) setSelectedBubbleId("basic_bubble");
+      if (POST_FRAMES[selectedFrameId]?.premium) setSelectedFrameId("basic_post_frame");
+    }
+  }, [isPremium]);
+
+  const handleTitleSelect = async (itemName: string) => {
+    const next = userProfile?.title === itemName ? null : itemName;
+    await updateProfile({ title: next });
+  };
 
   const normalItems = itemsWithStatus.filter((i) => i.category === "normal");
   const premiumItems = unlockItems.filter((i) => i.category === "premium");
@@ -215,65 +226,109 @@ export default function Step() {
                   {meta.label}
                 </p>
                 <div className="flex flex-col gap-2">
-                  {group.map((item) => (
-                    <div
-                      key={item.id}
-                      className={`rounded-2xl shadow-sm px-5 py-4 flex items-center gap-4 transition-all ${
-                        item.unlocked ? "bg-white" : "bg-gray-50"
-                      }`}
-                    >
+                  {group.map((item) => {
+                    const isSelectable =
+                      (type === "activeBubble" || type === "title" || type === "postFrame") &&
+                      item.unlocked;
+                    const isSelected =
+                      type === "activeBubble"
+                        ? selectedBubbleId === item.id
+                        : type === "title"
+                          ? userProfile?.title === item.name
+                          : type === "postFrame"
+                            ? selectedFrameId === item.id
+                            : false;
+                    const handleSelect = () => {
+                      if (type === "activeBubble") setSelectedBubbleId(item.id);
+                      else if (type === "title") handleTitleSelect(item.name);
+                      else if (type === "postFrame") setSelectedFrameId(item.id);
+                    };
+                    return (
                       <div
-                        className={`w-11 h-11 rounded-2xl flex items-center justify-center flex-shrink-0 ${
-                          type === "activeBubble" && BUBBLE_PREVIEWS[item.id]
-                            ? ""
+                        key={item.id}
+                        onClick={isSelectable ? handleSelect : undefined}
+                        className={`rounded-2xl shadow-sm px-5 py-4 flex items-center gap-4 transition-all border-2 ${
+                          isSelectable
+                            ? "cursor-pointer active:scale-[0.98]"
+                            : ""
+                        } ${
+                          isSelected
+                            ? "bg-white border-primary/30"
                             : item.unlocked
-                              ? meta.bgColor
-                              : "bg-gray-100"
+                              ? "bg-white border-transparent"
+                              : "bg-gray-50 border-transparent"
                         }`}
                       >
-                        {type === "activeBubble" && BUBBLE_PREVIEWS[item.id] ? (
-                          <div
-                            className={`flex flex-col items-center ${!item.unlocked ? "opacity-40" : ""}`}
-                          >
-                            <div
-                              className={`${BUBBLE_PREVIEWS[item.id].colorClass} text-white text-[7px] font-extrabold px-1.5 py-1.5 rounded-full whitespace-nowrap leading-none`}
-                            >
-                              {BUBBLE_PREVIEWS[item.id].text}
+                        <div
+                          className={`w-11 h-11 rounded-2xl flex items-center justify-center flex-shrink-0 ${
+                            (type === "activeBubble" && BUBBLE_PREVIEWS[item.id]) ||
+                            (type === "postFrame" && POST_FRAMES[item.id])
+                              ? ""
+                              : item.unlocked
+                                ? meta.bgColor
+                                : "bg-gray-100"
+                          }`}
+                        >
+                          {type === "activeBubble" && BUBBLE_PREVIEWS[item.id] ? (
+                            <div className={`flex flex-col items-center ${!item.unlocked ? "opacity-40" : ""}`}>
+                              <div className={`${BUBBLE_PREVIEWS[item.id].colorClass} ${BUBBLE_PREVIEWS[item.id].premium ? "animate-premium-bubble" : ""} text-white text-[7px] font-extrabold px-1.5 py-1.5 rounded-full whitespace-nowrap leading-none`}>
+                                {BUBBLE_PREVIEWS[item.id].text}
+                              </div>
+                              <div className={`w-2 h-2 ${BUBBLE_PREVIEWS[item.id].colorClass} ${BUBBLE_PREVIEWS[item.id].premium ? "animate-premium-bubble" : ""} rotate-45 rounded-[1px] -mt-1`} />
                             </div>
-                            <div
-                              className={`w-2 h-2 ${BUBBLE_PREVIEWS[item.id].colorClass} rotate-45 rounded-[1px] -mt-1`}
-                            />
-                          </div>
+                          ) : type === "postFrame" && POST_FRAMES[item.id] ? (
+                            <div className={`${!item.unlocked ? "opacity-40" : ""} ${
+                              POST_FRAMES[item.id].premium
+                                ? `p-[2px] rounded-xl ${POST_FRAMES[item.id].wrapperClass}`
+                                : ""
+                            }`}>
+                              <div className={`w-8 h-10 rounded-[9px] flex items-center justify-center ${
+                                POST_FRAMES[item.id].premium ? "bg-white" : "border-2 border-stone-200 bg-stone-50"
+                              }`}>
+                                <HiPhoto className={`text-base ${isSelected ? meta.iconColor : "text-stone-300"}`} />
+                              </div>
+                            </div>
+                          ) : item.unlocked ? (
+                            <meta.Icon className={`text-xl ${meta.iconColor}`} />
+                          ) : (
+                            <HiLockClosed className="text-xl text-gray-400" />
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p
+                            className={`font-bold text-sm ${item.unlocked ? "text-gray-800" : "text-gray-400"}`}
+                          >
+                            {item.name}
+                          </p>
+                          <p className="text-xs text-gray-400 mt-0.5">
+                            {item.condition?.monthlyAverageStep
+                              ? `월 평균 ${item.condition.monthlyAverageStep.toLocaleString()}보 필요`
+                              : item.description}
+                          </p>
+                        </div>
+                        {isSelectable ? (
+                          isSelected ? (
+                            <span className="flex-shrink-0 bg-primary/10 text-primary text-xs font-bold px-3 py-1.5 rounded-full">
+                              적용됨 ✓
+                            </span>
+                          ) : (
+                            <span className="flex-shrink-0 bg-green-100 text-green-600 text-xs font-bold px-3 py-1.5 rounded-full">
+                              선택하기
+                            </span>
+                          )
                         ) : item.unlocked ? (
-                          <meta.Icon className={`text-xl ${meta.iconColor}`} />
+                          <span className="flex-shrink-0 bg-green-100 text-green-600 text-xs font-bold px-3 py-1.5 rounded-full">
+                            해금됨
+                          </span>
                         ) : (
-                          <HiLockClosed className="text-xl text-gray-400" />
+                          <span className="flex-shrink-0 text-xs text-gray-400 font-bold">
+                            {item.condition?.monthlyAverageStep?.toLocaleString()}
+                            보
+                          </span>
                         )}
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <p
-                          className={`font-bold text-sm ${item.unlocked ? "text-gray-800" : "text-gray-400"}`}
-                        >
-                          {item.name}
-                        </p>
-                        <p className="text-xs text-gray-400 mt-0.5">
-                          {item.condition?.monthlyAverageStep
-                            ? `월 평균 ${item.condition.monthlyAverageStep.toLocaleString()}보 필요`
-                            : item.description}
-                        </p>
-                      </div>
-                      {item.unlocked ? (
-                        <span className="flex-shrink-0 bg-green-100 text-green-600 text-xs font-bold px-3 py-1.5 rounded-full">
-                          해금됨
-                        </span>
-                      ) : (
-                        <span className="flex-shrink-0 text-xs text-gray-400 font-bold">
-                          {item.condition?.monthlyAverageStep?.toLocaleString()}
-                          보
-                        </span>
-                      )}
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             );
@@ -282,6 +337,30 @@ export default function Step() {
         {/* ── 프리미엄 ── */}
         {tab === "premium" && (
           <>
+            {/* QA: DEV_IS_PREMIUM(useDiet.ts) 또는 아래 토글로 프리미엄·대체 식단 동작 테스트 */}
+            <button
+              type="button"
+              onClick={togglePremium}
+              className="rounded-2xl border border-primary/25 bg-white shadow-sm px-4 py-3 flex items-center justify-between gap-3 min-h-[44px]"
+              aria-pressed={isPremium}
+              aria-label="프리미엄 구독 테스트 모드 전환"
+            >
+              <span className="text-xs font-bold text-gray-600 text-left leading-snug">
+                프리미엄 구독
+                <span className="block text-[10px] font-semibold text-gray-400 mt-0.5">
+                  테스트 토글 (Supabase 연동 전)
+                </span>
+              </span>
+              <span
+                className={`text-xs font-extrabold px-2.5 py-1 rounded-full flex-shrink-0 ${
+                  isPremium
+                    ? "text-primary bg-primary/10"
+                    : "text-gray-400 bg-gray-100"
+                }`}
+              >
+                {isPremium ? "ON" : "OFF"}
+              </span>
+            </button>
             {/* 히어로 카드 */}
             <div className="rounded-3xl bg-gradient-to-br from-primary to-secondary p-6 shadow-lg">
               <div className="flex items-center gap-2 mb-4">
@@ -461,12 +540,33 @@ export default function Step() {
                   </p>
                   <div className="flex flex-col gap-2">
                     {group.map((item) => {
-                      const isActive = activePremiumItems[type] === item.id;
+                      const isUserSelectable =
+                        type === "activeBubble" || type === "title" || type === "postFrame";
+                      const isActive =
+                        type === "activeBubble"
+                          ? selectedBubbleId === item.id
+                          : type === "title"
+                            ? userProfile?.title === item.name
+                            : type === "postFrame"
+                              ? selectedFrameId === item.id
+                              : activePremiumItems[type] === item.id;
+                      const handlePremiumItemClick = () => {
+                        if (!isPremium && isUserSelectable) return;
+                        if (type === "activeBubble") setSelectedBubbleId(item.id);
+                        else if (type === "title") handleTitleSelect(item.name);
+                        else if (type === "postFrame") setSelectedFrameId(item.id);
+                        else togglePremiumItem(type, item.id);
+                      };
                       return (
                         <button
                           key={item.id}
-                          onClick={() => togglePremiumItem(type, item.id)}
+                          onClick={handlePremiumItemClick}
+                          disabled={isUserSelectable && !isPremium}
                           className={`rounded-2xl shadow-sm px-5 py-4 flex items-center gap-4 transition-all text-left w-full border-2 ${
+                            isUserSelectable && !isPremium
+                              ? "opacity-50 cursor-not-allowed"
+                              : ""
+                          } ${
                             isActive
                               ? "bg-white border-amber-400"
                               : "bg-gray-50 border-transparent"
@@ -474,25 +574,26 @@ export default function Step() {
                         >
                           <div
                             className={`w-11 h-11 rounded-2xl flex items-center justify-center flex-shrink-0 ${
-                              type === "activeBubble" &&
-                              BUBBLE_PREVIEWS[item.id]
+                              (type === "activeBubble" && BUBBLE_PREVIEWS[item.id]) ||
+                              (type === "postFrame" && POST_FRAMES[item.id])
                                 ? ""
                                 : isActive
                                   ? meta.bgColor
                                   : "bg-gray-100"
                             }`}
                           >
-                            {type === "activeBubble" &&
-                            BUBBLE_PREVIEWS[item.id] ? (
+                            {type === "activeBubble" && BUBBLE_PREVIEWS[item.id] ? (
                               <div className="flex flex-col items-center">
-                                <div
-                                  className={`${BUBBLE_PREVIEWS[item.id].colorClass} text-white text-[7px] font-extrabold px-1.5 py-1.5 rounded-full whitespace-nowrap leading-none`}
-                                >
+                                <div className={`${BUBBLE_PREVIEWS[item.id].colorClass} ${BUBBLE_PREVIEWS[item.id].premium ? "animate-premium-bubble" : ""} text-white text-[7px] font-extrabold px-1.5 py-1.5 rounded-full whitespace-nowrap leading-none`}>
                                   {BUBBLE_PREVIEWS[item.id].text}
                                 </div>
-                                <div
-                                  className={`w-2 h-2 ${BUBBLE_PREVIEWS[item.id].colorClass} rotate-45 rounded-[1px] -mt-1`}
-                                />
+                                <div className={`w-2 h-2 ${BUBBLE_PREVIEWS[item.id].colorClass} ${BUBBLE_PREVIEWS[item.id].premium ? "animate-premium-bubble" : ""} rotate-45 rounded-[1px] -mt-1`} />
+                              </div>
+                            ) : type === "postFrame" && POST_FRAMES[item.id] ? (
+                              <div className={`p-[2px] rounded-xl ${POST_FRAMES[item.id].wrapperClass} ${isActive ? POST_FRAMES[item.id].animationClass : ""}`}>
+                                <div className="w-8 h-10 rounded-[9px] bg-white flex items-center justify-center">
+                                  <HiPhoto className={`text-base ${isActive ? meta.iconColor : "text-gray-300"}`} />
+                                </div>
                               </div>
                             ) : (
                               <meta.Icon

@@ -6,6 +6,8 @@ import { getCardById, type SensoryCard } from "../lib/communityService";
 import { getAvatarCharacterById } from "../data/avatarCharacters";
 import { getCharacterById } from "../data/activityTypes";
 import { useUser } from "../context/UserContext";
+import { useActiveFrame } from "../context/ActiveFrameContext";
+import { resolvePostFrame } from "../data/postFrames";
 
 // ─── 타입 ─────────────────────────────────────────────────
 
@@ -60,18 +62,103 @@ function PostCard({
   onCheer,
   onDelete,
   showDelete,
+  frameId,
 }: {
   post: Post;
   onCheer: () => void;
   onDelete?: () => void;
   showDelete?: boolean;
+  frameId?: string | null;
 }) {
   const characterImage =
     getAvatarCharacterById(post.character_id)?.image ?? null;
+  const frame = resolvePostFrame(frameId);
+
+  const cardInner = (
+    <div
+      className={`px-3.5 pt-3 pb-2.5 ${
+        frame.premium
+          ? "bg-white rounded-2xl"
+          : "bg-white rounded-2xl border border-stone-100 shadow-sm"
+      }`}
+    >
+      {/* 태그 배지(최대 2개) + 걸음수 배지 */}
+      <div className="flex items-center justify-between mb-2.5">
+        <div className="flex items-center gap-1 flex-wrap">
+          {post.tags.slice(0, 2).map((tag) => (
+            <span
+              key={tag}
+              className="rounded-full px-2.5 py-0.5 text-[11px] font-semibold"
+              style={{
+                background: "var(--color-primary-light)",
+                color: "var(--color-primary)",
+              }}
+            >
+              #{tag}
+            </span>
+          ))}
+        </div>
+        <div className="flex items-center gap-1 bg-stone-100 rounded-full px-2.5 py-1 flex-shrink-0">
+          <FootprintIcon className="w-3 h-3 text-stone-500" />
+          <span className="text-[13px] text-stone-700 font-bold">
+            {post.steps}
+          </span>
+        </div>
+      </div>
+
+      {/* 텍스트 */}
+      <div className="max-h-[80px] overflow-y-auto scrollbar-hide mb-2.5">
+        <p className="text-[14px] text-stone-700 font-normal leading-relaxed whitespace-pre-line">
+          {post.text}
+        </p>
+      </div>
+
+      {/* 하단 바: 칭호 + 버튼 */}
+      <div className="flex items-center justify-between pt-2.5 border-t border-stone-50">
+        <span className="text-[11px] text-stone-400 font-light">
+          {post.title}
+        </span>
+        <div className="flex items-center gap-1.5">
+          {showDelete && (
+            <button
+              onClick={onDelete}
+              aria-label="게시글 삭제"
+              className="text-[11px] text-stone-300 border border-stone-200 rounded-full px-2.5 py-1 active:scale-95 transition-transform duration-150"
+            >
+              삭제
+            </button>
+          )}
+          {!post.isMine && (
+            <button
+              onClick={onCheer}
+              aria-label={post.cheered ? "응원 취소" : "응원 보내기"}
+              className="flex items-center gap-1 rounded-full px-3 py-1.5 text-[11px] font-medium transition-all duration-150 active:scale-95 border"
+              style={
+                post.cheered
+                  ? {
+                      background: "var(--color-primary-light)",
+                      color: "var(--color-primary)",
+                      borderColor: "var(--color-primary)",
+                    }
+                  : {
+                      background: "#f8f8f7",
+                      color: "#a8a29e",
+                      borderColor: "#e7e5e4",
+                    }
+              }
+            >
+              <span>🌿</span>
+              <span>{post.cheered ? "응원 완료" : "응원하기"}</span>
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
 
   return (
     <div className="flex items-start gap-2.5">
-      {/* 아바타  */}
+      {/* 아바타 */}
       <div className="flex-shrink-0 flex flex-col items-center gap-1 pt-1">
         {characterImage ? (
           <img
@@ -88,11 +175,11 @@ function PostCard({
           </div>
         )}
         {post.profileTitle && (
-          <span className="text-[9px] text-stone-400 font-semibold text-center leading-tight">
+          <span className="text-[9px] -mb-1 -ml-2 text-stone-400 font-semibold text-center leading-tight">
             {post.profileTitle}
           </span>
         )}
-        <span className="text-[10px] text-stone-400 font-light">
+        <span className="text-[10px] text-stone-500 text-center font-semibold font-light">
           {post.nickname}
         </span>
       </div>
@@ -101,7 +188,7 @@ function PostCard({
       <div className="flex-1 relative min-w-0">
         {/* 꼬리 삼각형 */}
         <div
-          className="absolute -left-[7px] top-3.5 w-0 h-0"
+          className="absolute -left-[7px] top-3.5 w-0 h-0 z-10"
           style={{
             borderTop: "6px solid transparent",
             borderBottom: "6px solid transparent",
@@ -110,80 +197,15 @@ function PostCard({
           }}
         />
 
-        <div className="bg-white rounded-2xl border border-stone-100 shadow-sm px-3.5 pt-3 pb-2.5">
-          {/* 태그 배지(최대 2개) + 걸음수 배지 */}
-          <div className="flex items-center justify-between mb-2.5">
-            <div className="flex items-center gap-1 flex-wrap">
-              {post.tags.slice(0, 2).map((tag) => (
-                <span
-                  key={tag}
-                  className="rounded-full px-2.5 py-0.5 text-[11px] font-semibold"
-                  style={{
-                    background: "var(--color-primary-light)",
-                    color: "var(--color-primary)",
-                  }}
-                >
-                  #{tag}
-                </span>
-              ))}
-            </div>
-            <div className="flex items-center gap-1 bg-stone-100 rounded-full px-2.5 py-1 flex-shrink-0">
-              <FootprintIcon className="w-3 h-3 text-stone-500" />
-              <span className="text-[13px] text-stone-700 font-bold">
-                {post.steps}
-              </span>
-            </div>
+        {frame.premium ? (
+          <div
+            className={`p-[2px] rounded-[18px] ${frame.wrapperClass} ${frame.animationClass} shadow-md`}
+          >
+            {cardInner}
           </div>
-
-          {/* 텍스트 - 고정 높이 + 드래그 스크롤 */}
-          <div className="max-h-[80px] overflow-y-auto scrollbar-hide mb-2.5">
-            <p className="text-[14px] text-stone-700 font-normal leading-relaxed whitespace-pre-line">
-              {post.text}
-            </p>
-          </div>
-
-          {/* 하단 바: 칭호 + 버튼 */}
-          <div className="flex items-center justify-between pt-2.5 border-t border-stone-50">
-            <span className="text-[11px] text-stone-400 font-light">
-              {post.title}
-            </span>
-
-            <div className="flex items-center gap-1.5">
-              {showDelete && (
-                <button
-                  onClick={onDelete}
-                  aria-label="게시글 삭제"
-                  className="text-[11px] text-stone-300 border border-stone-200 rounded-full px-2.5 py-1 active:scale-95 transition-transform duration-150"
-                >
-                  삭제
-                </button>
-              )}
-              {!post.isMine && (
-                <button
-                  onClick={onCheer}
-                  aria-label={post.cheered ? "응원 취소" : "응원 보내기"}
-                  className="flex items-center gap-1 rounded-full px-3 py-1.5 text-[11px] font-medium transition-all duration-150 active:scale-95 border"
-                  style={
-                    post.cheered
-                      ? {
-                          background: "var(--color-primary-light)",
-                          color: "var(--color-primary)",
-                          borderColor: "var(--color-primary)",
-                        }
-                      : {
-                          background: "#f8f8f7",
-                          color: "#a8a29e",
-                          borderColor: "#e7e5e4",
-                        }
-                  }
-                >
-                  <span>🌿</span>
-                  <span>{post.cheered ? "응원 완료" : "응원하기"}</span>
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
+        ) : (
+          cardInner
+        )}
       </div>
     </div>
   );
@@ -207,6 +229,7 @@ export default function CommunityPage() {
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
 
   const { user } = useUser();
+  const { selectedFrameId } = useActiveFrame();
   const {
     posts,
     myPosts,
@@ -327,6 +350,7 @@ export default function CommunityPage() {
                     key={post.id}
                     post={post}
                     onCheer={() => toggleCheer(post.id)}
+                    frameId={post.isMine ? selectedFrameId : null}
                   />
                 ))
               ) : (
@@ -389,6 +413,7 @@ export default function CommunityPage() {
                     onCheer={() => toggleCheer(post.id)}
                     onDelete={() => setDeleteTargetId(post.id)}
                     showDelete
+                    frameId={selectedFrameId}
                   />
                 ))
               ) : (

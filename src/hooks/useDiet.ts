@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { useActivityType } from "../context/ActivityTypeContext";
+import { usePremium } from "../context/PremiumContext";
 import { useUser } from "../context/UserContext";
 import type { ActivityType } from "../data/activityTypes";
 import { getCharacterWorkoutDiet } from "../data/characterWorkoutDiet";
@@ -18,14 +19,6 @@ import {
   type MainMealTime,
   type MealMenuIndices,
 } from "../utils/dietScaling";
-
-/**
- * QA / 개발용 프리미엄 구독 시뮬레이션
- * ─────────────────────────────────────
- * - `true`  → 대체 식단 새로고침 + localStorage에 끼니별 메뉴 ID 저장
- * - `false` → 클릭 시 Step 프리미엄 탭 이동 (저장/복원 없음)
- */
-export const DEV_IS_PREMIUM = false;
 
 const DEFAULT_DIET: RecommendedDiet = {
   durationLabel: "오늘 운동 기록이 없어요",
@@ -53,15 +46,15 @@ function loadMealIndices(
 export function useDiet() {
   const { selectedActivityType } = useActivityType();
   const { userProfile } = useUser();
+  const { isPremium, togglePremium } = usePremium();
   const location = useLocation();
 
   const activityType = selectedActivityType?.type ?? null;
 
   const [burnedKcal, setBurnedKcal] = useState(0);
   const [showDietInfo, setShowDietInfo] = useState(false);
-  const [isPremium, setIsPremium] = useState(DEV_IS_PREMIUM);
   const [mealMenuIndices, setMealMenuIndices] = useState<MealMenuIndices>(() =>
-    loadMealIndices(selectedActivityType, DEV_IS_PREMIUM),
+    loadMealIndices(selectedActivityType, isPremium),
   );
 
   useEffect(() => {
@@ -130,14 +123,6 @@ export function useDiet() {
     [isPremium],
   );
 
-  const togglePremium = useCallback(() => {
-    setIsPremium((prev) => {
-      const next = !prev;
-      setMealMenuIndices(loadMealIndices(selectedActivityType, next));
-      return next;
-    });
-  }, [selectedActivityType]);
-
   return {
     burnedKcal,
     workoutTargetKcal,
@@ -156,7 +141,6 @@ export function useDiet() {
     setShowDietInfo,
     userProfile,
     isPremium,
-    setIsPremium,
     togglePremium,
     rotateMealMenu,
   };

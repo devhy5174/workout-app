@@ -64,6 +64,21 @@ html, body {
   }
 }
 
+@keyframes premium-bubble-shine {
+  0%, 100% {
+    filter: brightness(1) saturate(1);
+    box-shadow: 0 0 0px transparent;
+  }
+  50% {
+    filter: brightness(1.22) saturate(1.12);
+    box-shadow: 0 0 7px 2px rgba(255, 255, 255, 0.38);
+  }
+}
+
+.animate-premium-bubble {
+  animation: premium-bubble-shine 2s ease-in-out infinite;
+}
+
 @layer base {
   * {
     font-family: "Nunito", "Nanum Round Gothic", sans-serif;
