@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { useNotices } from "../context/NoticesContext";
 import { useActivityType } from "../context/ActivityTypeContext";
 import { useCharacter } from "../context/CharacterContext";
 import { useUser } from "../context/UserContext";
@@ -98,6 +99,7 @@ function getGreeting() {
 
 export default function Home() {
   const navigate = useNavigate();
+  const { activeNotice, dismissNotice } = useNotices();
   const { selectedActivityType } = useActivityType();
   const { selectedCharacter } = useCharacter();
   const { userGoal, workoutRecords, userProfile } = useUser();
@@ -205,6 +207,23 @@ export default function Home() {
 
   return (
     <div className="flex flex-col h-full overflow-y-auto pb-20 bg-bg">
+      {/* 공지 배너 */}
+      {activeNotice && (
+        <div className="flex items-start gap-2.5 px-4 py-2.5 bg-amber-50/90 border-b border-amber-100">
+          <span className="text-base flex-shrink-0 mt-0.5">📢</span>
+          <p className="flex-1 text-xs font-semibold text-gray-800 leading-relaxed">
+            {activeNotice.content}
+          </p>
+          <button
+            onClick={() => dismissNotice(activeNotice.id)}
+            className="flex-shrink-0 w-5 h-5 rounded-full bg-amber-100 flex items-center justify-center text-gray-500 text-[11px] font-bold mt-0.5 active:scale-90 transition"
+            aria-label="공지 닫기"
+          >
+            ✕
+          </button>
+        </div>
+      )}
+
       {/* 상단 Streak + 날씨 */}
       <div className="flex justify-between items-center px-5 pt-4 pb-2">
         <div className="flex items-center gap-2 bg-primary-light rounded-full px-4 py-1.5">

@@ -23,6 +23,7 @@ import MyPage from "../pages/MyPage";
 import Admin from "../pages/Admin";
 import { useUser } from "../context/UserContext";
 import { EventsProvider } from "../context/EventsContext";
+import { NoticesProvider } from "../context/NoticesContext";
 import LoadingScreen from "../components/ui/LoadingScreen";
 
 function AuthGuard({ children }: { children: React.ReactNode }) {
@@ -67,6 +68,7 @@ function IntroGuard() {
 
 export default function AppRouter() {
   return (
+    <NoticesProvider>
     <EventsProvider>
     <BrowserRouter>
       <Routes>
@@ -98,5 +100,6 @@ export default function AppRouter() {
       </Routes>
     </BrowserRouter>
     </EventsProvider>
+    </NoticesProvider>
   );
 }

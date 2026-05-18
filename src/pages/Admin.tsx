@@ -22,6 +22,7 @@ import {
 } from "react-icons/hi";
 import { useAdminStats, type SubscriberStats } from "../hooks/useAdminStats";
 import { useEvents, getEventStatus } from "../hooks/useEvents";
+import { useNotices } from "../context/NoticesContext";
 import {
   CATEGORY_META,
   CATEGORY_CONDITIONS,
@@ -591,6 +592,152 @@ function PremiumTab({
   );
 }
 
+// ── 공지사항 패널 ─────────────────────────────────────────
+function NoticePanel() {
+  const { notices, activeNotice, addNotice, updateNotice, deleteNotice, toggleNotice } =
+    useNotices();
+  const [draft, setDraft] = useState(activeNotice?.content ?? "");
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editDraft, setEditDraft] = useState("");
+
+  function handlePublish() {
+    if (!draft.trim()) return;
+    addNotice(draft.trim());
+    setDraft("");
+  }
+
+  function startEdit(notice: { id: string; content: string }) {
+    setEditingId(notice.id);
+    setEditDraft(notice.content);
+  }
+
+  function handleEditSave(id: string) {
+    if (!editDraft.trim()) return;
+    updateNotice(id, editDraft.trim());
+    setEditingId(null);
+  }
+
+  return (
+    <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
+      {/* 헤더 */}
+      <div
+        className="px-5 py-3.5 flex items-center gap-2"
+        style={{
+          background:
+            "linear-gradient(135deg, var(--color-primary)12, var(--color-secondary)12)",
+        }}
+      >
+        <HiSpeakerphone size={16} className="text-[var(--color-primary)]" />
+        <p className="text-sm font-extrabold text-gray-800">공지사항 관리</p>
+      </div>
+
+      {/* 새 공지 입력 */}
+      <div className="px-4 pt-4 pb-3 border-b border-gray-50">
+        <p className="text-xs font-bold text-gray-400 mb-2">새 공지 작성</p>
+        <textarea
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          placeholder="홈 화면 상단에 표시할 공지 내용을 입력하세요"
+          maxLength={80}
+          rows={2}
+          className="w-full bg-gray-50 rounded-xl px-3 py-2.5 text-sm text-gray-700 outline-none resize-none placeholder:text-gray-300 focus:ring-2 focus:ring-[var(--color-primary)]/30 mb-2"
+        />
+        <div className="flex items-center justify-between">
+          <span className="text-[11px] text-gray-300">{draft.length}/80</span>
+          <button
+            onClick={handlePublish}
+            disabled={!draft.trim()}
+            className="flex items-center gap-1 text-xs font-bold text-white bg-gradient-to-r from-[var(--color-primary)] to-[var(--color-secondary)] px-4 py-1.5 rounded-full disabled:opacity-40 active:scale-95 transition"
+          >
+            <HiSpeakerphone size={12} />
+            공지 발행
+          </button>
+        </div>
+      </div>
+
+      {/* 공지 목록 */}
+      {notices.length === 0 ? (
+        <div className="flex flex-col items-center py-8 gap-2 text-gray-300">
+          <HiSpeakerphone size={32} />
+          <p className="text-xs font-bold">등록된 공지가 없어요</p>
+        </div>
+      ) : (
+        <div className="divide-y divide-gray-50">
+          {notices.map((notice) => (
+            <div key={notice.id} className={`px-4 py-3 ${!notice.isActive ? "opacity-50" : ""}`}>
+              {editingId === notice.id ? (
+                <div className="flex flex-col gap-2">
+                  <textarea
+                    value={editDraft}
+                    onChange={(e) => setEditDraft(e.target.value)}
+                    maxLength={80}
+                    rows={2}
+                    className="w-full bg-gray-50 rounded-xl px-3 py-2 text-sm text-gray-700 outline-none resize-none focus:ring-2 focus:ring-[var(--color-primary)]/30"
+                  />
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => handleEditSave(notice.id)}
+                      className="flex-1 py-1.5 rounded-lg text-xs font-bold text-white bg-[var(--color-primary)]"
+                    >
+                      저장
+                    </button>
+                    <button
+                      onClick={() => setEditingId(null)}
+                      className="flex-1 py-1.5 rounded-lg text-xs font-bold text-gray-400 bg-gray-100"
+                    >
+                      취소
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-start gap-2">
+                  <div className="flex-1 min-w-0">
+                    {notice.isActive && (
+                      <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded-full mr-1">
+                        표시 중
+                      </span>
+                    )}
+                    <span className="text-xs text-gray-700 font-semibold leading-relaxed">
+                      {notice.content}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1 flex-shrink-0">
+                    <button
+                      onClick={() => toggleNotice(notice.id)}
+                      className={`text-[10px] font-bold px-2 py-1 rounded-lg transition-colors ${
+                        notice.isActive
+                          ? "text-gray-400 bg-gray-100"
+                          : "text-[var(--color-primary)] bg-[var(--color-primary)]/10"
+                      }`}
+                      aria-label={notice.isActive ? "숨기기" : "표시"}
+                    >
+                      {notice.isActive ? "끄기" : "켜기"}
+                    </button>
+                    <button
+                      onClick={() => startEdit(notice)}
+                      className="w-6 h-6 rounded-lg bg-gray-100 flex items-center justify-center text-gray-400 hover:bg-blue-50 hover:text-blue-400 transition-colors"
+                      aria-label="수정"
+                    >
+                      <HiPencil size={11} />
+                    </button>
+                    <button
+                      onClick={() => deleteNotice(notice.id)}
+                      className="w-6 h-6 rounded-lg bg-gray-100 flex items-center justify-center text-gray-400 hover:bg-red-50 hover:text-red-400 transition-colors"
+                      aria-label="삭제"
+                    >
+                      <HiTrash size={11} />
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── 탭: 이벤트 관리 ───────────────────────────────────────
 function EventsTab() {
   const { events, activeEvents, addEvent, updateEvent, deleteEvent, toggleEvent } =
@@ -610,6 +757,16 @@ function EventsTab() {
 
   return (
     <div className="flex flex-col gap-3 p-4 pb-28">
+      {/* 공지사항 패널 */}
+      <NoticePanel />
+
+      {/* 이벤트 구분선 */}
+      <div className="flex items-center gap-2 mt-1">
+        <div className="flex-1 h-px bg-gray-100" />
+        <p className="text-[11px] font-bold text-gray-300">이벤트 관리</p>
+        <div className="flex-1 h-px bg-gray-100" />
+      </div>
+
       {/* 상단 바 */}
       <div className="flex items-center justify-between">
         <p className="text-xs font-bold text-gray-400">
