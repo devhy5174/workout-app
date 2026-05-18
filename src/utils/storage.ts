@@ -14,7 +14,13 @@ const KEYS = {
   TODAY_DATE: "today_date",
   WORKOUT_HISTORY: "workout_history",
   JOINED_PARTY_IDS: "joined_party_ids",
+  /** 프리미엄 유저 끼니별 선택 메뉴 ID (breakfast / lunch / dinner) */
+  PREMIUM_MEAL_MENU_IDS: "premium_meal_menu_ids",
 } as const;
+
+export type PremiumMealMenuIds = Partial<
+  Record<"breakfast" | "lunch" | "dinner", number>
+>;
 
 export type PointHistoryEntry = {
   date: string;
@@ -126,6 +132,22 @@ export const storage = {
     hist.unshift(entry);
     localStorage.setItem(KEYS.POINTS_HISTORY, JSON.stringify(hist));
   },
+
+  getPremiumMealMenuIds: (): PremiumMealMenuIds | null => {
+    const raw = localStorage.getItem(KEYS.PREMIUM_MEAL_MENU_IDS);
+    if (!raw) return null;
+    try {
+      return JSON.parse(raw) as PremiumMealMenuIds;
+    } catch {
+      return null;
+    }
+  },
+
+  setPremiumMealMenuIds: (ids: PremiumMealMenuIds) =>
+    localStorage.setItem(KEYS.PREMIUM_MEAL_MENU_IDS, JSON.stringify(ids)),
+
+  clearPremiumMealMenuIds: () =>
+    localStorage.removeItem(KEYS.PREMIUM_MEAL_MENU_IDS),
 
   addWorkoutToday: () => {
     const d = new Date();

@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import type { IconType } from "react-icons";
 import { HiLockClosed } from "react-icons/hi";
 import {
@@ -12,7 +13,9 @@ import {
   HiCloud,
   HiCheckCircle,
   HiNoSymbol,
+  HiArrowPath,
 } from "react-icons/hi2";
+import { isPremiumStepsTab } from "../utils/premiumNavigation";
 import { useUser } from "../context/UserContext";
 import { useUnlockItems } from "../hooks/useUnlockItems";
 import { unlockItems } from "../data/unlockItems";
@@ -108,8 +111,28 @@ const SEASON_PREVIEWS: {
   },
 ];
 
+const PREMIUM_HERO_BENEFITS = [
+  { Icon: HiChatBubbleOvalLeft, text: "활동중 특별 말풍선" },
+  { Icon: HiNoSymbol, text: "광고 없는 경험" },
+  { Icon: HiPhoto, text: "전용 카드 테마" },
+  { Icon: HiStar, text: "프리미엄 칭호" },
+  { Icon: HiArrowPath, text: "나만의 대체 식단 새로고침" },
+] as const;
+
+const PREMIUM_PLAN_BENEFITS = [
+  "활동중 프리미엄 말풍선",
+  "광고 제거",
+  "인증 카드 테마",
+  "프리미엄 칭호",
+  "내 입맛에 맞는 다른 맞춤 식단 변경",
+] as const;
+
 export default function Step() {
-  const [tab, setTab] = useState<Tab>("step");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const tabFromUrl = searchParams.get("tab");
+  const [tab, setTab] = useState<Tab>(() =>
+    isPremiumStepsTab(tabFromUrl) ? tabFromUrl : "step",
+  );
   const [selectedPlan, setSelectedPlan] = useState<PlanType>("annual");
   const [activePremiumItems, setActivePremiumItems] = useState<
     Record<string, string>
@@ -126,6 +149,17 @@ export default function Step() {
       ...prev,
       [type]: prev[type] === id ? "" : id,
     }));
+  };
+
+  useEffect(() => {
+    if (isPremiumStepsTab(tabFromUrl)) {
+      setTab(tabFromUrl);
+    }
+  }, [tabFromUrl]);
+
+  const selectTab = (key: Tab) => {
+    setTab(key);
+    setSearchParams({ tab: key }, { replace: true });
   };
 
   const tabs: { key: Tab; label: string }[] = [
@@ -157,7 +191,7 @@ export default function Step() {
         {tabs.map(({ key, label }) => (
           <button
             key={key}
-            onClick={() => setTab(key)}
+            onClick={() => selectTab(key)}
             className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition-all ${
               tab === key ? "bg-primary text-white shadow-sm" : "text-gray-400"
             }`}
@@ -281,12 +315,7 @@ export default function Step() {
               </div>
 
               <div className="flex flex-col gap-2">
-                {[
-                  { Icon: HiChatBubbleOvalLeft, text: "활동중 특별 말풍선" },
-                  { Icon: HiNoSymbol, text: "광고 없는 경험" },
-                  { Icon: HiPhoto, text: "전용 카드 테마" },
-                  { Icon: HiStar, text: "프리미엄 칭호" },
-                ].map(({ Icon, text }) => (
+                {PREMIUM_HERO_BENEFITS.map(({ Icon, text }) => (
                   <div key={text} className="flex items-center gap-2">
                     <Icon className="text-white/70 text-base flex-shrink-0" />
                     <p className="text-white/90 text-sm font-medium">{text}</p>
@@ -326,12 +355,7 @@ export default function Step() {
                 />
               </div>
               <div className="flex flex-col gap-1.5">
-                {[
-                  "활동중 프리미엄 말풍선",
-                  "광고 제거",
-                  "인증 카드 테마",
-                  "프리미엄 칭호",
-                ].map((text) => (
+                {PREMIUM_PLAN_BENEFITS.map((text) => (
                   <div key={text} className="flex items-center gap-2">
                     <HiCheckCircle
                       className={`text-base flex-shrink-0 transition-colors ${
@@ -395,12 +419,7 @@ export default function Step() {
                 />
               </div>
               <div className="flex flex-col gap-1.5">
-                {[
-                  "활동중 프리미엄 말풍선",
-                  "광고 제거",
-                  "인증 카드 테마",
-                  "프리미엄 칭호",
-                ].map((text) => (
+                {PREMIUM_PLAN_BENEFITS.map((text) => (
                   <div key={text} className="flex items-center gap-2">
                     <HiCheckCircle
                       className={`text-base flex-shrink-0 transition-colors ${
@@ -508,7 +527,7 @@ export default function Step() {
           </>
         )}
 
-        {/* ── 시즌 ── */}
+        {/* ── 이벤트 ── */}
         {tab === "events" && (
           <div className="flex flex-col items-center justify-center py-4 gap-5">
             <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-orange-400 to-pink-500 flex items-center justify-center shadow-lg">
