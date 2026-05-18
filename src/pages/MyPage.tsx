@@ -332,7 +332,7 @@ function ActivityTypeSheet({ onClose }: { onClose: () => void }) {
               );
             })}
           </div>
-          <div className="sticky bottom-0 -mx-5 -mb-8 bg-white/95 px-5 pt-3 pb-8 backdrop-blur">
+          <div className="sticky bottom-0 -mx-5 -mb-4 bg-white/95 px-5 pt-3 pb-8 backdrop-blur">
             <button
               onClick={() => setShowConfirmModal(true)}
               disabled={
