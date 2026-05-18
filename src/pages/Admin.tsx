@@ -22,7 +22,9 @@ import {
 } from "react-icons/hi";
 import { useAdminStats, type SubscriberStats } from "../hooks/useAdminStats";
 
-// ── 이벤트 타입 ──────────────────────────────────────────
+// ── 공통 타입 ─────────────────────────────────────────────
+type AdminTab = "dashboard" | "premium" | "events";
+
 type EventType = "challenge" | "promotion" | "notice" | "maintenance";
 type AppEvent = {
   id: string;
@@ -41,11 +43,7 @@ const EVENT_TYPE_META: Record<
   challenge: { label: "챌린지", color: "text-orange-600", bg: "bg-orange-50" },
   promotion: { label: "프로모션", color: "text-blue-600", bg: "bg-blue-50" },
   notice: { label: "공지", color: "text-gray-600", bg: "bg-gray-100" },
-  maintenance: {
-    label: "점검",
-    color: "text-red-600",
-    bg: "bg-red-50",
-  },
+  maintenance: { label: "점검", color: "text-red-600", bg: "bg-red-50" },
 };
 
 const INITIAL_EVENTS: AppEvent[] = [
@@ -60,8 +58,8 @@ const INITIAL_EVENTS: AppEvent[] = [
   },
   {
     id: "2",
-    title: "신규 가입 포인트 2배",
-    description: "5월 신규 가입자 첫 운동 포인트 2배 지급",
+    title: "신규 가입 혜택",
+    description: "5월 신규 가입자 첫 운동 시 특별 말풍선 즉시 지급",
     startDate: "2026-05-01",
     endDate: "2026-05-20",
     type: "promotion",
@@ -69,7 +67,70 @@ const INITIAL_EVENTS: AppEvent[] = [
   },
 ];
 
-// ── 이벤트 추가/수정 시트 ────────────────────────────────
+const PREMIUM_BENEFITS = [
+  {
+    icon: <HiSparkles size={18} className="text-yellow-500" />,
+    bg: "bg-yellow-50",
+    label: "특별 말풍선",
+    desc: "캐릭터 전용 프리미엄 말풍선",
+  },
+  {
+    icon: <HiVolumeOff size={18} className="text-blue-500" />,
+    bg: "bg-blue-50",
+    label: "광고 없는 경험",
+    desc: "모든 광고 제거",
+  },
+  {
+    icon: <HiColorSwatch size={18} className="text-purple-500" />,
+    bg: "bg-purple-50",
+    label: "전용 카드 테마",
+    desc: "프리미엄 전용 UI 테마",
+  },
+  {
+    icon: <HiShieldCheck size={18} className="text-emerald-500" />,
+    bg: "bg-emerald-50",
+    label: "프리미엄 칭호",
+    desc: "프로필 전용 칭호 표시",
+  },
+];
+
+// ── 공통 컴포넌트 ─────────────────────────────────────────
+function StatCard({
+  icon,
+  label,
+  value,
+  sub,
+  color,
+  isLoading,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: string | number;
+  sub?: string;
+  color: string;
+  isLoading: boolean;
+}) {
+  return (
+    <div className="bg-white rounded-2xl shadow-sm p-4 flex flex-col gap-2">
+      <div
+        className={`w-10 h-10 rounded-xl flex items-center justify-center ${color}`}
+      >
+        {icon}
+      </div>
+      <p className="text-xs text-gray-400 font-semibold">{label}</p>
+      {isLoading ? (
+        <div className="h-7 bg-gray-100 rounded-lg animate-pulse w-16" />
+      ) : (
+        <p className="text-2xl font-extrabold text-gray-800">
+          {typeof value === "number" ? value.toLocaleString() : value}
+        </p>
+      )}
+      {sub && <p className="text-[10px] text-gray-400">{sub}</p>}
+    </div>
+  );
+}
+
+// ── 이벤트 폼 시트 ────────────────────────────────────────
 function EventFormSheet({
   initial,
   onSave,
@@ -132,7 +193,6 @@ function EventFormSheet({
           </button>
         </div>
 
-        {/* 타입 선택 */}
         <p className="text-xs font-bold text-gray-400 mb-2">이벤트 유형</p>
         <div className="flex gap-2 mb-4">
           {(Object.keys(EVENT_TYPE_META) as EventType[]).map((t) => {
@@ -153,7 +213,6 @@ function EventFormSheet({
           })}
         </div>
 
-        {/* 제목 */}
         <p className="text-xs font-bold text-gray-400 mb-2">제목</p>
         <input
           type="text"
@@ -167,7 +226,6 @@ function EventFormSheet({
           className="w-full bg-gray-50 rounded-2xl px-4 py-3 text-sm font-semibold text-gray-800 outline-none mb-4 placeholder:text-gray-300 focus:ring-2 focus:ring-[var(--color-primary)]/30"
         />
 
-        {/* 설명 */}
         <p className="text-xs font-bold text-gray-400 mb-2">설명</p>
         <textarea
           value={description}
@@ -178,7 +236,6 @@ function EventFormSheet({
           className="w-full bg-gray-50 rounded-2xl px-4 py-3 text-sm text-gray-700 outline-none mb-4 resize-none placeholder:text-gray-300 focus:ring-2 focus:ring-[var(--color-primary)]/30"
         />
 
-        {/* 기간 */}
         <p className="text-xs font-bold text-gray-400 mb-2">기간</p>
         <div className="flex gap-2 mb-4">
           <div className="flex-1">
@@ -219,69 +276,76 @@ function EventFormSheet({
   );
 }
 
-// ── 통계 카드 ────────────────────────────────────────────
-function StatCard({
-  icon,
-  label,
-  value,
-  sub,
-  color,
+// ── 탭: 대시보드 ──────────────────────────────────────────
+function DashboardTab({
+  stats,
   isLoading,
 }: {
-  icon: React.ReactNode;
-  label: string;
-  value: string | number;
-  sub?: string;
-  color: string;
+  stats: ReturnType<typeof useAdminStats>["stats"];
   isLoading: boolean;
 }) {
   return (
-    <div className="bg-white rounded-2xl shadow-sm p-4 flex flex-col gap-2">
-      <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${color}`}>
-        {icon}
+    <div className="flex flex-col gap-4 p-4 pb-28">
+      <div className="grid grid-cols-2 gap-3">
+        <StatCard
+          icon={<HiUsers size={20} className="text-blue-500" />}
+          label="총 회원 수"
+          value={stats?.totalUsers ?? 0}
+          sub="누적 가입자"
+          color="bg-blue-50"
+          isLoading={isLoading}
+        />
+        <StatCard
+          icon={<HiUserAdd size={20} className="text-emerald-500" />}
+          label="오늘 신규 유입"
+          value={stats?.newUsersToday ?? 0}
+          sub="오늘 가입자"
+          color="bg-emerald-50"
+          isLoading={isLoading}
+        />
+        <StatCard
+          icon={<HiLightningBolt size={20} className="text-orange-500" />}
+          label="오늘 운동한 유저"
+          value={stats?.activeUsersToday ?? 0}
+          sub="오늘 활성 유저"
+          color="bg-orange-50"
+          isLoading={isLoading}
+        />
+        <StatCard
+          icon={<HiChartBar size={20} className="text-purple-500" />}
+          label="누적 운동 세션"
+          value={stats?.totalWorkouts ?? 0}
+          sub="전체 운동 기록"
+          color="bg-purple-50"
+          isLoading={isLoading}
+        />
       </div>
-      <p className="text-xs text-gray-400 font-semibold">{label}</p>
-      {isLoading ? (
-        <div className="h-7 bg-gray-100 rounded-lg animate-pulse w-16" />
-      ) : (
-        <p className="text-2xl font-extrabold text-gray-800">
-          {typeof value === "number" ? value.toLocaleString() : value}
-        </p>
-      )}
-      {sub && <p className="text-[10px] text-gray-400">{sub}</p>}
+
+      <div
+        className="rounded-2xl px-5 py-4 flex items-center gap-3"
+        style={{
+          background:
+            "linear-gradient(135deg, var(--color-primary), var(--color-secondary))",
+        }}
+      >
+        <div className="flex-1">
+          <p className="text-white/80 text-xs font-semibold">오늘 운동 세션</p>
+          {isLoading ? (
+            <div className="h-7 bg-white/20 rounded-lg animate-pulse w-20 mt-1" />
+          ) : (
+            <p className="text-white text-2xl font-extrabold">
+              {stats?.workoutSessionsToday ?? 0}회
+            </p>
+          )}
+        </div>
+        <HiBadgeCheck size={40} className="text-white/30" />
+      </div>
     </div>
   );
 }
 
-const PREMIUM_BENEFITS = [
-  {
-    icon: <HiSparkles size={18} className="text-yellow-500" />,
-    bg: "bg-yellow-50",
-    label: "특별 말풍선",
-    desc: "캐릭터 전용 프리미엄 말풍선",
-  },
-  {
-    icon: <HiVolumeOff size={18} className="text-blue-500" />,
-    bg: "bg-blue-50",
-    label: "광고 없는 경험",
-    desc: "모든 광고 제거",
-  },
-  {
-    icon: <HiColorSwatch size={18} className="text-purple-500" />,
-    bg: "bg-purple-50",
-    label: "전용 카드 테마",
-    desc: "프리미엄 전용 UI 테마",
-  },
-  {
-    icon: <HiShieldCheck size={18} className="text-emerald-500" />,
-    bg: "bg-emerald-50",
-    label: "프리미엄 칭호",
-    desc: "프로필 전용 칭호 표시",
-  },
-];
-
-// ── 구독자 현황 섹션 ─────────────────────────────────────
-function SubscriberSection({
+// ── 탭: 프리미엄 구독 ─────────────────────────────────────
+function PremiumTab({
   subscriberStats,
   totalUsers,
   isLoading,
@@ -291,18 +355,17 @@ function SubscriberSection({
   isLoading: boolean;
 }) {
   const RANK_MEDALS = ["🥇", "🥈", "🥉", "4️⃣", "5️⃣"];
-
   const habitRate =
     totalUsers > 0
-      ? Math.round(((subscriberStats?.activeStreakUsers ?? 0) / totalUsers) * 100)
+      ? Math.round(
+          ((subscriberStats?.activeStreakUsers ?? 0) / totalUsers) * 100,
+        )
       : 0;
 
   return (
-    <section>
-      <p className="text-xs font-bold text-gray-400 px-1 mb-2">구독자 현황</p>
-
-      {/* 습관 달성 지표 2종 */}
-      <div className="grid grid-cols-2 gap-3 mb-3">
+    <div className="flex flex-col gap-4 p-4 pb-28">
+      {/* 습관 달성 지표 */}
+      <div className="grid grid-cols-2 gap-3">
         <StatCard
           icon={<HiFire size={20} className="text-orange-500" />}
           label="꾸준한 유저"
@@ -323,7 +386,7 @@ function SubscriberSection({
 
       {/* 습관 형성률 배너 */}
       <div
-        className="rounded-2xl px-5 py-4 flex items-center gap-4 mb-3"
+        className="rounded-2xl px-5 py-4 flex items-center gap-4"
         style={{
           background:
             "linear-gradient(135deg, var(--color-primary), var(--color-secondary))",
@@ -346,7 +409,7 @@ function SubscriberSection({
       </div>
 
       {/* 프리미엄 혜택 목록 */}
-      <div className="bg-white rounded-2xl shadow-sm overflow-hidden mb-3">
+      <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
         <div
           className="px-5 py-3.5 flex items-center gap-2"
           style={{
@@ -371,7 +434,10 @@ function SubscriberSection({
                 <p className="text-sm font-bold text-gray-800">{b.label}</p>
                 <p className="text-[11px] text-gray-400">{b.desc}</p>
               </div>
-              <HiBadgeCheck size={16} className="text-[var(--color-primary)] flex-shrink-0" />
+              <HiBadgeCheck
+                size={16}
+                className="text-[var(--color-primary)] flex-shrink-0"
+              />
             </div>
           ))}
         </div>
@@ -433,28 +499,27 @@ function SubscriberSection({
           </div>
         )}
       </div>
-    </section>
+    </div>
   );
 }
 
-// ── Admin 메인 ───────────────────────────────────────────
-export default function Admin() {
-  const navigate = useNavigate();
-  const { stats, subscriberStats, isLoading, refresh } = useAdminStats();
-
+// ── 탭: 이벤트 관리 ───────────────────────────────────────
+function EventsTab() {
   const [events, setEvents] = useState<AppEvent[]>(INITIAL_EVENTS);
   const [showForm, setShowForm] = useState(false);
   const [editingEvent, setEditingEvent] = useState<AppEvent | undefined>();
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
-  function handleAddEvent(data: Omit<AppEvent, "id">) {
-    setEvents((prev) => [
-      { ...data, id: Date.now().toString() },
-      ...prev,
-    ]);
+  const today = new Date().toISOString().slice(0, 10);
+  const activeEvents = events.filter(
+    (e) => e.isActive && e.startDate <= today && e.endDate >= today,
+  );
+
+  function handleAdd(data: Omit<AppEvent, "id">) {
+    setEvents((prev) => [{ ...data, id: Date.now().toString() }, ...prev]);
   }
 
-  function handleEditEvent(data: Omit<AppEvent, "id">) {
+  function handleEdit(data: Omit<AppEvent, "id">) {
     if (!editingEvent) return;
     setEvents((prev) =>
       prev.map((e) =>
@@ -464,7 +529,7 @@ export default function Admin() {
     setEditingEvent(undefined);
   }
 
-  function handleToggleActive(id: string) {
+  function handleToggle(id: string) {
     setEvents((prev) =>
       prev.map((e) => (e.id === id ? { ...e, isActive: !e.isActive } : e)),
     );
@@ -475,267 +540,240 @@ export default function Admin() {
     setDeletingId(null);
   }
 
-  const today = new Date().toISOString().slice(0, 10);
-  const activeEvents = events.filter(
-    (e) => e.isActive && e.startDate <= today && e.endDate >= today,
-  );
-
   return (
-    <div className="flex flex-col min-h-full bg-gray-50">
-      {/* 헤더 */}
-      <div className="bg-white border-b border-gray-100 px-4 pt-4 pb-3 flex items-center gap-3">
+    <div className="flex flex-col gap-3 p-4 pb-28">
+      {/* 상단 바 */}
+      <div className="flex items-center justify-between">
+        <p className="text-xs font-bold text-gray-400">
+          전체 {events.length}개
+          <span className="ml-2 text-[var(--color-primary)]">
+            활성 {activeEvents.length}개
+          </span>
+        </p>
         <button
-          onClick={() => navigate("/settings")}
-          className="w-9 h-9 rounded-xl bg-gray-100 flex items-center justify-center text-gray-500 active:scale-95 transition"
-          aria-label="뒤로가기"
+          onClick={() => {
+            setEditingEvent(undefined);
+            setShowForm(true);
+          }}
+          className="flex items-center gap-1 text-xs font-bold text-[var(--color-primary)] bg-[var(--color-primary)]/10 px-3 py-1.5 rounded-full active:scale-95 transition"
         >
-          <HiArrowLeft size={20} />
-        </button>
-        <div className="flex-1">
-          <h1 className="text-lg font-extrabold text-gray-800">관리자 페이지</h1>
-          <p className="text-xs text-gray-400">서비스 현황 및 이벤트 관리</p>
-        </div>
-        <button
-          onClick={refresh}
-          disabled={isLoading}
-          className="w-9 h-9 rounded-xl bg-gray-100 flex items-center justify-center text-gray-400 active:scale-95 transition disabled:opacity-40"
-          aria-label="새로고침"
-        >
-          <HiRefresh size={18} className={isLoading ? "animate-spin" : ""} />
+          <HiPlus size={14} />
+          이벤트 추가
         </button>
       </div>
 
-      <div className="flex flex-col gap-5 p-4 pb-28">
-        {/* 주요 지표 */}
-        <section>
-          <p className="text-xs font-bold text-gray-400 px-1 mb-2">
-            주요 지표
+      {events.length === 0 ? (
+        <div className="bg-white rounded-2xl shadow-sm flex flex-col items-center justify-center py-16 gap-3">
+          <HiSpeakerphone size={40} className="text-gray-200" />
+          <p className="text-sm font-bold text-gray-400">
+            등록된 이벤트가 없어요
           </p>
-          <div className="grid grid-cols-2 gap-3">
-            <StatCard
-              icon={<HiUsers size={20} className="text-blue-500" />}
-              label="총 회원 수"
-              value={stats?.totalUsers ?? 0}
-              sub="누적 가입자"
-              color="bg-blue-50"
-              isLoading={isLoading}
-            />
-            <StatCard
-              icon={<HiUserAdd size={20} className="text-emerald-500" />}
-              label="오늘 신규 유입"
-              value={stats?.newUsersToday ?? 0}
-              sub="오늘 가입자"
-              color="bg-emerald-50"
-              isLoading={isLoading}
-            />
-            <StatCard
-              icon={<HiLightningBolt size={20} className="text-orange-500" />}
-              label="오늘 운동한 유저"
-              value={stats?.activeUsersToday ?? 0}
-              sub="오늘 활성 유저"
-              color="bg-orange-50"
-              isLoading={isLoading}
-            />
-            <StatCard
-              icon={<HiChartBar size={20} className="text-purple-500" />}
-              label="누적 운동 세션"
-              value={stats?.totalWorkouts ?? 0}
-              sub="전체 운동 기록"
-              color="bg-purple-50"
-              isLoading={isLoading}
-            />
-          </div>
-
-          {/* 오늘 요약 배너 */}
-          <div
-            className="mt-3 rounded-2xl px-5 py-4 flex items-center gap-3"
-            style={{
-              background:
-                "linear-gradient(135deg, var(--color-primary), var(--color-secondary))",
-            }}
+          <button
+            onClick={() => setShowForm(true)}
+            className="text-xs font-bold text-[var(--color-primary)] bg-[var(--color-primary)]/10 px-4 py-2 rounded-full"
           >
-            <div className="flex-1">
-              <p className="text-white/80 text-xs font-semibold">오늘 운동 세션</p>
-              {isLoading ? (
-                <div className="h-7 bg-white/20 rounded-lg animate-pulse w-20 mt-1" />
-              ) : (
-                <p className="text-white text-2xl font-extrabold">
-                  {stats?.workoutSessionsToday ?? 0}회
-                </p>
-              )}
-            </div>
-            <HiBadgeCheck size={40} className="text-white/30" />
-          </div>
-        </section>
+            + 첫 이벤트 추가
+          </button>
+        </div>
+      ) : (
+        events.map((event) => {
+          const meta = EVENT_TYPE_META[event.type];
+          const isExpired = event.endDate < today;
+          const isPending = event.startDate > today;
+          const statusLabel = isExpired
+            ? "종료"
+            : isPending
+              ? "예정"
+              : event.isActive
+                ? "진행 중"
+                : "비활성";
+          const statusColor = isExpired
+            ? "text-gray-400 bg-gray-100"
+            : isPending
+              ? "text-blue-500 bg-blue-50"
+              : event.isActive
+                ? "text-emerald-600 bg-emerald-50"
+                : "text-gray-400 bg-gray-100";
 
-        {/* 구독자 현황 */}
-        <SubscriberSection
-          subscriberStats={subscriberStats}
-          totalUsers={stats?.totalUsers ?? 0}
-          isLoading={isLoading}
-        />
-
-        {/* 이벤트 관리 */}
-        <section>
-          <div className="flex items-center justify-between px-1 mb-2">
-            <p className="text-xs font-bold text-gray-400">
-              이벤트 관리
-              <span className="ml-2 text-[var(--color-primary)]">
-                활성 {activeEvents.length}개
-              </span>
-            </p>
-            <button
-              onClick={() => {
-                setEditingEvent(undefined);
-                setShowForm(true);
-              }}
-              className="flex items-center gap-1 text-xs font-bold text-[var(--color-primary)] bg-[var(--color-primary)]/10 px-3 py-1.5 rounded-full active:scale-95 transition"
+          return (
+            <div
+              key={event.id}
+              className={`bg-white rounded-2xl shadow-sm p-4 transition-all ${
+                !event.isActive || isExpired ? "opacity-60" : ""
+              }`}
             >
-              <HiPlus size={14} />
-              이벤트 추가
-            </button>
-          </div>
-
-          {events.length === 0 ? (
-            <div className="bg-white rounded-2xl shadow-sm flex flex-col items-center justify-center py-12 gap-3">
-              <HiSpeakerphone size={40} className="text-gray-200" />
-              <p className="text-sm font-bold text-gray-400">
-                등록된 이벤트가 없어요
-              </p>
-              <button
-                onClick={() => setShowForm(true)}
-                className="text-xs font-bold text-[var(--color-primary)] bg-[var(--color-primary)]/10 px-4 py-2 rounded-full"
-              >
-                + 첫 이벤트 추가
-              </button>
-            </div>
-          ) : (
-            <div className="flex flex-col gap-3">
-              {events.map((event) => {
-                const meta = EVENT_TYPE_META[event.type];
-                const isExpired = event.endDate < today;
-                const isPending = event.startDate > today;
-                const statusLabel = isExpired
-                  ? "종료"
-                  : isPending
-                    ? "예정"
-                    : event.isActive
-                      ? "진행 중"
-                      : "비활성";
-                const statusColor = isExpired
-                  ? "text-gray-400 bg-gray-100"
-                  : isPending
-                    ? "text-blue-500 bg-blue-50"
-                    : event.isActive
-                      ? "text-emerald-600 bg-emerald-50"
-                      : "text-gray-400 bg-gray-100";
-
-                return (
-                  <div
-                    key={event.id}
-                    className={`bg-white rounded-2xl shadow-sm p-4 transition-all ${
-                      !event.isActive || isExpired ? "opacity-60" : ""
-                    }`}
+              <div className="flex items-start justify-between gap-2 mb-2">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span
+                    className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${meta.bg} ${meta.color}`}
                   >
-                    <div className="flex items-start justify-between gap-2 mb-2">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span
-                          className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${meta.bg} ${meta.color}`}
-                        >
-                          {meta.label}
-                        </span>
-                        <span
-                          className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${statusColor}`}
-                        >
-                          {statusLabel}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-1 flex-shrink-0">
-                        {!isExpired && (
-                          <button
-                            onClick={() => handleToggleActive(event.id)}
-                            className={`text-[11px] font-bold px-2 py-1 rounded-lg transition-colors ${
-                              event.isActive
-                                ? "text-gray-400 bg-gray-100 hover:bg-gray-200"
-                                : "text-[var(--color-primary)] bg-[var(--color-primary)]/10"
-                            }`}
-                            aria-label={event.isActive ? "비활성화" : "활성화"}
-                          >
-                            {event.isActive ? "끄기" : "켜기"}
-                          </button>
-                        )}
-                        <button
-                          onClick={() => {
-                            setEditingEvent(event);
-                            setShowForm(true);
-                          }}
-                          className="w-7 h-7 rounded-lg bg-gray-100 flex items-center justify-center text-gray-400 hover:bg-blue-50 hover:text-blue-400 transition-colors"
-                          aria-label="이벤트 수정"
-                        >
-                          <HiPencil size={13} />
-                        </button>
-                        {deletingId === event.id ? (
-                          <div className="flex items-center gap-1">
-                            <button
-                              onClick={() => handleDelete(event.id)}
-                              className="text-[11px] font-bold text-red-500 px-2 py-1"
-                              aria-label="삭제 확인"
-                            >
-                              삭제
-                            </button>
-                            <button
-                              onClick={() => setDeletingId(null)}
-                              className="text-[11px] font-bold text-gray-400 px-1 py-1"
-                              aria-label="취소"
-                            >
-                              취소
-                            </button>
-                          </div>
-                        ) : (
-                          <button
-                            onClick={() => setDeletingId(event.id)}
-                            className="w-7 h-7 rounded-lg bg-gray-100 flex items-center justify-center text-gray-400 hover:bg-red-50 hover:text-red-400 transition-colors"
-                            aria-label="이벤트 삭제"
-                          >
-                            <HiTrash size={13} />
-                          </button>
-                        )}
-                      </div>
+                    {meta.label}
+                  </span>
+                  <span
+                    className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${statusColor}`}
+                  >
+                    {statusLabel}
+                  </span>
+                </div>
+                <div className="flex items-center gap-1 flex-shrink-0">
+                  {!isExpired && (
+                    <button
+                      onClick={() => handleToggle(event.id)}
+                      className={`text-[11px] font-bold px-2 py-1 rounded-lg transition-colors ${
+                        event.isActive
+                          ? "text-gray-400 bg-gray-100 hover:bg-gray-200"
+                          : "text-[var(--color-primary)] bg-[var(--color-primary)]/10"
+                      }`}
+                      aria-label={event.isActive ? "비활성화" : "활성화"}
+                    >
+                      {event.isActive ? "끄기" : "켜기"}
+                    </button>
+                  )}
+                  <button
+                    onClick={() => {
+                      setEditingEvent(event);
+                      setShowForm(true);
+                    }}
+                    className="w-7 h-7 rounded-lg bg-gray-100 flex items-center justify-center text-gray-400 hover:bg-blue-50 hover:text-blue-400 transition-colors"
+                    aria-label="이벤트 수정"
+                  >
+                    <HiPencil size={13} />
+                  </button>
+                  {deletingId === event.id ? (
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={() => handleDelete(event.id)}
+                        className="text-[11px] font-bold text-red-500 px-2 py-1"
+                        aria-label="삭제 확인"
+                      >
+                        삭제
+                      </button>
+                      <button
+                        onClick={() => setDeletingId(null)}
+                        className="text-[11px] font-bold text-gray-400 px-1 py-1"
+                        aria-label="취소"
+                      >
+                        취소
+                      </button>
                     </div>
+                  ) : (
+                    <button
+                      onClick={() => setDeletingId(event.id)}
+                      className="w-7 h-7 rounded-lg bg-gray-100 flex items-center justify-center text-gray-400 hover:bg-red-50 hover:text-red-400 transition-colors"
+                      aria-label="이벤트 삭제"
+                    >
+                      <HiTrash size={13} />
+                    </button>
+                  )}
+                </div>
+              </div>
 
-                    <p className="font-extrabold text-gray-800 text-sm mb-0.5">
-                      {event.title}
-                    </p>
-                    {event.description && (
-                      <p className="text-xs text-gray-500 mb-2">
-                        {event.description}
-                      </p>
-                    )}
-                    <div className="flex items-center gap-1.5 text-[11px] text-gray-400 font-semibold">
-                      <HiCalendar size={12} />
-                      <span>
-                        {event.startDate} ~ {event.endDate}
-                      </span>
-                    </div>
-                  </div>
-                );
-              })}
+              <p className="font-extrabold text-gray-800 text-sm mb-0.5">
+                {event.title}
+              </p>
+              {event.description && (
+                <p className="text-xs text-gray-500 mb-2">{event.description}</p>
+              )}
+              <div className="flex items-center gap-1.5 text-[11px] text-gray-400 font-semibold">
+                <HiCalendar size={12} />
+                <span>
+                  {event.startDate} ~ {event.endDate}
+                </span>
+              </div>
             </div>
-          )}
-        </section>
-      </div>
+          );
+        })
+      )}
 
-      {/* 이벤트 폼 시트 */}
       {showForm && (
         <EventFormSheet
           initial={editingEvent}
-          onSave={editingEvent ? handleEditEvent : handleAddEvent}
+          onSave={editingEvent ? handleEdit : handleAdd}
           onClose={() => {
             setShowForm(false);
             setEditingEvent(undefined);
           }}
         />
       )}
+    </div>
+  );
+}
+
+// ── Admin 메인 ───────────────────────────────────────────
+const TABS: { id: AdminTab; label: string; icon: React.ReactNode }[] = [
+  { id: "dashboard", label: "대시보드", icon: <HiChartBar size={16} /> },
+  { id: "premium", label: "프리미엄", icon: <HiSparkles size={16} /> },
+  { id: "events", label: "이벤트", icon: <HiSpeakerphone size={16} /> },
+];
+
+export default function Admin() {
+  const navigate = useNavigate();
+  const { stats, subscriberStats, isLoading, refresh } = useAdminStats();
+  const [activeTab, setActiveTab] = useState<AdminTab>("dashboard");
+
+  return (
+    <div className="flex flex-col h-full bg-gray-50">
+      {/* 헤더 */}
+      <div className="bg-white border-b border-gray-100 px-4 pt-4 pb-0 flex-shrink-0">
+        <div className="flex items-center gap-3 mb-3">
+          <button
+            onClick={() => navigate("/settings")}
+            className="w-9 h-9 rounded-xl bg-gray-100 flex items-center justify-center text-gray-500 active:scale-95 transition"
+            aria-label="뒤로가기"
+          >
+            <HiArrowLeft size={20} />
+          </button>
+          <div className="flex-1">
+            <h1 className="text-lg font-extrabold text-gray-800">
+              관리자 페이지
+            </h1>
+          </div>
+          <button
+            onClick={refresh}
+            disabled={isLoading}
+            className="w-9 h-9 rounded-xl bg-gray-100 flex items-center justify-center text-gray-400 active:scale-95 transition disabled:opacity-40"
+            aria-label="새로고침"
+          >
+            <HiRefresh
+              size={18}
+              className={isLoading ? "animate-spin" : ""}
+            />
+          </button>
+        </div>
+
+        {/* 탭바 */}
+        <div className="flex">
+          {TABS.map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 text-sm font-bold border-b-2 transition-colors ${
+                activeTab === tab.id
+                  ? "border-[var(--color-primary)] text-[var(--color-primary)]"
+                  : "border-transparent text-gray-400"
+              }`}
+            >
+              {tab.icon}
+              {tab.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* 탭 콘텐츠 */}
+      <div className="flex-1 overflow-y-auto">
+        {activeTab === "dashboard" && (
+          <DashboardTab stats={stats} isLoading={isLoading} />
+        )}
+        {activeTab === "premium" && (
+          <PremiumTab
+            subscriberStats={subscriberStats}
+            totalUsers={stats?.totalUsers ?? 0}
+            isLoading={isLoading}
+          />
+        )}
+        {activeTab === "events" && <EventsTab />}
+      </div>
     </div>
   );
 }
