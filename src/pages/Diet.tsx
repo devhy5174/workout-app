@@ -40,7 +40,24 @@ function getBestMenu(
   );
 }
 
-function BmrInfoModal({ onClose }: { onClose: () => void }) {
+function BmrInfoModal({
+  onClose,
+  bmr,
+  gender,
+  age,
+  height,
+  weight,
+}: {
+  onClose: () => void;
+  bmr: number | null;
+  gender: string | null;
+  age: number | null;
+  height: number | null;
+  weight: number | null;
+}) {
+  const hasBody = !!(age && height && weight);
+  const genderLabel = gender === "female" ? "여성" : gender === "male" ? "남성" : null;
+
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center px-6"
@@ -48,7 +65,7 @@ function BmrInfoModal({ onClose }: { onClose: () => void }) {
       onClick={onClose}
     >
       <div
-        className="w-full max-w-xs bg-white rounded-3xl p-6 shadow-2xl flex flex-col gap-5"
+        className="w-full max-w-xs bg-white rounded-3xl p-6 shadow-2xl flex flex-col gap-4 max-h-[88vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
         {/* 헤더 */}
@@ -63,70 +80,107 @@ function BmrInfoModal({ onClose }: { onClose: () => void }) {
           </button>
         </div>
 
-        {/* 어떻게 계산되나요 */}
-        <div className="flex flex-col gap-2.5">
-          <p className="text-sm font-extrabold text-gray-800">
-            💡 어떻게 계산되나요?
-          </p>
+        {/* 💡 어떻게 계산되나요 */}
+        <div className="flex flex-col gap-2">
+          <p className="text-sm font-extrabold text-gray-800">💡 어떻게 계산되나요?</p>
           <p className="text-xs text-gray-500 leading-relaxed">
             Harris-Benedict 공식으로 기초대사량(BMR)을 계산하고 활동 유형별
             배율을 곱해요.
           </p>
-          <div className="flex flex-col gap-1.5">
-            {[
-              { label: "산책러", emoji: "🚶", multiplier: "× 1.375" },
-              { label: "파워워커", emoji: "🚶‍♂️", multiplier: "× 1.55" },
-              { label: "러너", emoji: "🏃", multiplier: "× 1.725" },
-              { label: "등산가", emoji: "🏔️", multiplier: "× 1.55" },
-            ].map(({ label, emoji, multiplier }) => (
-              <div
-                key={label}
-                className="flex items-center justify-between bg-gray-50 rounded-2xl px-4 py-2.5"
-              >
-                <span className="text-sm font-bold text-gray-700">
-                  {emoji} {label}
-                </span>
-                <span
-                  className="text-sm font-extrabold"
-                  style={{ color: "var(--color-primary)" }}
-                >
-                  {multiplier}
-                </span>
-              </div>
-            ))}
-          </div>
         </div>
 
-        {/* 구분선 */}
+        {/* 내 계산 기준 */}
+        <div className="bg-gray-50 rounded-2xl px-4 py-3 flex flex-col gap-2">
+          <p className="text-xs font-extrabold text-gray-700">내 계산 기준</p>
+          {hasBody ? (
+            <>
+              <div className="grid grid-cols-2 gap-x-4 gap-y-1">
+                {genderLabel && (
+                  <div className="flex justify-between">
+                    <span className="text-xs text-gray-400">성별</span>
+                    <span className="text-xs font-bold text-gray-700">{genderLabel}</span>
+                  </div>
+                )}
+                {age && (
+                  <div className="flex justify-between">
+                    <span className="text-xs text-gray-400">나이</span>
+                    <span className="text-xs font-bold text-gray-700">{age}세</span>
+                  </div>
+                )}
+                <div className="flex justify-between">
+                  <span className="text-xs text-gray-400">키</span>
+                  <span className="text-xs font-bold text-gray-700">{height}cm</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-xs text-gray-400">몸무게</span>
+                  <span className="text-xs font-bold text-gray-700">{weight}kg</span>
+                </div>
+              </div>
+              {bmr && (
+                <div className="border-t border-gray-200 pt-2 flex justify-between items-center">
+                  <span className="text-xs text-gray-400">BMR</span>
+                  <span
+                    className="text-sm font-extrabold"
+                    style={{ color: "var(--color-primary)" }}
+                  >
+                    {Math.round(bmr).toLocaleString()} kcal
+                  </span>
+                </div>
+              )}
+            </>
+          ) : (
+            <p className="text-xs text-gray-400">
+              마이페이지에서 신체정보를 입력하면 내 BMR을 계산해드려요.
+            </p>
+          )}
+        </div>
+
+        {/* 활동 배율 */}
+        <div className="flex flex-col gap-1.5">
+          {[
+            { label: "산책러", emoji: "🚶", multiplier: "× 1.375" },
+            { label: "파워워커", emoji: "🚶‍♂️", multiplier: "× 1.55" },
+            { label: "러너", emoji: "🏃", multiplier: "× 1.725" },
+            { label: "등산가", emoji: "🏔️", multiplier: "× 1.55" },
+          ].map(({ label, emoji, multiplier }) => (
+            <div
+              key={label}
+              className="flex items-center justify-between bg-gray-50 rounded-2xl px-4 py-2.5"
+            >
+              <span className="text-sm font-bold text-gray-700">{emoji} {label}</span>
+              <span className="text-sm font-extrabold" style={{ color: "var(--color-primary)" }}>
+                {multiplier}
+              </span>
+            </div>
+          ))}
+        </div>
+
         <div className="h-px bg-gray-100" />
 
         {/* 목표별 조정 가이드 */}
-        <div className="flex flex-col gap-2.5">
-          <p className="text-sm font-extrabold text-gray-800">
-            🎯 목표별 조정 가이드
-          </p>
+        <div className="flex flex-col gap-2">
+          <p className="text-sm font-extrabold text-gray-800">🎯 목표별 조정 가이드</p>
           <div className="flex flex-col gap-1.5">
             {[
               { label: "감량", desc: "− 300~500 kcal", color: "text-blue-500" },
               { label: "유지", desc: "그대로", color: "text-green-500" },
-              {
-                label: "증량",
-                desc: "+ 300~500 kcal",
-                color: "text-orange-500",
-              },
+              { label: "증량", desc: "+ 300~500 kcal", color: "text-orange-500" },
             ].map(({ label, desc, color }) => (
               <div
                 key={label}
                 className="flex items-center justify-between bg-gray-50 rounded-2xl px-4 py-2.5"
               >
                 <span className="text-sm font-bold text-gray-700">{label}</span>
-                <span className={`text-sm font-extrabold ${color}`}>
-                  {desc}
-                </span>
+                <span className={`text-sm font-extrabold ${color}`}>{desc}</span>
               </div>
             ))}
           </div>
         </div>
+
+        {/* 안내 */}
+        <p className="text-[11px] text-gray-400 text-center leading-relaxed">
+          📝 정보 수정은 마이페이지에서 가능해요
+        </p>
       </div>
     </div>
   );
@@ -150,18 +204,17 @@ export default function Diet() {
   const activityType = selectedActivityType?.type ?? null;
   const hasBodyData = !!(userProfile?.weight && userProfile?.height);
 
+  const bmr = hasBodyData
+    ? calculateBMR(
+        userProfile!.gender ?? "male",
+        userProfile!.weight!,
+        userProfile!.height!,
+        userProfile!.age ?? 25,
+      )
+    : null;
+
   const dailyKcal =
-    hasBodyData && activityType
-      ? calculateDailyKcal(
-          calculateBMR(
-            userProfile!.gender ?? "male",
-            userProfile!.weight!,
-            userProfile!.height!,
-            userProfile!.age ?? 25,
-          ),
-          activityType,
-        )
-      : null;
+    bmr && activityType ? calculateDailyKcal(bmr, activityType) : null;
 
   const kcalProgress = dailyKcal
     ? Math.min((burnedKcal / dailyKcal) * 100, 100)
@@ -368,7 +421,16 @@ export default function Diet() {
         개인 맞춤 칼로리를 계산해요 📊
       </p>
 
-      {showBmrInfo && <BmrInfoModal onClose={() => setShowBmrInfo(false)} />}
+      {showBmrInfo && (
+        <BmrInfoModal
+          onClose={() => setShowBmrInfo(false)}
+          bmr={bmr}
+          gender={userProfile?.gender ?? null}
+          age={userProfile?.age ?? null}
+          height={userProfile?.height ?? null}
+          weight={userProfile?.weight ?? null}
+        />
+      )}
     </div>
   );
 }
