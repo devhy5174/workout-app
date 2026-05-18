@@ -598,6 +598,27 @@ export default function PartyDetail() {
     };
   }, [id, user?.id]);
 
+  // active_sessions 변경 시 멤버 상태(활성 여부·말풍선) 실시간 갱신
+  useEffect(() => {
+    if (!id || members.length === 0) return;
+    const memberUserIds = new Set(members.map((m) => m.user_id));
+    const channel = supabase
+      .channel(`party-sessions-${id}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "active_sessions" },
+        (payload) => {
+          const row = (payload.new ?? payload.old) as { user_id?: string } | null;
+          if (!row?.user_id || !memberUserIds.has(row.user_id)) return;
+          reloadMembers();
+        },
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [id, members.length]);
+
   const handleJoinConfirm = async () => {
     if (!party) return;
     const { error } = await joinParty(party.id);
