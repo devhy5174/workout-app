@@ -7,6 +7,7 @@ import { getAvatarCharacterById } from "../data/avatarCharacters";
 import { activityTypes } from "../data/activityTypes";
 import { storage } from "../utils/storage";
 import { startSession, updateSession, endSession } from "../lib/sessionService";
+import { useActiveBubble } from "../context/ActiveBubbleContext";
 import { FAKE_ACTIVE_USERS } from "../data/fakeActiveUsers";
 import { DIET_BY_CHARACTER } from "../data/characterWorkoutDiet";
 import { useTodayStats } from "../hooks/useTodayStats";
@@ -65,6 +66,7 @@ export default function Workout() {
   const { user, userGoal, saveWorkout, userProfile } =
     useUser();
   const { todayStats } = useTodayStats(user?.id ?? null);
+  const { selectedBubbleId } = useActiveBubble();
 
   const [state, setState] = useState<WorkoutState>(
     () => (sessionStorage.getItem("wk_state") as WorkoutState) ?? "idle",
@@ -231,7 +233,7 @@ export default function Workout() {
   // 세션 시작/종료
   useEffect(() => {
     if (state === "running" && user) {
-      startSession(user.id, selectedActivityType?.type ?? "walker");
+      startSession(user.id, selectedActivityType?.type ?? "walker", selectedBubbleId);
     }
   }, [state === "running"]);
 

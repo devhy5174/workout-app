@@ -10,7 +10,11 @@ export type ActiveSession = {
   title: string | null;
 };
 
-export async function startSession(userId: string, exerciseType: string) {
+export async function startSession(
+  userId: string,
+  exerciseType: string,
+  activeBubbleId: string | null = null,
+) {
   await supabase.from("active_sessions").delete().eq("user_id", userId);
   const { error } = await supabase.from("active_sessions").insert({
     user_id: userId,
@@ -18,6 +22,7 @@ export async function startSession(userId: string, exerciseType: string) {
     started_at: new Date().toISOString(),
     last_seen: new Date().toISOString(),
     is_active: true,
+    active_bubble: activeBubbleId,
   });
   if (error) console.error("[session] start 실패:", error.message);
 }
