@@ -8,10 +8,9 @@ export type AdminStats = {
   totalWorkoutSessions: number;
 };
 
-export type TopUser = {
+export type TopStreakUser = {
   id: string;
   nickname: string | null;
-  points: number | null;
   streak: number | null;
   activity_type_id: number | null;
 };
@@ -19,9 +18,7 @@ export type TopUser = {
 export type SubscriberStats = {
   activeStreakUsers: number;
   powerUsers: number;
-  engagedUsers: number;
-  avgPoints: number;
-  topUsers: TopUser[];
+  topStreakUsers: TopStreakUser[];
 };
 
 // public_profiles는 RLS UNRESTRICTED — 전체 유저 수 조회 가능
@@ -33,7 +30,7 @@ export async function fetchTotalUsers(): Promise<number> {
   return count ?? 0;
 }
 
-// app_users.created_at 기반 오늘 신규 유저 (본인 데이터 + RLS 제한)
+// app_users.created_at 기반 오늘 신규 유저
 export async function fetchNewUsersToday(): Promise<number> {
   const today = new Date().toISOString().slice(0, 10);
   const { count, error } = await supabase
@@ -68,33 +65,21 @@ export async function fetchTotalWorkouts(): Promise<number> {
   return count ?? 0;
 }
 
-// public_profiles는 RLS UNRESTRICTED — streak·points 전체 집계 가능
+// public_profiles 기반 streak 집계 (RLS UNRESTRICTED)
 export async function fetchSubscriberStats(): Promise<SubscriberStats> {
   const { data, error } = await supabase
     .from("public_profiles")
-    .select("id, nickname, points, streak, activity_type_id");
+    .select("id, nickname, streak, activity_type_id");
 
   if (error || !data) {
-    return {
-      activeStreakUsers: 0,
-      powerUsers: 0,
-      engagedUsers: 0,
-      avgPoints: 0,
-      topUsers: [],
-    };
+    return { activeStreakUsers: 0, powerUsers: 0, topStreakUsers: [] };
   }
-
-  const totalPoints = data.reduce((sum, u) => sum + (u.points ?? 0), 0);
-  const avgPoints =
-    data.length > 0 ? Math.round(totalPoints / data.length) : 0;
 
   return {
     activeStreakUsers: data.filter((u) => (u.streak ?? 0) >= 7).length,
     powerUsers: data.filter((u) => (u.streak ?? 0) >= 30).length,
-    engagedUsers: data.filter((u) => (u.points ?? 0) >= 500).length,
-    avgPoints,
-    topUsers: [...data]
-      .sort((a, b) => (b.points ?? 0) - (a.points ?? 0))
-      .slice(0, 5) as TopUser[],
+    topStreakUsers: [...data]
+      .sort((a, b) => (b.streak ?? 0) - (a.streak ?? 0))
+      .slice(0, 5) as TopStreakUser[],
   };
 }
