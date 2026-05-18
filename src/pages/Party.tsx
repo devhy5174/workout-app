@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { PARTY_TAGS } from "../data/tags";
+import { validatePostText } from "../data/nicknameFilters";
 import { useUser } from "../context/UserContext";
 import { useParty } from "../hooks/useParty";
 import { getPartyMembers, getPartyTodayStats } from "../lib/partyService";
@@ -607,11 +608,18 @@ function CreatePartyModal({
   onCreate: (input: CreatePartyInput) => Promise<void>;
 }) {
   const [name, setName] = useState("");
+  const [nameError, setNameError] = useState<string | null>(null);
   const [steps, setSteps] = useState<StepsOption>(10000);
   const [timeSlot, setTimeSlot] = useState<TimeSlot>("아침");
   const [maxMembers, setMaxMembers] = useState<MaxMembersOption>(10);
   const [selectedTagIds, setSelectedTagIds] = useState<number[]>([]);
   const [submitting, setSubmitting] = useState(false);
+
+  const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    setName(val);
+    setNameError(val.trim() ? validatePostText(val) : null);
+  };
 
   const toggleTag = (id: number) => {
     setSelectedTagIds((prev) =>
@@ -620,6 +628,8 @@ function CreatePartyModal({
   };
 
   const handleSubmit = async () => {
+    const error = validatePostText(name.trim());
+    if (error) { setNameError(error); return; }
     if (!name.trim() || submitting) return;
     setSubmitting(true);
 
@@ -671,11 +681,16 @@ function CreatePartyModal({
           <input
             type="text"
             value={name}
-            onChange={(e) => setName(e.target.value)}
+            onChange={handleNameChange}
             placeholder="예) 새벽 러닝 크루"
             maxLength={20}
-            className="w-full px-4 py-3 rounded-2xl border border-gray-200 text-sm font-semibold text-gray-700 placeholder-gray-300 outline-none focus:border-primary transition"
+            className={`w-full px-4 py-3 rounded-2xl border text-sm font-semibold text-gray-700 placeholder-gray-300 outline-none transition ${
+              nameError ? "border-red-300 bg-red-50" : "border-gray-200 focus:border-primary"
+            }`}
           />
+          {nameError && (
+            <p className="text-xs text-red-400 px-1">{nameError}</p>
+          )}
         </div>
 
         <div className="flex flex-col gap-1.5">
@@ -760,9 +775,9 @@ function CreatePartyModal({
 
         <button
           onClick={handleSubmit}
-          disabled={!name.trim() || submitting}
+          disabled={!name.trim() || !!nameError || submitting}
           className={`w-full py-3.5 rounded-2xl text-sm font-extrabold transition active:scale-95 ${
-            name.trim() && !submitting
+            name.trim() && !nameError && !submitting
               ? "bg-primary text-white"
               : "bg-gray-100 text-gray-300 cursor-not-allowed"
           }`}
