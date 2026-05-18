@@ -1,7 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useState } from 'react';
 
 const STORAGE_KEY = 'workout_app_notices';
-const DISMISSED_KEY = 'workout_app_dismissed_notices';
+const DISMISSED_KEY = 'workout_app_dismissed_notices'; // sessionStorage — 앱 재진입 시 초기화
 
 export interface Notice {
   id: string;
@@ -33,7 +33,7 @@ function loadNotices(): Notice[] {
 
 function loadDismissed(): Set<string> {
   try {
-    const raw = localStorage.getItem(DISMISSED_KEY);
+    const raw = sessionStorage.getItem(DISMISSED_KEY);
     if (raw) return new Set(JSON.parse(raw) as string[]);
   } catch {}
   return new Set();
@@ -48,7 +48,7 @@ export function NoticesProvider({ children }: { children: React.ReactNode }) {
   }, [notices]);
 
   useEffect(() => {
-    localStorage.setItem(DISMISSED_KEY, JSON.stringify([...dismissedIds]));
+    sessionStorage.setItem(DISMISSED_KEY, JSON.stringify([...dismissedIds]));
   }, [dismissedIds]);
 
   // 가장 최근 활성 공지 (dismissed 제외)
