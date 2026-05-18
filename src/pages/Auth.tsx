@@ -1,17 +1,21 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { MdDirectionsRun } from "react-icons/md";
 import { useUser } from "../context/UserContext";
+import { useTheme } from "../context/ThemeContext";
 import { supabase } from "../lib/supabase";
 
 type Mode = "login" | "signup";
 
-const gradientStyle = {
-  background:
-    "linear-gradient(160deg, var(--color-primary) 0%, var(--color-secondary) 100%)",
+const THEME_GRADIENTS = {
+  energy: "linear-gradient(160deg, #1a0500 0%, #7c1a08 30%, #d4461a 60%, #ff7433 85%, #ffac60 100%)",
+  nature: "linear-gradient(160deg, #002210 0%, #0a5c28 30%, #1a9950 60%, #2ecc71 85%, #a8e063 100%)",
+  cosmo:  "linear-gradient(160deg, #050018 0%, #1a1060 30%, #3040c0 60%, #5b6cf9 85%, #818cf8 100%)",
 };
 
 export default function Auth() {
   const { login } = useUser();
+  const { theme } = useTheme();
   const navigate = useNavigate();
 
   const [mode, setMode] = useState<Mode>("login");
@@ -76,7 +80,7 @@ export default function Auth() {
     return (
       <div
         className="min-h-screen flex items-center justify-center p-6"
-        style={gradientStyle}
+        style={{ background: THEME_GRADIENTS[theme] }}
       >
         <div className="text-center max-w-sm w-full">
           <div className="text-7xl mb-6">📧</div>
@@ -106,12 +110,17 @@ export default function Auth() {
   return (
     <div
       className="min-h-screen flex flex-col items-center justify-center p-6"
-      style={gradientStyle}
+      style={{ background: THEME_GRADIENTS[theme] }}
     >
       <div className="w-full max-w-sm flex flex-col items-center">
         {/* 헤더 */}
         <div className="text-center mb-10">
-          <div className="text-8xl mb-4 drop-shadow-lg">🏃</div>
+          <div
+            className="mb-4"
+            style={{ filter: "drop-shadow(0 4px 16px rgba(0,0,0,0.3))" }}
+          >
+            <MdDirectionsRun className="text-white mx-auto" style={{ fontSize: "6rem" }} />
+          </div>
           <h1 className="text-3xl font-black text-white tracking-tight">
             함께 걸어요
           </h1>
