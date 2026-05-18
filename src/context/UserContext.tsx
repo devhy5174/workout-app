@@ -36,6 +36,7 @@ export type AppUser = {
   theme: string | null;
   created_at: string;
   title: string | null;
+  nickname_changed_at: string | null;
 };
 
 type UserContextValue = {

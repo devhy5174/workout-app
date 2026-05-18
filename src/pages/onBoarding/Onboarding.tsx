@@ -1,10 +1,14 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useUser } from "../../context/UserContext";
 import { useActivityType } from "../../context/ActivityTypeContext";
 import { useCharacter } from "../../context/CharacterContext";
 import { activityTypes, type ActivityType } from "../../data/activityTypes";
-import { supabase } from "../../lib/supabase";
+import {
+  NICKNAME_MAX_LENGTH,
+  validateNicknameLocally,
+} from "../../data/nicknameFilters";
+import { checkNicknameDuplicate } from "../../lib/userService";
 import CharacterGrid from "../../components/CharacterGrid";
 import male from "../../assets/images/basic_m.webp";
 import female from "../../assets/images/basic_w.webp";
@@ -15,12 +19,14 @@ type Gender = "male" | "female";
 
 function StepNickname({
   nickname,
-  setNickname,
-  duplicateError,
+  onChange,
+  error,
+  isChecking,
 }: {
   nickname: string;
-  setNickname: (v: string) => void;
-  duplicateError: string | null;
+  onChange: (v: string) => void;
+  error: string | null;
+  isChecking: boolean;
 }) {
   return (
     <div className="flex flex-col items-center pt-6">
@@ -36,26 +42,30 @@ function StepNickname({
       <input
         type="text"
         value={nickname}
-        onChange={(e) => setNickname(e.target.value.slice(0, 10))}
-        placeholder="닉네임 (최대 10자)"
-        maxLength={10}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={`닉네임 (최대 ${NICKNAME_MAX_LENGTH}자)`}
+        maxLength={NICKNAME_MAX_LENGTH}
         className="w-full px-5 py-4 rounded-2xl bg-white border-2 text-gray-800 text-base font-semibold placeholder-gray-300 focus:outline-none transition-colors"
         style={{
-          borderColor: duplicateError
+          borderColor: error
             ? "#ef4444"
             : nickname.trim()
-            ? "var(--color-primary)"
-            : "#e5e7eb",
+              ? "var(--color-primary)"
+              : "#e5e7eb",
         }}
         autoFocus
       />
       <div className="flex justify-between w-full mt-2">
-        {duplicateError ? (
-          <p className="text-xs text-red-500 font-semibold">{duplicateError}</p>
+        {error ? (
+          <p className="text-xs text-red-500 font-semibold">{error}</p>
+        ) : isChecking ? (
+          <p className="text-xs text-gray-400">중복 확인 중...</p>
         ) : (
-          <span />
+          <p className="text-xs text-gray-300">한글·영문·숫자만 사용 가능</p>
         )}
-        <p className="text-xs text-gray-300">{nickname.length}/10</p>
+        <p className="text-xs text-gray-300">
+          {nickname.length}/{NICKNAME_MAX_LENGTH}
+        </p>
       </div>
     </div>
   );
@@ -367,7 +377,8 @@ export default function Onboarding() {
 
   const [step, setStep] = useState(1);
   const [nickname, setNickname] = useState("");
-  const [duplicateError, setDuplicateError] = useState<string | null>(null);
+  const [nicknameError, setNicknameError] = useState<string | null>(null);
+  const [isCheckingDuplicate, setIsCheckingDuplicate] = useState(false);
   const [gender, setGender] = useState<Gender | null>(null);
   const [age, setAge] = useState("");
   const [height, setHeight] = useState("");
@@ -382,8 +393,27 @@ export default function Onboarding() {
   const bmiValue =
     h > 0 && w > 0 ? parseFloat((w / (h / 100) ** 2).toFixed(1)) : null;
 
+  // 닉네임 실시간 중복 체크 (500ms 디바운스)
+  useEffect(() => {
+    if (step !== 1) return;
+    const trimmed = nickname.trim();
+    if (!trimmed || validateNicknameLocally(trimmed)) return;
+
+    setIsCheckingDuplicate(true);
+    const timer = setTimeout(async () => {
+      const { isDuplicate } = await checkNicknameDuplicate(trimmed, "");
+      setIsCheckingDuplicate(false);
+      if (isDuplicate) setNicknameError("이미 사용 중인 닉네임이에요.");
+    }, 500);
+
+    return () => {
+      clearTimeout(timer);
+      setIsCheckingDuplicate(false);
+    };
+  }, [nickname, step]);
+
   const canProceed =
-    (step === 1 && nickname.trim().length >= 1) ||
+    (step === 1 && nickname.trim().length >= 2 && !nicknameError && !isCheckingDuplicate) ||
     (step === 2 && gender !== null) ||
     (step === 3 &&
       a >= 1 &&
@@ -397,18 +427,10 @@ export default function Onboarding() {
 
   const handleNext = async () => {
     if (step === 1) {
-      setIsSubmitting(true);
-      const { data } = await supabase
-        .from("app_users")
-        .select("id")
-        .eq("nickname", nickname.trim())
-        .maybeSingle();
-      setIsSubmitting(false);
-      if (data) {
-        setDuplicateError("이미 사용 중인 닉네임이에요.");
-        return;
-      }
-      setDuplicateError(null);
+      const localError = validateNicknameLocally(nickname);
+      if (localError) { setNicknameError(localError); return; }
+      if (nicknameError) return;
+      setNicknameError(null);
       setStep((s) => s + 1);
       return;
     }
@@ -471,8 +493,12 @@ export default function Onboarding() {
         {step === 1 && (
           <StepNickname
             nickname={nickname}
-            setNickname={(v) => { setNickname(v); setDuplicateError(null); }}
-            duplicateError={duplicateError}
+            onChange={(v) => {
+              setNickname(v);
+              setNicknameError(v.trim() ? validateNicknameLocally(v) : null);
+            }}
+            error={nicknameError}
+            isChecking={isCheckingDuplicate}
           />
         )}
         {step === 2 && <StepGender gender={gender} setGender={setGender} />}
