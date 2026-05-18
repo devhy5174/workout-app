@@ -98,8 +98,10 @@ function PostCard({
           className="flex items-center gap-1.5 rounded-full px-3 py-1.5 flex-shrink-0"
           style={{ background: "var(--color-primary-light)" }}
         >
-          <FootprintIcon className="w-3.5 h-3.5" style={{ color: "var(--color-primary)" }} />
-          <span className="text-[14px] font-extrabold" style={{ color: "var(--color-primary)" }}>
+          <span
+            className="text-[14px] font-extrabold"
+            style={{ color: "var(--color-primary)" }}
+          >
             {post.steps}
           </span>
         </div>
