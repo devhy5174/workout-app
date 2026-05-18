@@ -406,24 +406,28 @@ export default function Settings() {
         <SettingsRow
           icon={<HiChatAlt2 size={20} />}
           label="문의하기"
-          description="support@workoutapp.com"
+          description="devhy5174@gmail.com"
           right={null}
           onClick={() => {
-            window.location.href = "mailto:support@workoutapp.com";
+            window.location.href = "mailto:devhy5174@gmail.com";
           }}
         />
       </div>
 
       {/* 관리자 */}
-      <SectionLabel label="관리자" />
-      <div className="bg-white rounded-2xl shadow-sm">
-        <SettingsRow
-          icon={<HiShieldCheck size={20} />}
-          label="관리자 페이지"
-          description="이벤트·유저·통계 관리"
-          onClick={() => navigate("/admin")}
-        />
-      </div>
+      {userProfile?.is_admin && (
+        <>
+          <SectionLabel label="관리자" />
+          <div className="bg-white rounded-2xl shadow-sm">
+            <SettingsRow
+              icon={<HiShieldCheck size={20} />}
+              label="관리자 페이지"
+              description="이벤트·유저·통계 관리"
+              onClick={() => navigate("/admin")}
+            />
+          </div>
+        </>
+      )}
 
       {/* 로그아웃 */}
       <div className="mt-4">

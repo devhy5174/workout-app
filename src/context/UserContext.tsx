@@ -22,6 +22,7 @@ import {
 export type { WorkoutRecord, UserGoal };
 
 export type AppUser = {
+  is_admin: boolean | null;
   id: string;
   nickname: string | null;
   activity_type_id: number | null;
