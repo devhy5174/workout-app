@@ -1,10 +1,14 @@
 import { useCallback, useEffect, useState } from "react";
 import {
   fetchNewUsersToday,
+  fetchSubscriberStats,
   fetchTodayWorkouts,
   fetchTotalUsers,
   fetchTotalWorkouts,
+  type SubscriberStats,
 } from "../lib/adminService";
+
+export type { SubscriberStats };
 
 export type AdminStats = {
   totalUsers: number;
@@ -16,16 +20,19 @@ export type AdminStats = {
 
 export function useAdminStats() {
   const [stats, setStats] = useState<AdminStats | null>(null);
+  const [subscriberStats, setSubscriberStats] =
+    useState<SubscriberStats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   const load = useCallback(async () => {
     setIsLoading(true);
-    const [totalUsers, newUsersToday, todayWorkouts, totalWorkouts] =
+    const [totalUsers, newUsersToday, todayWorkouts, totalWorkouts, subStats] =
       await Promise.all([
         fetchTotalUsers(),
         fetchNewUsersToday(),
         fetchTodayWorkouts(),
         fetchTotalWorkouts(),
+        fetchSubscriberStats(),
       ]);
     setStats({
       totalUsers,
@@ -34,6 +41,7 @@ export function useAdminStats() {
       workoutSessionsToday: todayWorkouts.sessions,
       totalWorkouts,
     });
+    setSubscriberStats(subStats);
     setIsLoading(false);
   }, []);
 
@@ -41,5 +49,5 @@ export function useAdminStats() {
     load();
   }, [load]);
 
-  return { stats, isLoading, refresh: load };
+  return { stats, subscriberStats, isLoading, refresh: load };
 }

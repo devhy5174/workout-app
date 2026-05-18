@@ -13,8 +13,13 @@ import {
   HiBadgeCheck,
   HiCalendar,
   HiSpeakerphone,
+  HiFire,
+  HiStar,
+  HiTrendingUp,
+  HiCurrencyDollar,
+  HiCrown,
 } from "react-icons/hi";
-import { useAdminStats } from "../hooks/useAdminStats";
+import { useAdminStats, type SubscriberStats } from "../hooks/useAdminStats";
 
 // ── 이벤트 타입 ──────────────────────────────────────────
 type EventType = "challenge" | "promotion" | "notice" | "maintenance";
@@ -247,10 +252,157 @@ function StatCard({
   );
 }
 
+// ── 구독자 현황 섹션 ─────────────────────────────────────
+function SubscriberSection({
+  subscriberStats,
+  totalUsers,
+  isLoading,
+}: {
+  subscriberStats: SubscriberStats | null;
+  totalUsers: number;
+  isLoading: boolean;
+}) {
+  const RANK_MEDALS = ["🥇", "🥈", "🥉", "4️⃣", "5️⃣"];
+
+  return (
+    <section>
+      <p className="text-xs font-bold text-gray-400 px-1 mb-2">구독자 현황</p>
+
+      {/* 4종 지표 카드 */}
+      <div className="grid grid-cols-2 gap-3 mb-3">
+        <StatCard
+          icon={<HiFire size={20} className="text-orange-500" />}
+          label="꾸준한 유저"
+          value={subscriberStats?.activeStreakUsers ?? 0}
+          sub="7일+ 연속 운동"
+          color="bg-orange-50"
+          isLoading={isLoading}
+        />
+        <StatCard
+          icon={<HiCrown size={20} className="text-yellow-500" />}
+          label="파워 유저"
+          value={subscriberStats?.powerUsers ?? 0}
+          sub="30일+ 연속 운동"
+          color="bg-yellow-50"
+          isLoading={isLoading}
+        />
+        <StatCard
+          icon={<HiStar size={20} className="text-violet-500" />}
+          label="적극 참여 유저"
+          value={subscriberStats?.engagedUsers ?? 0}
+          sub="500P 이상 보유"
+          color="bg-violet-50"
+          isLoading={isLoading}
+        />
+        <StatCard
+          icon={<HiTrendingUp size={20} className="text-teal-500" />}
+          label="평균 포인트"
+          value={subscriberStats?.avgPoints ?? 0}
+          sub="유저 평균 P"
+          color="bg-teal-50"
+          isLoading={isLoading}
+        />
+      </div>
+
+      {/* 포인트 상위 유저 랭킹 */}
+      <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
+        <div
+          className="px-5 py-3.5 flex items-center gap-2"
+          style={{
+            background:
+              "linear-gradient(135deg, var(--color-primary)15, var(--color-secondary)15)",
+          }}
+        >
+          <HiCurrencyDollar size={18} className="text-[var(--color-primary)]" />
+          <p className="text-sm font-extrabold text-gray-800">포인트 상위 유저</p>
+        </div>
+
+        {isLoading ? (
+          <div className="flex flex-col gap-3 p-4">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-full bg-gray-100 animate-pulse" />
+                <div className="flex-1 h-4 bg-gray-100 rounded-lg animate-pulse" />
+                <div className="w-16 h-4 bg-gray-100 rounded-lg animate-pulse" />
+              </div>
+            ))}
+          </div>
+        ) : !subscriberStats?.topUsers.length ? (
+          <div className="flex flex-col items-center py-10 gap-2 text-gray-300">
+            <HiUsers size={36} />
+            <p className="text-sm font-bold">데이터가 없어요</p>
+          </div>
+        ) : (
+          <div className="divide-y divide-gray-50">
+            {subscriberStats.topUsers.map((u, i) => (
+              <div
+                key={u.id}
+                className="flex items-center gap-3 px-5 py-3.5"
+              >
+                <span className="text-lg w-7 text-center flex-shrink-0">
+                  {RANK_MEDALS[i]}
+                </span>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-bold text-gray-800 truncate">
+                    {u.nickname ?? "익명"}
+                  </p>
+                  <p className="text-[11px] text-gray-400">
+                    🔥 연속 {u.streak ?? 0}일
+                  </p>
+                </div>
+                <div className="text-right flex-shrink-0">
+                  <p
+                    className="text-sm font-extrabold"
+                    style={{ color: "var(--color-primary)" }}
+                  >
+                    {(u.points ?? 0).toLocaleString()}P
+                  </p>
+                  {i === 0 && (
+                    <p className="text-[10px] text-yellow-500 font-bold">TOP</p>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* 전환율 요약 배너 */}
+      {!isLoading && subscriberStats && subscriberStats.engagedUsers > 0 && (
+        <div className="mt-3 bg-white rounded-2xl shadow-sm px-5 py-4 flex items-center gap-4">
+          <div className="flex-1">
+            <p className="text-xs text-gray-400 font-semibold mb-1">
+              적극 참여율
+            </p>
+            <div className="flex items-baseline gap-1">
+              <p className="text-2xl font-extrabold text-gray-800">
+                {totalUsers > 0
+                  ? Math.round((subscriberStats.engagedUsers / totalUsers) * 100)
+                  : 0}
+                %
+              </p>
+              <p className="text-xs text-gray-400">500P 이상 / 전체</p>
+            </div>
+          </div>
+          <div
+            className="w-14 h-14 rounded-2xl flex items-center justify-center"
+            style={{
+              background:
+                "linear-gradient(135deg, var(--color-primary)20, var(--color-secondary)20)",
+            }}
+          >
+            <HiStar size={28} className="text-[var(--color-primary)]" />
+          </div>
+        </div>
+      )}
+    </section>
+  );
+}
+
 // ── Admin 메인 ───────────────────────────────────────────
 export default function Admin() {
   const navigate = useNavigate();
-  const { stats, isLoading, refresh } = useAdminStats();
+  const { stats, subscriberStats, isLoading, refresh } = useAdminStats();
 
   const [events, setEvents] = useState<AppEvent[]>(INITIAL_EVENTS);
   const [showForm, setShowForm] = useState(false);
@@ -377,6 +529,13 @@ export default function Admin() {
             <HiBadgeCheck size={40} className="text-white/30" />
           </div>
         </section>
+
+        {/* 구독자 현황 */}
+        <SubscriberSection
+          subscriberStats={subscriberStats}
+          totalUsers={stats?.totalUsers ?? 0}
+          isLoading={isLoading}
+        />
 
         {/* 이벤트 관리 */}
         <section>
