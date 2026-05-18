@@ -31,7 +31,7 @@ type TabType = "community" | "mine";
 function deriveTitle(activityTypeId: number | null): string {
   if (!activityTypeId) return "산책러";
   const type = getCharacterById(activityTypeId);
-  return type ? `${type.emoji} ${type.name}` : "산책러";
+  return type ? `${type.name}` : "산책러";
 }
 
 function formatSteps(steps: number): string {

@@ -35,9 +35,8 @@ export default function Diet() {
         selectedActivityType={selectedActivityType}
         onInfoClick={() => setShowDietInfo(true)}
       />
-
-      <div className="rounded-2xl bg-gradient-to-r from-primary to-secondary p-4 flex items-center gap-3">
-        <span className="text-2xl">💪</span>
+      <div className="rounded-2xl bg-gradient-to-r from-primary to-secondary p-2 flex items-center gap-3">
+        <span className="text-lg">💪</span>
         <p className="text-white font-bold text-sm">
           {hasWorkout
             ? "운동 후 30분 이내 단백질을 섭취하세요!"
