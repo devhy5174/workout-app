@@ -4,6 +4,7 @@ import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { useUser } from "../context/UserContext";
 import { useActiveBubble } from "../context/ActiveBubbleContext";
 import { resolveBubblePreview } from "../data/bubblePreviews";
+import { validatePostText } from "../data/nicknameFilters";
 import { useParty } from "../hooks/useParty";
 import {
   getPartyById,
@@ -16,7 +17,12 @@ import {
   deletePartyNotice,
   deleteParty,
 } from "../lib/partyService";
-import type { Party, PartyMember, PartyTodayStats, PartyNotice } from "../lib/partyService";
+import type {
+  Party,
+  PartyMember,
+  PartyTodayStats,
+  PartyNotice,
+} from "../lib/partyService";
 import { supabase } from "../lib/supabase";
 
 const timeSlotEmoji: Record<string, string> = {
@@ -274,28 +280,36 @@ function CheerInput({
   onInputChange: (v: string) => void;
   onSend: () => void;
 }) {
+  const error = input.trim() ? validatePostText(input) : null;
+  const canSend = input.trim() && !error;
+
   return (
-    <div className="bg-white rounded-3xl shadow-sm px-4 py-3 flex items-center gap-2">
-      <span className="text-base shrink-0">💬</span>
-      <input
-        type="text"
-        value={input}
-        onChange={(e) => onInputChange(e.target.value.slice(0, 30))}
-        onKeyDown={(e) => e.key === "Enter" && onSend()}
-        placeholder="응원 메시지 보내기..."
-        maxLength={30}
-        className="flex-1 text-xs font-semibold text-gray-700 placeholder-gray-300 outline-none bg-transparent"
-      />
-      <button
-        onClick={onSend}
-        disabled={!input.trim()}
-        aria-label="응원 보내기"
-        className={`w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center text-sm transition active:scale-90 ${
-          input.trim() ? "bg-primary text-white" : "bg-gray-100 text-gray-300"
-        }`}
-      >
-        🚀
-      </button>
+    <div className="flex flex-col gap-1">
+      <div className="bg-white rounded-3xl shadow-sm px-4 py-3 flex items-center gap-2">
+        <span className="text-base shrink-0">💬</span>
+        <input
+          type="text"
+          value={input}
+          onChange={(e) => onInputChange(e.target.value.slice(0, 30))}
+          onKeyDown={(e) => e.key === "Enter" && canSend && onSend()}
+          placeholder="응원 메시지 보내기..."
+          maxLength={30}
+          className="flex-1 text-xs font-semibold text-gray-700 placeholder-gray-300 outline-none bg-transparent"
+        />
+        <button
+          onClick={onSend}
+          disabled={!canSend}
+          aria-label="응원 보내기"
+          className={`w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center text-sm transition active:scale-90 ${
+            canSend ? "bg-primary text-white" : "bg-gray-100 text-gray-300"
+          }`}
+        >
+          🚀
+        </button>
+      </div>
+      {error && (
+        <p className="text-[10px] text-red-400 font-semibold px-4">{error}</p>
+      )}
     </div>
   );
 }
@@ -314,7 +328,7 @@ function WelcomeModal({
       <div className="w-full max-w-sm bg-white rounded-3xl p-7 flex flex-col items-center gap-4 shadow-xl">
         <span className="text-5xl">{partyEmoji}</span>
         <p className="font-extrabold text-gray-800 text-xl text-center">
-          파티에 합류했어요! 🎉
+          파티에 합류했어요!
         </p>
         <p className="text-sm text-gray-500 text-center leading-relaxed">
           <span className="font-bold text-gray-700">"{partyName}"</span>의<br />
@@ -387,7 +401,6 @@ function JoinConfirmModal({
   return (
     <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center px-6">
       <div className="w-full max-w-sm bg-white rounded-3xl p-7 flex flex-col items-center gap-4 shadow-xl">
-        <span className="text-5xl">🎉</span>
         <p className="font-extrabold text-gray-800 text-lg text-center">
           파티에 참가할까요?
         </p>
@@ -481,7 +494,8 @@ function DeletePartyModal({
           파티를 해체할까요?
         </p>
         <p className="text-sm text-gray-400 text-center leading-relaxed">
-          <span className="font-bold text-gray-600">"{partyName}"</span> 파티가<br />
+          <span className="font-bold text-gray-600">"{partyName}"</span> 파티가
+          <br />
           영구적으로 삭제돼요. 되돌릴 수 없어요.
         </p>
         <div className="flex gap-3 w-full">
@@ -515,12 +529,20 @@ function NoticeSection({
   onDelete: (id: string) => void;
 }) {
   const [input, setInput] = useState("");
+  const [noticeError, setNoticeError] = useState<string | null>(null);
+
+  function handleNoticeChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const val = e.target.value.slice(0, 60);
+    setInput(val);
+    setNoticeError(val.trim() ? validatePostText(val) : null);
+  }
 
   function handlePost() {
     const trimmed = input.trim();
-    if (!trimmed) return;
+    if (!trimmed || noticeError) return;
     onPost(trimmed);
     setInput("");
+    setNoticeError(null);
   }
 
   return (
@@ -564,26 +586,33 @@ function NoticeSection({
       )}
 
       {isLeader && (
-        <div className="flex items-center gap-2 bg-gray-50 rounded-2xl px-4 py-3 mt-1">
-          <input
-            type="text"
-            value={input}
-            onChange={(e) => setInput(e.target.value.slice(0, 60))}
-            onKeyDown={(e) => e.key === "Enter" && handlePost()}
-            placeholder="공지 입력 (60자 이내)"
-            maxLength={60}
-            className="flex-1 text-xs font-semibold text-gray-700 placeholder-gray-300 outline-none bg-transparent"
-          />
-          <button
-            onClick={handlePost}
-            disabled={!input.trim()}
-            aria-label="공지 올리기"
-            className={`w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center text-sm transition active:scale-90 ${
-              input.trim() ? "bg-primary text-white" : "bg-gray-100 text-gray-300"
-            }`}
-          >
-            📌
-          </button>
+        <div className="flex flex-col gap-1 mt-1">
+          <div className="flex items-center gap-2 bg-gray-50 rounded-2xl px-4 py-3">
+            <input
+              type="text"
+              value={input}
+              onChange={handleNoticeChange}
+              onKeyDown={(e) => e.key === "Enter" && !noticeError && handlePost()}
+              placeholder="공지 입력 (60자 이내)"
+              maxLength={60}
+              className="flex-1 text-xs font-semibold text-gray-700 placeholder-gray-300 outline-none bg-transparent"
+            />
+            <button
+              onClick={handlePost}
+              disabled={!input.trim() || !!noticeError}
+              aria-label="공지 올리기"
+              className={`w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center text-sm transition active:scale-90 ${
+                input.trim() && !noticeError
+                  ? "bg-primary text-white"
+                  : "bg-gray-100 text-gray-300"
+              }`}
+            >
+              📌
+            </button>
+          </div>
+          {noticeError && (
+            <p className="text-[10px] text-red-400 font-semibold px-1">{noticeError}</p>
+          )}
         </div>
       )}
     </div>
@@ -707,11 +736,20 @@ export default function PartyDetail() {
       .channel(`party-notices-${id}`)
       .on(
         "postgres_changes",
-        { event: "*", schema: "public", table: "party_notices", filter: `party_id=eq.${id}` },
-        () => { getPartyNotices(id).then(setNotices); },
+        {
+          event: "*",
+          schema: "public",
+          table: "party_notices",
+          filter: `party_id=eq.${id}`,
+        },
+        () => {
+          getPartyNotices(id).then(setNotices);
+        },
       )
       .subscribe();
-    return () => { supabase.removeChannel(channel); };
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [id]);
 
   const handlePostNotice = async (message: string) => {
@@ -780,7 +818,9 @@ export default function PartyDetail() {
         "postgres_changes",
         { event: "*", schema: "public", table: "active_sessions" },
         (payload) => {
-          const row = (payload.new ?? payload.old) as { user_id?: string } | null;
+          const row = (payload.new ?? payload.old) as {
+            user_id?: string;
+          } | null;
           if (!row?.user_id || !memberUserIds.has(row.user_id)) return;
           reloadMembers();
         },
