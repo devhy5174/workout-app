@@ -450,7 +450,7 @@ export async function getPartyMembers(partyId: string): Promise<PartyMember[]> {
         .gte("created_at", todayStart.toISOString()),
       supabase
         .from("active_sessions")
-        .select("user_id")
+        .select("user_id, active_bubble")
         .in("user_id", userIds)
         .eq("is_active", true),
       supabase
@@ -475,6 +475,10 @@ export async function getPartyMembers(partyId: string): Promise<PartyMember[]> {
 
   const activeUserIds = new Set(
     (activeResult.data ?? []).map((s: any) => s.user_id),
+  );
+
+  const activeBubbleMap = new Map<string, string | null>(
+    (activeResult.data ?? []).map((s: any) => [s.user_id, s.active_bubble ?? null]),
   );
 
   const lastActiveMap = new Map<string, string>();
@@ -512,7 +516,7 @@ export async function getPartyMembers(partyId: string): Promise<PartyMember[]> {
       is_active: activeUserIds.has(m.user_id),
       joined_at: m.joined_at,
       last_active_at,
-      active_bubble_id: null, // TODO: active_sessions.active_bubble 마이그레이션 후 연동
+      active_bubble_id: activeUserIds.has(m.user_id) ? (activeBubbleMap.get(m.user_id) ?? null) : null,
     };
   });
 
