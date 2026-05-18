@@ -305,10 +305,9 @@ function ActivityTypeCard({
         {activityType.style}
       </span>
       <span
-        className="text-xs mt-1.5 font-semibold"
-        style={{ color: "var(--color-primary)" }}
+        className="text-xs mt-1.5 font-semibold text-gray-400"
       >
-        {activityType.bonusIcon} {activityType.bonus}
+        🔥 분당 {activityType.kcalPerMin}kcal 소모
       </span>
     </button>
   );
@@ -327,7 +326,7 @@ function StepActivityType({
         나의 운동 스타일은?
       </h2>
       <p className="text-gray-400 text-sm mb-6">
-        캐릭터마다 다른 보너스를 받아요.
+        운동 스타일에 맞는 맞춤 식단을 추천해드려요.
       </p>
       <div className="grid grid-cols-2 gap-3 w-full">
         {activityTypes.map((c) => (

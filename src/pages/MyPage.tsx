@@ -309,9 +309,8 @@ function ActivityTypeSheet({ onClose }: { onClose: () => void }) {
                       </div>
                       <p className="text-xs text-gray-500 mt-0.5">{c.style}</p>
                       <div className="flex items-center gap-1 mt-1">
-                        <span className="text-xs">{c.bonusIcon}</span>
                         <span className="text-[11px] font-semibold text-gray-500">
-                          {c.bonus}
+                          🔥 분당 {c.kcalPerMin}kcal 소모
                         </span>
                       </div>
                     </div>

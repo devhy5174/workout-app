@@ -27,8 +27,6 @@ export interface ActivityType {
   name: string;
   style: string;
   kcalPerMin: number; // 분당 칼로리 소모
-  bonus: string;
-  bonusIcon: string;
   gradient: string;
   bg: string;
   border: string;
@@ -47,8 +45,6 @@ export const activityTypes: ActivityType[] = [
     name: "산책러",
     style: "천천히 걷기 특화",
     kcalPerMin: 3,
-    bonus: "연속 운동 포인트 2배",
-    bonusIcon: "🔥",
     gradient: "from-green-400 to-teal-400",
     bg: "bg-green-50",
     border: "border-green-400",
@@ -69,8 +65,6 @@ export const activityTypes: ActivityType[] = [
     name: "파워워커",
     style: "빠르게 걷기 특화",
     kcalPerMin: 5,
-    bonus: "목표 달성 포인트 2배",
-    bonusIcon: "⚡",
     gradient: "from-orange-400 to-amber-400",
     bg: "bg-orange-50",
     border: "border-orange-400",
@@ -91,8 +85,6 @@ export const activityTypes: ActivityType[] = [
     name: "러너",
     style: "러닝 특화",
     kcalPerMin: 8,
-    bonus: "거리 달성 보너스",
-    bonusIcon: "🏅",
     gradient: "from-red-400 to-rose-400",
     bg: "bg-red-50",
     border: "border-red-400",
@@ -119,8 +111,6 @@ export const activityTypes: ActivityType[] = [
     name: "등산가",
     style: "등산 특화",
     kcalPerMin: 6,
-    bonus: "파티 참여 보너스",
-    bonusIcon: "🗺️",
     gradient: "from-yellow-500 to-orange-400",
     bg: "bg-yellow-50",
     border: "border-yellow-400",

@@ -737,9 +737,6 @@ export default function Workout() {
                       >
                         {c.kcalPerMin}kcal/분
                       </p>
-                      <p className="text-[10px] text-gray-400">
-                        {c.bonusIcon} {c.bonus}
-                      </p>
                     </div>
                   </button>
                 );
