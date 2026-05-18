@@ -300,6 +300,13 @@ export default function Diet() {
         </div>
       )}
 
+      {/* 섹션 구분 */}
+      <div className="flex items-center gap-3 px-1">
+        <div className="flex-1 h-px bg-gray-200" />
+        <p className="text-xs font-bold text-gray-400">오늘의 3끼 추천</p>
+        <div className="flex-1 h-px bg-gray-200" />
+      </div>
+
       {/* 아침 / 점심 / 저녁 추천 메뉴 */}
       {MEAL_CONFIGS.map(({ time, label }) => {
         const menu = getBestMenu(time, activityType);

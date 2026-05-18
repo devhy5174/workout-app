@@ -18,6 +18,7 @@ import { type UserGoal } from "../lib/workoutService";
 import { useWorkoutStats, type StatPeriod } from "../hooks/useWorkoutStats";
 import { localDateStr } from "../utils/streak";
 import Diet from "./Diet";
+import WorkoutCalendar from "../components/ui/WorkoutCalendar";
 
 const WORKOUT_TYPE_LABEL: Record<string, { label: string; emoji: string }> = {
   walker: { label: "걷기", emoji: "🚶" },
@@ -1313,6 +1314,9 @@ function StatsTab() {
           </div>
         </div>
       </div>
+
+      {/* 운동 달력 카드 */}
+      <WorkoutCalendar workoutRecords={workoutRecords} />
     </div>
   );
 }

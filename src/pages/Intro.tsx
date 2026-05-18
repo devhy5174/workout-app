@@ -6,14 +6,14 @@ export default function Intro() {
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      navigate("/", { replace: true });
+      navigate("/auth", { replace: true });
     }, 2400);
     return () => clearTimeout(timer);
   }, [navigate]);
 
   return (
     <div
-      className="h-screen w-full flex flex-col items-center justify-center relative overflow-hidden"
+      className="h-screen w-full flex flex-col items-center justify-center relative"
       style={{
         background:
           "linear-gradient(160deg, #1a0500 0%, #7c1a08 30%, #d4461a 60%, #ff7433 85%, #ffac60 100%)",
@@ -41,7 +41,9 @@ export default function Intro() {
       {/* 메인 콘텐츠 */}
       <div
         className="flex flex-col items-center gap-5"
-        style={{ animation: "introFadeUp 0.9s cubic-bezier(0.16,1,0.3,1) forwards" }}
+        style={{
+          animation: "introFadeUp 0.9s cubic-bezier(0.16,1,0.3,1) forwards",
+        }}
       >
         {/* 발자국 아이콘 */}
         <div

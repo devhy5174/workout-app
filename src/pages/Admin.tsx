@@ -1,0 +1,544 @@
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import {
+  HiArrowLeft,
+  HiRefresh,
+  HiPlus,
+  HiPencil,
+  HiTrash,
+  HiUsers,
+  HiUserAdd,
+  HiLightningBolt,
+  HiChartBar,
+  HiBadgeCheck,
+  HiCalendar,
+  HiSpeakerphone,
+} from "react-icons/hi";
+import { useAdminStats } from "../hooks/useAdminStats";
+
+// ── 이벤트 타입 ──────────────────────────────────────────
+type EventType = "challenge" | "promotion" | "notice" | "maintenance";
+type AppEvent = {
+  id: string;
+  title: string;
+  description: string;
+  startDate: string;
+  endDate: string;
+  type: EventType;
+  isActive: boolean;
+};
+
+const EVENT_TYPE_META: Record<
+  EventType,
+  { label: string; color: string; bg: string }
+> = {
+  challenge: { label: "챌린지", color: "text-orange-600", bg: "bg-orange-50" },
+  promotion: { label: "프로모션", color: "text-blue-600", bg: "bg-blue-50" },
+  notice: { label: "공지", color: "text-gray-600", bg: "bg-gray-100" },
+  maintenance: {
+    label: "점검",
+    color: "text-red-600",
+    bg: "bg-red-50",
+  },
+};
+
+const INITIAL_EVENTS: AppEvent[] = [
+  {
+    id: "1",
+    title: "5월 걷기 챌린지",
+    description: "5월 한 달간 매일 8,000보 달성하면 특별 보상!",
+    startDate: "2026-05-01",
+    endDate: "2026-05-31",
+    type: "challenge",
+    isActive: true,
+  },
+  {
+    id: "2",
+    title: "신규 가입 포인트 2배",
+    description: "5월 신규 가입자 첫 운동 포인트 2배 지급",
+    startDate: "2026-05-01",
+    endDate: "2026-05-20",
+    type: "promotion",
+    isActive: true,
+  },
+];
+
+// ── 이벤트 추가/수정 시트 ────────────────────────────────
+function EventFormSheet({
+  initial,
+  onSave,
+  onClose,
+}: {
+  initial?: AppEvent;
+  onSave: (event: Omit<AppEvent, "id">) => void;
+  onClose: () => void;
+}) {
+  const [title, setTitle] = useState(initial?.title ?? "");
+  const [description, setDescription] = useState(initial?.description ?? "");
+  const [startDate, setStartDate] = useState(
+    initial?.startDate ?? new Date().toISOString().slice(0, 10),
+  );
+  const [endDate, setEndDate] = useState(
+    initial?.endDate ?? new Date().toISOString().slice(0, 10),
+  );
+  const [type, setType] = useState<EventType>(initial?.type ?? "challenge");
+  const [error, setError] = useState<string | null>(null);
+
+  function handleSave() {
+    if (!title.trim()) {
+      setError("이벤트 제목을 입력해주세요.");
+      return;
+    }
+    if (endDate < startDate) {
+      setError("종료일이 시작일보다 빠를 수 없어요.");
+      return;
+    }
+    onSave({
+      title: title.trim(),
+      description: description.trim(),
+      startDate,
+      endDate,
+      type,
+      isActive: initial?.isActive ?? true,
+    });
+    onClose();
+  }
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-end bg-black/40"
+      onClick={onClose}
+    >
+      <div
+        className="w-full max-w-md mx-auto bg-white rounded-t-3xl p-6 pb-10 shadow-2xl max-h-[90vh] overflow-y-auto"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between mb-5">
+          <h3 className="text-lg font-extrabold text-gray-800">
+            {initial ? "이벤트 수정" : "이벤트 추가"}
+          </h3>
+          <button
+            onClick={onClose}
+            className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 font-bold"
+            aria-label="닫기"
+          >
+            ✕
+          </button>
+        </div>
+
+        {/* 타입 선택 */}
+        <p className="text-xs font-bold text-gray-400 mb-2">이벤트 유형</p>
+        <div className="flex gap-2 mb-4">
+          {(Object.keys(EVENT_TYPE_META) as EventType[]).map((t) => {
+            const meta = EVENT_TYPE_META[t];
+            return (
+              <button
+                key={t}
+                onClick={() => setType(t)}
+                className={`flex-1 py-2 rounded-xl text-xs font-bold transition-all border-2 ${
+                  type === t
+                    ? `${meta.bg} ${meta.color} border-current`
+                    : "bg-gray-50 text-gray-400 border-transparent"
+                }`}
+              >
+                {meta.label}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* 제목 */}
+        <p className="text-xs font-bold text-gray-400 mb-2">제목</p>
+        <input
+          type="text"
+          value={title}
+          onChange={(e) => {
+            setTitle(e.target.value);
+            setError(null);
+          }}
+          placeholder="이벤트 제목"
+          maxLength={40}
+          className="w-full bg-gray-50 rounded-2xl px-4 py-3 text-sm font-semibold text-gray-800 outline-none mb-4 placeholder:text-gray-300 focus:ring-2 focus:ring-[var(--color-primary)]/30"
+        />
+
+        {/* 설명 */}
+        <p className="text-xs font-bold text-gray-400 mb-2">설명</p>
+        <textarea
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          placeholder="이벤트 설명 (선택)"
+          maxLength={100}
+          rows={2}
+          className="w-full bg-gray-50 rounded-2xl px-4 py-3 text-sm text-gray-700 outline-none mb-4 resize-none placeholder:text-gray-300 focus:ring-2 focus:ring-[var(--color-primary)]/30"
+        />
+
+        {/* 기간 */}
+        <p className="text-xs font-bold text-gray-400 mb-2">기간</p>
+        <div className="flex gap-2 mb-4">
+          <div className="flex-1">
+            <p className="text-[11px] text-gray-400 mb-1 px-1">시작일</p>
+            <input
+              type="date"
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+              className="w-full bg-gray-50 rounded-2xl px-3 py-2.5 text-sm font-semibold text-gray-800 outline-none focus:ring-2 focus:ring-[var(--color-primary)]/30"
+            />
+          </div>
+          <div className="flex-1">
+            <p className="text-[11px] text-gray-400 mb-1 px-1">종료일</p>
+            <input
+              type="date"
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+              className="w-full bg-gray-50 rounded-2xl px-3 py-2.5 text-sm font-semibold text-gray-800 outline-none focus:ring-2 focus:ring-[var(--color-primary)]/30"
+            />
+          </div>
+        </div>
+
+        {error && <p className="text-xs text-red-500 mb-3 px-1">{error}</p>}
+
+        <button
+          onClick={handleSave}
+          disabled={!title.trim()}
+          className="w-full py-4 rounded-2xl text-white font-extrabold text-base active:scale-95 transition shadow-md disabled:opacity-50"
+          style={{
+            background:
+              "linear-gradient(135deg, var(--color-primary), var(--color-secondary))",
+          }}
+        >
+          {initial ? "수정 완료" : "이벤트 추가"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ── 통계 카드 ────────────────────────────────────────────
+function StatCard({
+  icon,
+  label,
+  value,
+  sub,
+  color,
+  isLoading,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: string | number;
+  sub?: string;
+  color: string;
+  isLoading: boolean;
+}) {
+  return (
+    <div className="bg-white rounded-2xl shadow-sm p-4 flex flex-col gap-2">
+      <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${color}`}>
+        {icon}
+      </div>
+      <p className="text-xs text-gray-400 font-semibold">{label}</p>
+      {isLoading ? (
+        <div className="h-7 bg-gray-100 rounded-lg animate-pulse w-16" />
+      ) : (
+        <p className="text-2xl font-extrabold text-gray-800">
+          {typeof value === "number" ? value.toLocaleString() : value}
+        </p>
+      )}
+      {sub && <p className="text-[10px] text-gray-400">{sub}</p>}
+    </div>
+  );
+}
+
+// ── Admin 메인 ───────────────────────────────────────────
+export default function Admin() {
+  const navigate = useNavigate();
+  const { stats, isLoading, refresh } = useAdminStats();
+
+  const [events, setEvents] = useState<AppEvent[]>(INITIAL_EVENTS);
+  const [showForm, setShowForm] = useState(false);
+  const [editingEvent, setEditingEvent] = useState<AppEvent | undefined>();
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  function handleAddEvent(data: Omit<AppEvent, "id">) {
+    setEvents((prev) => [
+      { ...data, id: Date.now().toString() },
+      ...prev,
+    ]);
+  }
+
+  function handleEditEvent(data: Omit<AppEvent, "id">) {
+    if (!editingEvent) return;
+    setEvents((prev) =>
+      prev.map((e) =>
+        e.id === editingEvent.id ? { ...data, id: editingEvent.id } : e,
+      ),
+    );
+    setEditingEvent(undefined);
+  }
+
+  function handleToggleActive(id: string) {
+    setEvents((prev) =>
+      prev.map((e) => (e.id === id ? { ...e, isActive: !e.isActive } : e)),
+    );
+  }
+
+  function handleDelete(id: string) {
+    setEvents((prev) => prev.filter((e) => e.id !== id));
+    setDeletingId(null);
+  }
+
+  const today = new Date().toISOString().slice(0, 10);
+  const activeEvents = events.filter(
+    (e) => e.isActive && e.startDate <= today && e.endDate >= today,
+  );
+
+  return (
+    <div className="flex flex-col min-h-full bg-gray-50">
+      {/* 헤더 */}
+      <div className="bg-white border-b border-gray-100 px-4 pt-4 pb-3 flex items-center gap-3">
+        <button
+          onClick={() => navigate("/settings")}
+          className="w-9 h-9 rounded-xl bg-gray-100 flex items-center justify-center text-gray-500 active:scale-95 transition"
+          aria-label="뒤로가기"
+        >
+          <HiArrowLeft size={20} />
+        </button>
+        <div className="flex-1">
+          <h1 className="text-lg font-extrabold text-gray-800">관리자 페이지</h1>
+          <p className="text-xs text-gray-400">서비스 현황 및 이벤트 관리</p>
+        </div>
+        <button
+          onClick={refresh}
+          disabled={isLoading}
+          className="w-9 h-9 rounded-xl bg-gray-100 flex items-center justify-center text-gray-400 active:scale-95 transition disabled:opacity-40"
+          aria-label="새로고침"
+        >
+          <HiRefresh size={18} className={isLoading ? "animate-spin" : ""} />
+        </button>
+      </div>
+
+      <div className="flex flex-col gap-5 p-4 pb-28">
+        {/* 주요 지표 */}
+        <section>
+          <p className="text-xs font-bold text-gray-400 px-1 mb-2">
+            주요 지표
+          </p>
+          <div className="grid grid-cols-2 gap-3">
+            <StatCard
+              icon={<HiUsers size={20} className="text-blue-500" />}
+              label="총 회원 수"
+              value={stats?.totalUsers ?? 0}
+              sub="누적 가입자"
+              color="bg-blue-50"
+              isLoading={isLoading}
+            />
+            <StatCard
+              icon={<HiUserAdd size={20} className="text-emerald-500" />}
+              label="오늘 신규 유입"
+              value={stats?.newUsersToday ?? 0}
+              sub="오늘 가입자"
+              color="bg-emerald-50"
+              isLoading={isLoading}
+            />
+            <StatCard
+              icon={<HiLightningBolt size={20} className="text-orange-500" />}
+              label="오늘 운동한 유저"
+              value={stats?.activeUsersToday ?? 0}
+              sub="오늘 활성 유저"
+              color="bg-orange-50"
+              isLoading={isLoading}
+            />
+            <StatCard
+              icon={<HiChartBar size={20} className="text-purple-500" />}
+              label="누적 운동 세션"
+              value={stats?.totalWorkouts ?? 0}
+              sub="전체 운동 기록"
+              color="bg-purple-50"
+              isLoading={isLoading}
+            />
+          </div>
+
+          {/* 오늘 요약 배너 */}
+          <div
+            className="mt-3 rounded-2xl px-5 py-4 flex items-center gap-3"
+            style={{
+              background:
+                "linear-gradient(135deg, var(--color-primary), var(--color-secondary))",
+            }}
+          >
+            <div className="flex-1">
+              <p className="text-white/80 text-xs font-semibold">오늘 운동 세션</p>
+              {isLoading ? (
+                <div className="h-7 bg-white/20 rounded-lg animate-pulse w-20 mt-1" />
+              ) : (
+                <p className="text-white text-2xl font-extrabold">
+                  {stats?.workoutSessionsToday ?? 0}회
+                </p>
+              )}
+            </div>
+            <HiBadgeCheck size={40} className="text-white/30" />
+          </div>
+        </section>
+
+        {/* 이벤트 관리 */}
+        <section>
+          <div className="flex items-center justify-between px-1 mb-2">
+            <p className="text-xs font-bold text-gray-400">
+              이벤트 관리
+              <span className="ml-2 text-[var(--color-primary)]">
+                활성 {activeEvents.length}개
+              </span>
+            </p>
+            <button
+              onClick={() => {
+                setEditingEvent(undefined);
+                setShowForm(true);
+              }}
+              className="flex items-center gap-1 text-xs font-bold text-[var(--color-primary)] bg-[var(--color-primary)]/10 px-3 py-1.5 rounded-full active:scale-95 transition"
+            >
+              <HiPlus size={14} />
+              이벤트 추가
+            </button>
+          </div>
+
+          {events.length === 0 ? (
+            <div className="bg-white rounded-2xl shadow-sm flex flex-col items-center justify-center py-12 gap-3">
+              <HiSpeakerphone size={40} className="text-gray-200" />
+              <p className="text-sm font-bold text-gray-400">
+                등록된 이벤트가 없어요
+              </p>
+              <button
+                onClick={() => setShowForm(true)}
+                className="text-xs font-bold text-[var(--color-primary)] bg-[var(--color-primary)]/10 px-4 py-2 rounded-full"
+              >
+                + 첫 이벤트 추가
+              </button>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-3">
+              {events.map((event) => {
+                const meta = EVENT_TYPE_META[event.type];
+                const isExpired = event.endDate < today;
+                const isPending = event.startDate > today;
+                const statusLabel = isExpired
+                  ? "종료"
+                  : isPending
+                    ? "예정"
+                    : event.isActive
+                      ? "진행 중"
+                      : "비활성";
+                const statusColor = isExpired
+                  ? "text-gray-400 bg-gray-100"
+                  : isPending
+                    ? "text-blue-500 bg-blue-50"
+                    : event.isActive
+                      ? "text-emerald-600 bg-emerald-50"
+                      : "text-gray-400 bg-gray-100";
+
+                return (
+                  <div
+                    key={event.id}
+                    className={`bg-white rounded-2xl shadow-sm p-4 transition-all ${
+                      !event.isActive || isExpired ? "opacity-60" : ""
+                    }`}
+                  >
+                    <div className="flex items-start justify-between gap-2 mb-2">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span
+                          className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${meta.bg} ${meta.color}`}
+                        >
+                          {meta.label}
+                        </span>
+                        <span
+                          className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${statusColor}`}
+                        >
+                          {statusLabel}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1 flex-shrink-0">
+                        {!isExpired && (
+                          <button
+                            onClick={() => handleToggleActive(event.id)}
+                            className={`text-[11px] font-bold px-2 py-1 rounded-lg transition-colors ${
+                              event.isActive
+                                ? "text-gray-400 bg-gray-100 hover:bg-gray-200"
+                                : "text-[var(--color-primary)] bg-[var(--color-primary)]/10"
+                            }`}
+                            aria-label={event.isActive ? "비활성화" : "활성화"}
+                          >
+                            {event.isActive ? "끄기" : "켜기"}
+                          </button>
+                        )}
+                        <button
+                          onClick={() => {
+                            setEditingEvent(event);
+                            setShowForm(true);
+                          }}
+                          className="w-7 h-7 rounded-lg bg-gray-100 flex items-center justify-center text-gray-400 hover:bg-blue-50 hover:text-blue-400 transition-colors"
+                          aria-label="이벤트 수정"
+                        >
+                          <HiPencil size={13} />
+                        </button>
+                        {deletingId === event.id ? (
+                          <div className="flex items-center gap-1">
+                            <button
+                              onClick={() => handleDelete(event.id)}
+                              className="text-[11px] font-bold text-red-500 px-2 py-1"
+                              aria-label="삭제 확인"
+                            >
+                              삭제
+                            </button>
+                            <button
+                              onClick={() => setDeletingId(null)}
+                              className="text-[11px] font-bold text-gray-400 px-1 py-1"
+                              aria-label="취소"
+                            >
+                              취소
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            onClick={() => setDeletingId(event.id)}
+                            className="w-7 h-7 rounded-lg bg-gray-100 flex items-center justify-center text-gray-400 hover:bg-red-50 hover:text-red-400 transition-colors"
+                            aria-label="이벤트 삭제"
+                          >
+                            <HiTrash size={13} />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+
+                    <p className="font-extrabold text-gray-800 text-sm mb-0.5">
+                      {event.title}
+                    </p>
+                    {event.description && (
+                      <p className="text-xs text-gray-500 mb-2">
+                        {event.description}
+                      </p>
+                    )}
+                    <div className="flex items-center gap-1.5 text-[11px] text-gray-400 font-semibold">
+                      <HiCalendar size={12} />
+                      <span>
+                        {event.startDate} ~ {event.endDate}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </section>
+      </div>
+
+      {/* 이벤트 폼 시트 */}
+      {showForm && (
+        <EventFormSheet
+          initial={editingEvent}
+          onSave={editingEvent ? handleEditEvent : handleAddEvent}
+          onClose={() => {
+            setShowForm(false);
+            setEditingEvent(undefined);
+          }}
+        />
+      )}
+    </div>
+  );
+}

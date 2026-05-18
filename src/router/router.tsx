@@ -1,4 +1,10 @@
-import { BrowserRouter, Routes, Route, Navigate, Outlet } from "react-router-dom";
+import {
+  BrowserRouter,
+  Routes,
+  Route,
+  Navigate,
+  Outlet,
+} from "react-router-dom";
 import BottomNav from "../components/layout/BottomNav";
 import Intro from "../pages/Intro";
 import Home from "../pages/Home";
@@ -14,6 +20,7 @@ import Onboarding from "../pages/onBoarding/Onboarding";
 import Community from "../pages/Community";
 import PartyDetail from "../pages/PartyDetail";
 import MyPage from "../pages/MyPage";
+import Admin from "../pages/Admin";
 import { useUser } from "../context/UserContext";
 import LoadingScreen from "../components/ui/LoadingScreen";
 
@@ -26,6 +33,12 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
 
 function ProtectedLayout() {
   const { user, userProfile, isLoading } = useUser();
+
+  const introShown = sessionStorage.getItem("intro_shown");
+  if (!introShown) {
+    sessionStorage.setItem("intro_shown", "1");
+    return <Navigate to="/intro" replace />;
+  }
 
   if (isLoading) return <LoadingScreen />;
   if (!user) return <Navigate to="/auth" replace />;
@@ -76,6 +89,7 @@ export default function AppRouter() {
           <Route path="/steps" element={<Step />} />
           <Route path="/mypage" element={<MyPage />} />
           <Route path="/settings" element={<Settings />} />
+          <Route path="/admin" element={<Admin />} />
           <Route path="/workout" element={<Workout />} />
         </Route>
         <Route path="*" element={<IntroGuard />} />
