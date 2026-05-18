@@ -1,8 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { PARTY_TAGS } from "../data/tags";
-import { POINT_RULES } from "../data/points";
-import { storage } from "../utils/storage";
 import { useUser } from "../context/UserContext";
 import { useParty } from "../hooks/useParty";
 import { getPartyMembers, getPartyTodayStats } from "../lib/partyService";
@@ -818,12 +816,6 @@ function JoinConfirmModal({
           <span className="font-bold text-gray-600">"{partyName}"</span> 파티에
           참가해요
         </p>
-        <p
-          className="text-sm font-bold text-center"
-          style={{ color: "var(--color-primary)" }}
-        >
-          +{POINT_RULES.PARTY_JOIN}P 적립!
-        </p>
         <div className="flex gap-3 w-full">
           <button
             onClick={onCancel}
@@ -995,20 +987,10 @@ export default function Party() {
 
   const handleJoinConfirm = async () => {
     if (!joinTarget) return;
-    const { id: partyId, name: partyName } = joinTarget;
+    const { id: partyId } = joinTarget;
     const { error } = await joinParty(partyId);
     setJoinTarget(null);
     if (!error) {
-      const today = new Date();
-      const pad = (n: number) => String(n).padStart(2, "0");
-      const todayStr = `${today.getFullYear()}.${pad(today.getMonth() + 1)}.${pad(today.getDate())}`;
-      storage.addPoints(POINT_RULES.PARTY_JOIN);
-      storage.addPointsHistory({
-        date: todayStr,
-        desc: `${partyName} 파티 참가`,
-        points: POINT_RULES.PARTY_JOIN,
-        icon: "🎉",
-      });
       navigate(`/party/${partyId}`, { state: { newJoin: true } });
     }
   };

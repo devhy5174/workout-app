@@ -9,7 +9,6 @@ export type WorkoutRecord = {
   distance: number;
   steps: number;
   calories: number;
-  points_earned: number;
   workout_type: string;
   goal_achieved: boolean;
   created_at?: string;
@@ -59,44 +58,6 @@ export async function fetchWorkoutHistory(
     .limit(50);
   if (error || !data) return [];
   return data as WorkoutRecord[];
-}
-
-export async function addUserPoints(
-  userId: string,
-  points: number,
-): Promise<{ error: string | null }> {
-  const { data, error: fetchError } = await supabase
-    .from("app_users")
-    .select("points")
-    .eq("id", userId)
-    .single();
-
-  if (fetchError) {
-    console.error(
-      "[app_users] points 조회 실패:",
-      fetchError.code,
-      fetchError.message,
-    );
-    return { error: fetchError.message };
-  }
-
-  const current = (data as { points: number | null } | null)?.points ?? 0;
-  const { error } = await supabase
-    .from("app_users")
-    .update({ points: current + points })
-    .eq("id", userId);
-
-  if (error) {
-    console.error(
-      "[app_users] points 업데이트 실패:",
-      error.code,
-      error.message,
-    );
-    return { error: error.message };
-  }
-
-  console.log("[app_users] points 업데이트:", current, "→", current + points);
-  return { error: null };
 }
 
 export async function fetchActiveGoal(

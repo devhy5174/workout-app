@@ -6,9 +6,6 @@ import { useUser } from "../context/UserContext";
 import { getAvatarCharacterById } from "../data/avatarCharacters";
 import { activityTypes } from "../data/activityTypes";
 import { storage } from "../utils/storage";
-import { POINT_RULES } from "../data/points";
-import { calculateStreak, isWeekend } from "../utils/streak";
-import { addPoints } from "../lib/pointService";
 import { startSession, updateSession, endSession } from "../lib/sessionService";
 import { FAKE_ACTIVE_USERS } from "../data/fakeActiveUsers";
 import { useTodayStats } from "../hooks/useTodayStats";
@@ -98,7 +95,7 @@ export default function Workout() {
   const navigate = useNavigate();
   const { selectedActivityType, selectedId, selectActivityType } =
     useActivityType();
-  const { user, userGoal, saveWorkout, workoutRecords, userProfile } =
+  const { user, userGoal, saveWorkout, userProfile } =
     useUser();
   const { todayStats } = useTodayStats(user?.id ?? null);
 
@@ -113,7 +110,6 @@ export default function Workout() {
   );
   const [showStartModal, setShowStartModal] = useState(false);
   const [showModal, setShowModal] = useState(false);
-  const [earnedPoints, setEarnedPoints] = useState(0);
   const [pendingId, setPendingId] = useState<number>(() => selectedId ?? 1);
 
   const [showBuddies, setShowBuddies] = useState(true);
@@ -139,7 +135,6 @@ export default function Workout() {
   const kcalPerMin = selectedActivityType?.kcalPerMin ?? 4;
   const distance = parseFloat((steps * 0.0008).toFixed(2));
   const calories = Math.floor(kcalPerMin * (elapsed / 60));
-  const pointsEarned = Math.max(Math.floor(distance * POINT_RULES.PER_KM), 1);
   const elapsedMin = Math.floor(elapsed / 60);
   const elapsedSec = elapsed % 60;
   const durationLabel =
@@ -244,45 +239,12 @@ export default function Workout() {
     const pad = (n: number) => String(n).padStart(2, "0");
     const todayIso = `${today.getFullYear()}-${pad(today.getMonth() + 1)}-${pad(today.getDate())}`;
 
-    const todayAlreadyWorkedOut = workoutRecords.some(
-      (r) => r.date === todayIso,
-    );
-    const todayGoalAlreadyAchieved = workoutRecords.some(
-      (r) => r.date === todayIso && r.goal_achieved,
-    );
-
-    let earned = pointsEarned;
-
-    if (
-      steps >= (userGoal?.goal_type === "steps" ? goalValue : 5000) &&
-      !todayGoalAlreadyAchieved
-    ) {
-      earned += POINT_RULES.GOAL_BONUS;
-    }
-
-    const freshHistory = storage.getWorkoutHistory();
-    const currentStreak = calculateStreak(freshHistory);
-    if (
-      currentStreak > 0 &&
-      currentStreak % 7 === 0 &&
-      !todayAlreadyWorkedOut
-    ) {
-      earned += POINT_RULES.STREAK_7_BONUS;
-    }
-
-    if (isWeekend(today) && !todayAlreadyWorkedOut) {
-      earned += POINT_RULES.WEEKEND_BONUS;
-    }
-
-    setEarnedPoints(earned);
-
     const saveResult = await saveWorkout({
       date: todayIso,
       duration: currentElapsed,
       distance,
       steps,
       calories: currentCalories,
-      points_earned: earned,
       workout_type: selectedActivityType?.type ?? "walker",
       goal_achieved: goalProgress >= 100,
     });
@@ -290,55 +252,6 @@ export default function Workout() {
     if (saveResult.error) {
       console.error("운동 저장 실패 — Supabase 에러:", saveResult.error);
       return;
-    }
-
-    if (user) {
-      const workoutIcon = selectedActivityType?.emoji ?? "🏃";
-      const workoutType = selectedActivityType?.type ?? "walker";
-      await addPoints(
-        user.id,
-        pointsEarned,
-        `${distance.toFixed(2)}km 운동 완료`,
-        workoutIcon,
-        workoutType,
-      );
-
-      if (
-        steps >= (userGoal?.goal_type === "steps" ? goalValue : 5000) &&
-        !todayGoalAlreadyAchieved
-      ) {
-        await addPoints(
-          user.id,
-          POINT_RULES.GOAL_BONUS,
-          "목표 달성 보너스",
-          "🏆",
-          "goal_bonus",
-        );
-      }
-
-      if (
-        currentStreak > 0 &&
-        currentStreak % 7 === 0 &&
-        !todayAlreadyWorkedOut
-      ) {
-        await addPoints(
-          user.id,
-          POINT_RULES.STREAK_7_BONUS,
-          "7일 연속 달성 보너스",
-          "🔥",
-          "streak",
-        );
-      }
-
-      if (isWeekend(today) && !todayAlreadyWorkedOut) {
-        await addPoints(
-          user.id,
-          POINT_RULES.WEEKEND_BONUS,
-          "주말 운동 보너스",
-          "🌅",
-          "weekend",
-        );
-      }
     }
   };
 
@@ -936,26 +849,6 @@ export default function Workout() {
                       </span>
                     </div>
                   ))}
-                  <div
-                    className="mt-1 rounded-2xl flex items-center justify-between px-4 py-3"
-                    style={{ background: "var(--color-primary-light)" }}
-                  >
-                    <div className="flex items-center gap-2">
-                      <span className="text-lg">💰</span>
-                      <span
-                        className="text-sm font-bold"
-                        style={{ color: "var(--color-primary)" }}
-                      >
-                        획득 포인트
-                      </span>
-                    </div>
-                    <span
-                      className="text-xl font-extrabold"
-                      style={{ color: "var(--color-primary)" }}
-                    >
-                      +{earnedPoints} P
-                    </span>
-                  </div>
                 </div>
 
                 <div className="px-6 pb-2">

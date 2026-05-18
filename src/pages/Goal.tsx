@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { useUser } from "../context/UserContext";
 import { type UserGoal } from "../lib/workoutService";
-import { POINT_RULES } from "../data/points";
 
 const MILESTONE_KM = 100;
 
@@ -114,7 +113,7 @@ function GoalModal({ onClose }: { onClose: () => void }) {
 }
 
 export default function Goal() {
-  const { userGoal, workoutRecords, userProfile } = useUser();
+  const { userGoal, workoutRecords } = useUser();
   const [showModal, setShowModal] = useState(false);
 
   const totalSteps = workoutRecords.reduce((s, r) => s + r.steps, 0);
@@ -133,7 +132,6 @@ export default function Goal() {
     : 0;
 
   const milestonePct = Math.min((totalDistance / MILESTONE_KM) * 100, 100);
-  const totalPoints = userProfile?.points ?? 0;
 
   const goalUnit =
     userGoal?.goal_type === "steps"
@@ -233,21 +231,6 @@ export default function Goal() {
           />
         </div>
         <p className="text-xs text-gray-400">{milestonePct.toFixed(1)}% 달성</p>
-      </div>
-
-      {/* 포인트 저금 */}
-      <div className="bg-white rounded-3xl shadow-sm p-5 flex flex-col gap-2">
-        <p className="font-bold text-gray-700">포인트 저금</p>
-        <p
-          className="text-4xl font-extrabold"
-          style={{ color: "var(--color-secondary)" }}
-        >
-          {totalPoints.toLocaleString()}{" "}
-          <span className="text-2xl">P</span>
-        </p>
-        <p className="text-xs text-gray-400">
-          운동 거리 1km당 {POINT_RULES.PER_KM}P 적립
-        </p>
       </div>
 
       {/* 운동 통계 */}

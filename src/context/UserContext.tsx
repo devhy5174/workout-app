@@ -32,7 +32,6 @@ export type AppUser = {
   height: number | null;
   weight: number | null;
   bmi: number | null;
-  points: number | null;
   theme: string | null;
   created_at: string;
   title: string | null;
@@ -60,7 +59,6 @@ type UserContextValue = {
   deleteGoal: () => Promise<{ error: string | null }>;
   deleteWorkout: (id: string) => Promise<{ error: string | null }>;
   refreshWorkoutHistory: () => Promise<void>;
-  addLocalPoints: (amount: number) => void;
 };
 
 const UserContext = createContext<UserContextValue>({
@@ -77,7 +75,6 @@ const UserContext = createContext<UserContextValue>({
   deleteGoal: async () => ({ error: null }),
   deleteWorkout: async () => ({ error: null }),
   refreshWorkoutHistory: async () => {},
-  addLocalPoints: () => {},
 });
 
 async function fetchProfile(userId: string): Promise<AppUser | null> {
@@ -277,15 +274,6 @@ export function UserProvider({ children }: { children: ReactNode }) {
     };
     setWorkoutRecords((prev) => [newRecord, ...prev]);
 
-    // 로컬 포인트 상태 낙관적 업데이트 (Supabase 실제 업데이트는 pointService.addPoints가 담당)
-    setUserProfile((prev) => {
-      const next = prev
-        ? { ...prev, points: (prev.points ?? 0) + record.points_earned }
-        : prev;
-      userProfileRef.current = next;
-      return next;
-    });
-
     return { error: null };
   };
 
@@ -332,16 +320,6 @@ export function UserProvider({ children }: { children: ReactNode }) {
     setWorkoutRecords(workouts);
   };
 
-  const addLocalPoints = (amount: number) => {
-    setUserProfile((prev) => {
-      const next = prev
-        ? { ...prev, points: (prev.points ?? 0) + amount }
-        : prev;
-      userProfileRef.current = next;
-      return next;
-    });
-  };
-
   return (
     <UserContext.Provider
       value={{
@@ -358,7 +336,6 @@ export function UserProvider({ children }: { children: ReactNode }) {
         deleteGoal,
         deleteWorkout,
         refreshWorkoutHistory,
-        addLocalPoints,
       }}
     >
       {children}

@@ -952,9 +952,6 @@ function WorkoutTab() {
                     <p className="font-extrabold text-gray-800 text-sm">
                       {typeInfo.label}
                     </p>
-                    <span className="text-[10px] font-bold text-[var(--color-primary)] bg-[var(--color-primary)]/10 rounded-full px-2 py-0.5">
-                      +{record.points_earned}P
-                    </span>
                     {record.goal_achieved && (
                       <span
                         className="text-[10px] font-bold text-white px-1.5 py-0.5 rounded-full"

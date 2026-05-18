@@ -12,8 +12,6 @@ import {
 } from "../lib/partyService";
 import type { Party, PartyMember, PartyTodayStats } from "../lib/partyService";
 import { supabase } from "../lib/supabase";
-import { POINT_RULES } from "../data/points";
-import { addPoints } from "../lib/pointService";
 
 const timeSlotEmoji: Record<string, string> = {
   새벽: "🌅",
@@ -385,12 +383,6 @@ function JoinConfirmModal({
           <span className="font-bold text-gray-600">"{partyName}"</span> 파티에
           참가해요
         </p>
-        <p
-          className="text-sm font-bold text-center"
-          style={{ color: "var(--color-primary)" }}
-        >
-          +{POINT_RULES.PARTY_JOIN}P 적립!
-        </p>
         <div className="flex gap-3 w-full">
           <button
             onClick={onCancel}
@@ -464,7 +456,7 @@ export default function PartyDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, userProfile, addLocalPoints } = useUser();
+  const { user, userProfile } = useUser();
   const {
     isJoined,
     isLeader,
@@ -602,17 +594,7 @@ export default function PartyDetail() {
     const { error } = await joinParty(party.id);
     setShowJoinModal(false);
     if (!error) {
-      if (user) {
-        await addPoints(
-          user.id,
-          POINT_RULES.PARTY_JOIN,
-          `${party.name} 파티 참가`,
-          "🎉",
-          "party",
-        );
-        addLocalPoints(POINT_RULES.PARTY_JOIN);
-      }
-      showToast(`파티에 참가했어요! +${POINT_RULES.PARTY_JOIN}P 적립`, "🎉");
+      showToast("파티에 참가했어요!", "🎉");
       await reloadMembers();
     }
   };
