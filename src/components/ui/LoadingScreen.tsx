@@ -1,3 +1,5 @@
+import { MdDirectionsRun } from "react-icons/md";
+
 export default function LoadingScreen() {
   return (
     <div className="h-screen flex flex-col items-center justify-center bg-bg gap-4">
@@ -28,8 +30,10 @@ export default function LoadingScreen() {
         />
       </div>
 
-      {/* 캐릭터 이모지 */}
-      <div className="text-5xl animate-bounce select-none">🏃</div>
+      {/* 캐릭터 아이콘 */}
+      <div className="animate-bounce" style={{ color: "var(--color-primary)" }}>
+        <MdDirectionsRun size={52} />
+      </div>
 
       {/* 점 3개 */}
       <div className="flex gap-2 items-center mt-1">
