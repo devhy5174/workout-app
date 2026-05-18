@@ -256,6 +256,7 @@ export async function deleteParty(
 
 export type PartyTodayStats = {
   totalSteps: number;
+  avgSteps: number;
   topMember: { user_id: string; nickname: string; steps: number } | null;
 };
 
@@ -268,7 +269,7 @@ export async function getPartyTodayStats(
     .eq("party_id", partyId);
 
   if (!members || members.length === 0)
-    return { totalSteps: 0, topMember: null };
+    return { totalSteps: 0, avgSteps: 0, topMember: null };
 
   const userIds = members.map((m: any) => m.user_id);
   const todayStart = new Date();
@@ -281,7 +282,7 @@ export async function getPartyTodayStats(
     .gte("created_at", todayStart.toISOString());
 
   if (!workouts || workouts.length === 0)
-    return { totalSteps: 0, topMember: null };
+    return { totalSteps: 0, avgSteps: 0, topMember: null };
 
   const stepsMap = new Map<string, number>();
   workouts.forEach((w: any) => {
@@ -300,7 +301,9 @@ export async function getPartyTodayStats(
     }
   });
 
-  if (totalSteps === 0) return { totalSteps: 0, topMember: null };
+  if (totalSteps === 0) return { totalSteps: 0, avgSteps: 0, topMember: null };
+
+  const avgSteps = Math.round(totalSteps / members.length);
 
   const topMemberRow = members.find((m: any) => m.user_id === topUserId);
   const topNickname =
@@ -308,8 +311,49 @@ export async function getPartyTodayStats(
 
   return {
     totalSteps,
+    avgSteps,
     topMember: { user_id: topUserId, nickname: topNickname, steps: topSteps },
   };
+}
+
+export type PartyNotice = {
+  id: string;
+  party_id: string;
+  user_id: string;
+  message: string;
+  created_at: string;
+};
+
+export async function getPartyNotices(partyId: string): Promise<PartyNotice[]> {
+  const { data, error } = await supabase
+    .from("party_notices")
+    .select("*")
+    .eq("party_id", partyId)
+    .order("created_at", { ascending: false })
+    .limit(5);
+  if (error || !data) return [];
+  return data as PartyNotice[];
+}
+
+export async function sendPartyNotice(
+  partyId: string,
+  userId: string,
+  message: string,
+): Promise<{ error: string | null }> {
+  const { error } = await supabase
+    .from("party_notices")
+    .insert({ party_id: partyId, user_id: userId, message });
+  return { error: error?.message ?? null };
+}
+
+export async function deletePartyNotice(
+  noticeId: string,
+): Promise<{ error: string | null }> {
+  const { error } = await supabase
+    .from("party_notices")
+    .delete()
+    .eq("id", noticeId);
+  return { error: error?.message ?? null };
 }
 
 export type AchievedParty = {

@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   HiBell,
-  HiClipboardList,
   HiGlobeAlt,
   HiPencil,
   HiMail,
@@ -14,10 +13,15 @@ import {
   HiColorSwatch,
   HiBadgeCheck,
   HiX,
+  HiUserGroup,
+  HiFire,
+  HiClock,
+  HiSpeakerphone,
+  HiLightningBolt,
 } from "react-icons/hi";
 import { useTheme } from "../context/ThemeContext";
 import { useUser } from "../context/UserContext";
-import { useSettings, type Language } from "../hooks/useSettings";
+import { useSettings, type Language, type NotificationKey } from "../hooks/useSettings";
 import Modal from "../components/ui/Modal";
 import SettingsRow from "../components/ui/SettingsRow";
 import {
@@ -355,6 +359,151 @@ function TextSheet({
   );
 }
 
+// ── 서브 알림 행 ──────────────────────────────────────────
+function SubNotificationRow({
+  icon,
+  label,
+  description,
+  on,
+  onToggle,
+  disabled,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  description?: string;
+  on: boolean;
+  onToggle: () => void;
+  disabled?: boolean;
+}) {
+  return (
+    <div
+      className={`flex items-center gap-3 px-5 py-3.5 pl-12 transition-all ${
+        disabled ? "opacity-40" : ""
+      }`}
+    >
+      <span className="w-5 h-5 flex items-center justify-center flex-shrink-0 text-gray-300">
+        {icon}
+      </span>
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-semibold text-gray-600">{label}</p>
+        {description && (
+          <p className="text-xs text-gray-400 mt-0.5">{description}</p>
+        )}
+      </div>
+      <Toggle on={on && !disabled} onToggle={disabled ? () => {} : onToggle} />
+    </div>
+  );
+}
+
+// ── 알림 상세 설정 시트 ──────────────────────────────────
+function NotificationSheet({
+  settings,
+  toggleNotification,
+  onClose,
+}: {
+  settings: ReturnType<typeof import("../hooks/useSettings").useSettings>["settings"];
+  toggleNotification: (key: NotificationKey) => void;
+  onClose: () => void;
+}) {
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-end bg-black/40"
+      onClick={onClose}
+    >
+      <div
+        className="w-full max-w-md mx-auto bg-white rounded-t-3xl shadow-2xl overflow-hidden"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* 헤더 */}
+        <div className="flex items-center justify-between px-6 pt-6 pb-4">
+          <h3 className="text-lg font-extrabold text-gray-800">알림 설정</h3>
+          <button
+            onClick={onClose}
+            className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500"
+            aria-label="닫기"
+          >
+            <HiX size={16} />
+          </button>
+        </div>
+
+        <div className="flex flex-col gap-3 px-4 pb-10 overflow-y-auto max-h-[70vh]">
+          {/* 운동 알림 그룹 */}
+          <div className="bg-gray-50 rounded-2xl overflow-hidden">
+            <div className="flex items-center gap-3 px-4 py-4">
+              <span className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0"
+                style={{ background: "linear-gradient(135deg, var(--color-primary), var(--color-secondary))" }}>
+                <HiBell size={16} className="text-white" />
+              </span>
+              <div className="flex-1">
+                <p className="text-sm font-extrabold text-gray-800">운동 알림</p>
+                <p className="text-xs text-gray-400 mt-0.5">운동 관련 알림 전체</p>
+              </div>
+              <Toggle
+                on={settings.workoutNotification}
+                onToggle={() => toggleNotification("workoutNotification")}
+              />
+            </div>
+            {settings.workoutNotification && (
+              <div className="border-t border-gray-100 divide-y divide-gray-100">
+                <SubNotificationRow
+                  icon={<HiClock size={15} />}
+                  label="운동 시작 리마인더"
+                  description="매일 정해진 시간에 운동 알림"
+                  on={settings.workoutReminderNotification}
+                  onToggle={() => toggleNotification("workoutReminderNotification")}
+                />
+                <SubNotificationRow
+                  icon={<HiFire size={15} />}
+                  label="스트릭 유지 알림"
+                  description="오늘 운동 안 했을 때 저녁에 알림"
+                  on={settings.streakNotification}
+                  onToggle={() => toggleNotification("streakNotification")}
+                />
+              </div>
+            )}
+          </div>
+
+          {/* 파티 알림 그룹 */}
+          <div className="bg-gray-50 rounded-2xl overflow-hidden">
+            <div className="flex items-center gap-3 px-4 py-4">
+              <span className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0"
+                style={{ background: "linear-gradient(135deg, var(--color-primary), var(--color-secondary))" }}>
+                <HiUserGroup size={16} className="text-white" />
+              </span>
+              <div className="flex-1">
+                <p className="text-sm font-extrabold text-gray-800">파티 알림</p>
+                <p className="text-xs text-gray-400 mt-0.5">파티 관련 알림 전체</p>
+              </div>
+              <Toggle
+                on={settings.partyNotification}
+                onToggle={() => toggleNotification("partyNotification")}
+              />
+            </div>
+            {settings.partyNotification && (
+              <div className="border-t border-gray-100 divide-y divide-gray-100">
+                <SubNotificationRow
+                  icon={<HiLightningBolt size={15} />}
+                  label="파티 시작 전 알림"
+                  description="파티 시작 30분 전에 알림"
+                  on={settings.partyStartNotification}
+                  onToggle={() => toggleNotification("partyStartNotification")}
+                />
+                <SubNotificationRow
+                  icon={<HiSpeakerphone size={15} />}
+                  label="파티 공지"
+                  description="방장이 공지를 올렸을 때 알림"
+                  on={settings.partyAnnouncementNotification}
+                  onToggle={() => toggleNotification("partyAnnouncementNotification")}
+                />
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── 섹션 헤더 ────────────────────────────────────────────
 function SectionLabel({ label }: { label: string }) {
   return (
@@ -363,7 +512,8 @@ function SectionLabel({ label }: { label: string }) {
 }
 
 // ── Settings 메인 ────────────────────────────────────────
-type Sheet = "language" | "nickname" | "privacy" | "terms" | "appinfo" | null;
+type Sheet = "language" | "nickname" | "privacy" | "terms" | "appinfo" | "notification" | null;
+
 
 export default function Settings() {
   const { theme, setTheme } = useTheme();
@@ -424,28 +574,12 @@ export default function Settings() {
 
       {/* 알림 */}
       <SectionLabel label="알림" />
-      <div className="bg-white rounded-2xl shadow-sm divide-y divide-gray-50">
+      <div className="bg-white rounded-2xl shadow-sm">
         <SettingsRow
           icon={<HiBell size={20} />}
-          label="운동 알림"
-          description="운동 시작·종료 알림"
-          right={
-            <Toggle
-              on={settings.workoutNotification}
-              onToggle={() => toggleNotification("workoutNotification")}
-            />
-          }
-        />
-        <SettingsRow
-          icon={<HiClipboardList size={20} />}
-          label="식단 알림"
-          description="식사 시간 알림"
-          right={
-            <Toggle
-              on={settings.dietNotification}
-              onToggle={() => toggleNotification("dietNotification")}
-            />
-          }
+          label="알림 설정"
+          description="운동·파티 알림 세부 설정"
+          onClick={() => setSheet("notification")}
         />
       </div>
 
@@ -537,6 +671,14 @@ export default function Settings() {
       </div>
 
       {/* 시트/모달 */}
+      {sheet === "notification" && (
+        <NotificationSheet
+          settings={settings}
+          toggleNotification={toggleNotification}
+          onClose={() => setSheet(null)}
+        />
+      )}
+
       {sheet === "language" && (
         <LanguageSheet
           current={settings.language}

@@ -2,9 +2,21 @@ import { useEffect, useState } from "react";
 
 export type Language = "ko" | "en";
 
+export type NotificationKey =
+  | "workoutNotification"
+  | "workoutReminderNotification"
+  | "streakNotification"
+  | "partyNotification"
+  | "partyStartNotification"
+  | "partyAnnouncementNotification";
+
 type SettingsState = {
   workoutNotification: boolean;
-  dietNotification: boolean;
+  workoutReminderNotification: boolean;
+  streakNotification: boolean;
+  partyNotification: boolean;
+  partyStartNotification: boolean;
+  partyAnnouncementNotification: boolean;
   language: Language;
 };
 
@@ -12,7 +24,11 @@ const STORAGE_KEY = "app_settings";
 
 const defaults: SettingsState = {
   workoutNotification: true,
-  dietNotification: true,
+  workoutReminderNotification: true,
+  streakNotification: true,
+  partyNotification: true,
+  partyStartNotification: true,
+  partyAnnouncementNotification: true,
   language: "ko",
 };
 
@@ -30,9 +46,7 @@ export function useSettings() {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
   }, [settings]);
 
-  function toggleNotification(
-    key: "workoutNotification" | "dietNotification",
-  ) {
+  function toggleNotification(key: NotificationKey) {
     setSettings((prev) => ({ ...prev, [key]: !prev[key] }));
   }
 

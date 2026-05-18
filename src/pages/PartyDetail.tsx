@@ -11,8 +11,12 @@ import {
   getPartyTodayStats,
   getPartyCheers,
   sendPartyCheer,
+  getPartyNotices,
+  sendPartyNotice,
+  deletePartyNotice,
+  deleteParty,
 } from "../lib/partyService";
-import type { Party, PartyMember, PartyTodayStats } from "../lib/partyService";
+import type { Party, PartyMember, PartyTodayStats, PartyNotice } from "../lib/partyService";
 import { supabase } from "../lib/supabase";
 
 const timeSlotEmoji: Record<string, string> = {
@@ -460,6 +464,132 @@ function Toast({ message, icon = "🎉" }: { message: string; icon?: string }) {
   );
 }
 
+function DeletePartyModal({
+  partyName,
+  onConfirm,
+  onCancel,
+}: {
+  partyName: string;
+  onConfirm: () => void;
+  onCancel: () => void;
+}) {
+  return (
+    <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center px-6">
+      <div className="w-full max-w-sm bg-white rounded-3xl p-7 flex flex-col items-center gap-4 shadow-xl">
+        <span className="text-5xl">💥</span>
+        <p className="font-extrabold text-gray-800 text-lg text-center">
+          파티를 해체할까요?
+        </p>
+        <p className="text-sm text-gray-400 text-center leading-relaxed">
+          <span className="font-bold text-gray-600">"{partyName}"</span> 파티가<br />
+          영구적으로 삭제돼요. 되돌릴 수 없어요.
+        </p>
+        <div className="flex gap-3 w-full">
+          <button
+            onClick={onCancel}
+            className="flex-1 py-3 rounded-2xl bg-gray-100 text-sm font-bold text-gray-500 active:scale-95 transition"
+          >
+            취소
+          </button>
+          <button
+            onClick={onConfirm}
+            className="flex-1 py-3 rounded-2xl bg-red-500 text-white text-sm font-extrabold active:scale-95 transition"
+          >
+            해체하기
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function NoticeSection({
+  notices,
+  isLeader,
+  onPost,
+  onDelete,
+}: {
+  notices: PartyNotice[];
+  isLeader: boolean;
+  onPost: (msg: string) => void;
+  onDelete: (id: string) => void;
+}) {
+  const [input, setInput] = useState("");
+
+  function handlePost() {
+    const trimmed = input.trim();
+    if (!trimmed) return;
+    onPost(trimmed);
+    setInput("");
+  }
+
+  return (
+    <div className="bg-white rounded-3xl shadow-sm p-5 flex flex-col gap-3">
+      <p className="text-sm font-extrabold text-gray-700">📢 파티 공지</p>
+
+      {notices.length === 0 ? (
+        <p className="text-xs text-gray-300 text-center py-2">
+          {isLeader ? "공지를 올려보세요!" : "아직 공지가 없어요"}
+        </p>
+      ) : (
+        <div className="flex flex-col gap-2">
+          {notices.map((n) => (
+            <div
+              key={n.id}
+              className="flex items-start gap-2 bg-orange-50 rounded-2xl px-4 py-3"
+            >
+              <p className="flex-1 text-xs text-gray-700 leading-relaxed font-semibold">
+                {n.message}
+              </p>
+              <div className="flex flex-col items-end gap-1 flex-shrink-0">
+                <p className="text-[10px] text-gray-400">
+                  {new Date(n.created_at).toLocaleDateString("ko-KR", {
+                    month: "short",
+                    day: "numeric",
+                  })}
+                </p>
+                {isLeader && (
+                  <button
+                    onClick={() => onDelete(n.id)}
+                    aria-label="공지 삭제"
+                    className="text-[10px] text-gray-300 hover:text-red-400 transition font-bold"
+                  >
+                    삭제
+                  </button>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {isLeader && (
+        <div className="flex items-center gap-2 bg-gray-50 rounded-2xl px-4 py-3 mt-1">
+          <input
+            type="text"
+            value={input}
+            onChange={(e) => setInput(e.target.value.slice(0, 60))}
+            onKeyDown={(e) => e.key === "Enter" && handlePost()}
+            placeholder="공지 입력 (60자 이내)"
+            maxLength={60}
+            className="flex-1 text-xs font-semibold text-gray-700 placeholder-gray-300 outline-none bg-transparent"
+          />
+          <button
+            onClick={handlePost}
+            disabled={!input.trim()}
+            aria-label="공지 올리기"
+            className={`w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center text-sm transition active:scale-90 ${
+              input.trim() ? "bg-primary text-white" : "bg-gray-100 text-gray-300"
+            }`}
+          >
+            📌
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function PartyDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -485,12 +615,14 @@ export default function PartyDetail() {
   );
   const [showJoinModal, setShowJoinModal] = useState(false);
   const [showLeaveModal, setShowLeaveModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [kickTarget, setKickTarget] = useState<PartyMember | null>(null);
   const [toast, setToast] = useState<{ message: string; icon?: string } | null>(
     null,
   );
   const [cheerMessages, setCheerMessages] = useState<CheerMessage[]>([]);
   const [cheerInput, setCheerInput] = useState("");
+  const [notices, setNotices] = useState<PartyNotice[]>([]);
 
   const sendCheer = async () => {
     const text = cheerInput.trim();
@@ -563,6 +695,46 @@ export default function PartyDetail() {
       );
     });
   }, [id]);
+
+  useEffect(() => {
+    if (!id) return;
+    getPartyNotices(id).then(setNotices);
+  }, [id]);
+
+  useEffect(() => {
+    if (!id) return;
+    const channel = supabase
+      .channel(`party-notices-${id}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "party_notices", filter: `party_id=eq.${id}` },
+        () => { getPartyNotices(id).then(setNotices); },
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [id]);
+
+  const handlePostNotice = async (message: string) => {
+    if (!id || !user) return;
+    await sendPartyNotice(id, user.id, message);
+    getPartyNotices(id).then(setNotices);
+  };
+
+  const handleDeleteNotice = async (noticeId: string) => {
+    await deletePartyNotice(noticeId);
+    setNotices((prev) => prev.filter((n) => n.id !== noticeId));
+  };
+
+  const handleDeleteParty = async () => {
+    if (!party) return;
+    const { error } = await deleteParty(party.id);
+    setShowDeleteModal(false);
+    if (error) {
+      showToast("해체에 실패했어요. 잠시 후 다시 시도해 주세요.", "⚠️");
+    } else {
+      navigate("/party", { replace: true });
+    }
+  };
 
   useEffect(() => {
     if (!id) return;
@@ -780,6 +952,14 @@ export default function PartyDetail() {
                   %
                 </p>
               </div>
+              {todayStats.avgSteps > 0 && (
+                <p className="text-[11px] text-gray-400 font-semibold">
+                  파티 평균{" "}
+                  <span className="text-orange-400 font-extrabold">
+                    {todayStats.avgSteps.toLocaleString()}보
+                  </span>
+                </p>
+              )}
               <div className="w-full h-2 bg-orange-100 rounded-full overflow-hidden">
                 <div
                   className="h-full bg-gradient-to-r from-orange-400 to-primary rounded-full transition-all duration-700"
@@ -841,6 +1021,14 @@ export default function PartyDetail() {
           )}
         </div>
 
+        {/* 파티 공지 */}
+        <NoticeSection
+          notices={notices}
+          isLeader={leader}
+          onPost={handlePostNotice}
+          onDelete={handleDeleteNotice}
+        />
+
         {/* 응원 ticker bar */}
         <CheerTicker messages={cheerMessages} />
 
@@ -891,9 +1079,17 @@ export default function PartyDetail() {
       <div className="bg-white rounded-3xl shadow-sm p-4 flex gap-2">
         {joined ? (
           leader ? (
-            <div className="flex-1 py-3 rounded-2xl bg-yellow-50 text-sm font-extrabold text-yellow-600 flex items-center justify-center gap-1">
-              👑 파티장
-            </div>
+            <>
+              <div className="flex-1 py-3 rounded-2xl bg-yellow-50 text-sm font-extrabold text-yellow-600 flex items-center justify-center gap-1">
+                👑 파티장
+              </div>
+              <button
+                onClick={() => setShowDeleteModal(true)}
+                className="px-4 py-3 rounded-2xl bg-red-50 text-sm font-bold text-red-400 active:scale-95 transition"
+              >
+                해체
+              </button>
+            </>
           ) : (
             <button
               onClick={() => setShowLeaveModal(true)}
@@ -943,6 +1139,13 @@ export default function PartyDetail() {
           nickname={kickTarget.nickname}
           onConfirm={handleKickConfirm}
           onCancel={() => setKickTarget(null)}
+        />
+      )}
+      {showDeleteModal && party && (
+        <DeletePartyModal
+          partyName={party.name}
+          onConfirm={handleDeleteParty}
+          onCancel={() => setShowDeleteModal(false)}
         />
       )}
       {toast && <Toast message={toast.message} icon={toast.icon} />}
