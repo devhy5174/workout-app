@@ -153,6 +153,161 @@ npm run dev
 
 ---
 
+## 🔔 알림 시스템 (Notification System)
+
+인앱 알림함 · 웹 푸시 · 스케줄 알림 세 가지 레이어로 구성된 풀스택 알림 시스템입니다.
+
+---
+
+### 📦 파일 구조
+
+| 파일 | 역할 |
+|------|------|
+| `src/lib/notificationService.ts` | Supabase CRUD · 푸시 구독 저장/삭제 |
+| `src/hooks/useNotifications.ts` | 알림 목록 조회 + Realtime 구독 |
+| `src/hooks/usePushSubscription.ts` | Service Worker 등록 · 브라우저 푸시 구독/해제 |
+| `src/utils/notificationTriggers.ts` | 이벤트별 알림 생성 헬퍼 함수 모음 |
+| `src/components/notifications/FloatingNotificationButton.tsx` | 우측 상단 플로팅 종 버튼 + unread 뱃지 |
+| `src/components/notifications/NotificationDrawer.tsx` | 알림 목록 Drawer UI |
+| `public/sw.js` | Service Worker — 푸시 수신 → OS 알림 표시 |
+| `supabase/functions/notify-scheduled/index.ts` | Edge Function — 스케줄 알림 생성 |
+| `supabase/functions/notify-push/index.ts` | Edge Function — 웹 푸시 실제 발송 |
+| `supabase/notifications_schema.sql` | DB 테이블 · RLS · Realtime 설정 SQL |
+| `supabase/cron_schedule.sql` | pg_cron 스케줄 등록 SQL |
+
+---
+
+### 1. 인앱 알림함
+
+앱 우측 상단 플로팅 종 버튼 → Drawer로 알림 목록 확인.  
+Supabase Realtime 구독으로 새 알림이 오면 뱃지가 즉시 갱신됩니다.
+
+**Supabase 테이블**
+
+| 컬럼 | 타입 | 설명 |
+|------|------|------|
+| `id` | uuid | PK |
+| `user_id` | uuid | 수신자 |
+| `type` | text | `party_joined` · `party_started` · `goal_reached` · `streak_warning` · `diet_reminder` · `system` |
+| `title` | text | 알림 제목 |
+| `body` | text | 알림 본문 |
+| `data` | jsonb | 추가 메타데이터 (party_id 등) |
+| `is_read` | boolean | 읽음 여부 |
+| `created_at` | timestamptz | 생성 시각 |
+
+---
+
+### 2. 이벤트 기반 알림
+
+앱 내 특정 행동 발생 시 자동으로 DB에 알림을 생성합니다.
+
+| 이벤트 | 수신자 | 수정 위치 |
+|--------|--------|-----------|
+| 파티 참가 | 파티 리더 | `src/hooks/useParty.ts` → `handleJoin` |
+| 운동 목표 달성 | 본인 | `src/pages/Workout.tsx` → `performSave` |
+
+**새 이벤트 알림 추가하는 법**
+
+```typescript
+// 1. src/utils/notificationTriggers.ts 에 함수 추가
+export async function notifyXxx(params: { userId: string; ... }) {
+  await createNotification({
+    user_id: params.userId,
+    type: "system",
+    title: "제목",
+    body: "본문",
+    data: {},
+    is_read: false,
+  });
+}
+
+// 2. 원하는 곳에서 호출 (fire-and-forget)
+notifyXxx({ userId: user.id, ... }).catch(() => {});
+```
+
+---
+
+### 3. 스케줄 알림 (pg_cron)
+
+매일 정해진 시각에 Edge Function이 조건에 맞는 유저들에게 자동 발송합니다.
+
+| 스케줄명 | 시각 (KST) | 대상 조건 | 내용 |
+|----------|-----------|-----------|------|
+| `activity-reminder` | 오후 12시 | 최근 7일 활성 & 오늘 미운동 | "오늘 운동 어때요?" |
+| `diet-lunch-reminder` | 오후 1시 | 최근 7일 활성 유저 전체 | "점심 후 10분 걷기" |
+| `diet-dinner-reminder` | 오후 6시 | 오늘 운동 완료한 유저 | 소모 칼로리 포함 저녁 식단 안내 |
+| `streak-warning` | 오후 8시 | 최근 3일 활성 & 오늘 미운동 | 연속 스트릭 일수 포함 경고 |
+
+**조건·내용 수정**  
+`supabase/functions/notify-scheduled/index.ts` 의 해당 `case` 블록 수정 후 재배포:
+```bash
+supabase functions deploy notify-scheduled --project-ref <PROJECT_REF>
+```
+
+**스케줄 시간 변경**  
+`supabase/cron_schedule.sql` 의 cron 식 수정 후 Supabase SQL Editor에서 재실행.  
+cron 식 형식: `'분 시(UTC) 일 월 요일'` — KST는 UTC+9이므로 시각에서 9 차감.
+
+---
+
+### 4. 웹 푸시 알림
+
+브라우저/기기가 닫혀 있어도 OS 레벨 알림을 수신할 수 있습니다.
+
+**플랫폼별 지원**
+
+| 환경 | 지원 여부 |
+|------|----------|
+| PC 브라우저 (Chrome·Edge·Firefox) | ✅ |
+| 안드로이드 Chrome | ✅ |
+| iOS Safari 16.4+ (홈 화면 추가 후) | ✅ |
+| iOS Safari 일반 탭 | ❌ |
+
+**동작 흐름**
+
+```
+유저가 설정 > 알림 > 기기 푸시 토글 켜기
+  → Service Worker 등록 (public/sw.js)
+  → 브라우저 권한 요청
+  → PushSubscription 생성 (VAPID 공개키 사용)
+  → push_subscriptions 테이블에 저장
+
+스케줄/이벤트 발생
+  → notify-scheduled: notifications 테이블 INSERT
+  → notify-push Edge Function 호출
+  → push_subscriptions 조회 → web-push 라이브러리로 발송
+  → 만료된 구독(410/404) 자동 삭제
+```
+
+**환경 변수**
+
+| 위치 | 변수명 | 설명 |
+|------|--------|------|
+| `.env` | `VITE_VAPID_PUBLIC_KEY` | VAPID 공개키 (클라이언트) |
+| Edge Function Secrets | `VAPID_PUBLIC_KEY` | VAPID 공개키 (서버) |
+| Edge Function Secrets | `VAPID_PRIVATE_KEY` | VAPID 비공개키 (서버) |
+| Edge Function Secrets | `VAPID_CONTACT_EMAIL` | 연락처 이메일 |
+| Edge Function Secrets | `CRON_SECRET` | pg_cron → Edge Function 인증 토큰 |
+
+VAPID 키 생성: `npx web-push generate-vapid-keys`
+
+---
+
+### 5. 수동 테스트 (curl)
+
+```bash
+curl -X POST https://<PROJECT_REF>.supabase.co/functions/v1/notify-scheduled \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <SUPABASE_ANON_KEY>" \
+  -H "x-cron-secret: <CRON_SECRET>" \
+  -d '{"type":"streak_warning"}'
+# {"sent": N} 응답 오면 성공
+```
+
+type 값: `streak_warning` · `activity_reminder` · `diet_lunch` · `diet_dinner`
+
+---
+
 ## 🥑 식단 관리 탭 (Diet Management)
 
 사용자의 실제 신체 정보와 당일 운동 소모 칼로리를 기반으로, 맞춤형 하루 3끼 식단을 가이드하고 프리미엄 구독 모델(Freemium)을 유기적으로 연결한 핵심 기능 페이지입니다.
