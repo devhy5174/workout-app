@@ -153,12 +153,11 @@ export const STEP_MESSAGES = [
     adult: "축지법을 쓰시는 수준, 동네 걷기 왕좌 등극 👑",
   },
 ];
-
 // ==========================================
-// 5. MBTI 사전 (WORKOUT_MBTI_DICTIONARY)
+// 5. MBTI 사전 (WORKOUT_MBTI_DICTIONARY) - 16개 풀 조합 완료!
 // ==========================================
 export const WORKOUT_MBTI_DICTIONARY = {
-  // E(매일) + R(러너) + F(칼로리) + M(아침)
+  // 1. ERFM (매일 + 러너 + 칼로리 + 아침)
   ERFM: {
     mz: {
       title: "불꽃 경주마형",
@@ -171,7 +170,7 @@ export const WORKOUT_MBTI_DICTIONARY = {
       emoji: "🌅",
     },
   },
-  // E(매일) + R(러너) + F(칼로리) + N(야간)
+  // 2. ERFN (매일 + 러너 + 칼로리 + 야간)
   ERFN: {
     mz: {
       title: "야간 심야 야생마형",
@@ -185,7 +184,66 @@ export const WORKOUT_MBTI_DICTIONARY = {
       emoji: "👟",
     },
   },
-  // E(매일) + W(산책) + D(거리) + M(아침)
+  // 3. ERDM (매일 + 러너 + 거리 + 아침)
+  ERDM: {
+    mz: {
+      title: "모닝 마라톤 수송마형",
+      description:
+        "출근 전에 묵묵히 수십 킬로미터를 배달하듯 달리는 인간 네비게이션 🏃‍♂️",
+      emoji: "🗺️",
+    },
+    adult: {
+      title: "아침 철인형",
+      description:
+        "매일 아침 강인한 의지로 목표 거리를 완수하는 이 시대의 진정한 철인 🦾",
+      emoji: "🏅",
+    },
+  },
+  // 4. ERDN (매일 + 러너 + 거리 + 야간)
+  ERDN: {
+    mz: {
+      title: "밤거리 트랙 사냥꾼형",
+      description:
+        "매일 밤 목적지 따윈 중요치 않다, 오직 트랙 거리만 늘리는 질주 본능 🐺",
+      emoji: "🎯",
+    },
+    adult: {
+      title: "야간 끈기파형",
+      description:
+        "지친 하루 끝에도 흔들림 없이 목표 거리를 채워내는 위대한 노력가 🌟",
+      emoji: "💯",
+    },
+  },
+  // 5. EWFM (매일 + 산책 + 칼로리 + 아침)
+  EWFM: {
+    mz: {
+      title: "미라클모닝 중독형",
+      description: "눈 뜨자마자 운동 안 켜면 온몸에 가시가 돋는 자기관리 AI 🤖",
+      emoji: "📊",
+    },
+    adult: {
+      title: "철저한 모범형",
+      description:
+        "매일 아침 규칙적인 유산소로 건강한 삶을 개척하는 교과서 같은 분 💯",
+      emoji: "✨",
+    },
+  },
+  // 6. EWFN (매일 + 산책 + 칼로리 + 야간)
+  EWFN: {
+    mz: {
+      title: "퇴근길 프로 소각로형",
+      description:
+        "퇴근 후 저녁밥 칼로리를 산책으로 싹 태워버려야 직성이 풀리는 타입 🫁",
+      emoji: "🔥",
+    },
+    adult: {
+      title: "저녁 안심형",
+      description:
+        "하루 삼시 세끼 칼로리를 밤 산책으로 깔끔하게 정리하는 건강 마스터 ☕",
+      emoji: "🌙",
+    },
+  },
+  // 7. EWDM (매일 + 산책 + 거리 + 아침)
   EWDM: {
     mz: {
       title: "새벽 안개 빌런형",
@@ -195,11 +253,130 @@ export const WORKOUT_MBTI_DICTIONARY = {
     adult: {
       title: "새벽 청명형",
       description:
-        "상쾌한 이른 아침, 묵묵히 걸으며 심신을 다스리는 건강 수호자 🌿",
-      emoji: "🧘",
+        "상쾌한 이른 아침, 묵묵히 걸으며 심신을 다스리는 건강 수호자 🧘",
+      emoji: "🌿",
     },
   },
-  // W(주말) + W(산책) + D(거리) + N(야간)
+  // 8. EWDN (매일 + 산책 + 거리 + 야간)
+  EWDN: {
+    mz: {
+      title: "야간 순찰대 반장형",
+      description:
+        "매일 밤 에어팟 끼고 동네 세 바퀴는 돌아야 잠이 오는 프로 야간 순찰러 👮",
+      emoji: "🌃",
+    },
+    adult: {
+      title: "달빛 동행형",
+      description:
+        "매일 저녁 고요한 밤하늘을 벗 삼아 꾸준히 발걸음을 누적하는 뚝심파 🌙",
+      emoji: "🚶‍♂️",
+    },
+  },
+  // 9. WRFM (주말 + 러너 + 칼로리 + 아침)
+  WRFM: {
+    mz: {
+      title: "주말 조기축구 에이스형",
+      description:
+        "주말 아침에 눈뜨자마자 고강도 스프린트로 지방을 찢어발기는 타입 ⚽",
+      emoji: "🏃",
+    },
+    adult: {
+      title: "주말 청춘형",
+      description:
+        "주말 아침 상쾌한 땀방울로 젊음과 활력을 급속 충전하는 열정파 ⚡",
+      emoji: "☀️",
+    },
+  },
+  // 10. WRFN (주말 + 러너 + 칼로리 + 야간)
+  WRFN: {
+    mz: {
+      title: "평일 요양, 주말 폭주형",
+      description: "평일엔 침대 누워있다가 주말 밤만 되면 에너자이저 빙의함 🔋",
+      emoji: "💥",
+    },
+    adult: {
+      title: "주말 버닝형",
+      description:
+        "평일엔 생업에 집중하고, 주말 밤에 에너지를 대폭발시키는 반전 매력파 ⚡",
+      emoji: "🔋",
+    },
+  },
+  // 11. WRDM (주말 + 러너 + 거리 + 아침)
+  WRDM: {
+    mz: {
+      title: "주말 원정 레이서형",
+      description:
+        "평일엔 아낀 체력을 주말 아침 장거리 하이킹이나 러닝에 몰빵하는 스타일 🏎️",
+      emoji: "🗺️",
+    },
+    adult: {
+      title: "주말 활력형",
+      description:
+        "쉬는 날 아침 일찍 일어나 멀리까지 달리고 오며 스트레스를 날리는 철인 🏅",
+      emoji: "⛰️",
+    },
+  },
+  // 12. WRDN (주말 + 러너 + 거리 + 야간)
+  WRDN: {
+    mz: {
+      title: "토요일 밤의 심야 무법자형",
+      description:
+        "주말 밤 도심 속을 칼바람 가르며 장거리 레이싱 뛰는 야생마 🐎",
+      emoji: "🕶️",
+    },
+    adult: {
+      title: "주말 심야 열정파",
+      description:
+        "한 주 동안 쌓인 피로를 주말 밤 장거리 유산소로 시원하게 날리는 쾌남형 🌃",
+      emoji: "💪",
+    },
+  },
+  // 13. WWFM (주말 + 산책 + 칼로리 + 아침)
+  WWFM: {
+    mz: {
+      title: "브런치 칼로리 청산형",
+      description:
+        "주말 브런치 거하게 먹기 전 양심적으로 동네 한 바퀴 파워 워킹하는 스타일 🥞",
+      emoji: "🍳",
+    },
+    adult: {
+      title: "주말 보양 산책형",
+      description:
+        "주말 아침 가족들과 함께 가볍게 걸으며 건강한 주말을 시작하는 웰빙파 🌳",
+      emoji: "☀️",
+    },
+  },
+  // 14. WWFN (주말 + 산책 + 칼로리 + 야간)
+  WWFN: {
+    mz: {
+      title: "치맥 죄책감 세탁형",
+      description:
+        "주말 저녁 야식 먹은 나를 용서하지 못해 밤늦게 파워 산책으로 세탁하는 중 🍗",
+      emoji: "🧼",
+    },
+    adult: {
+      title: "주말 저녁 정화형",
+      description:
+        "맛있는 주말 저녁 식사 후, 소화를 위해 기분 좋게 땀 흘리는 현명한 분 🍉",
+      emoji: "✨",
+    },
+  },
+  // 15. WWDM (주말 + 산책 + 거리 + 아침)
+  WWDM: {
+    mz: {
+      title: "주말 숲길 오픈런형",
+      description:
+        "주말 아침 일찍 에어팟 장착하고 멀리 경치 보러 떠나는 프로 탐험러 🎒",
+      emoji: "🌲",
+    },
+    adult: {
+      title: "주말 등산 마스터형",
+      description:
+        "주말 아침 산과 들을 찾으며 자연 속에서 장거리 힐링을 즐기는 산신령형 ⛰️",
+      emoji: "🧗‍♂️",
+    },
+  },
+  // 16. WWDN (주말 + 산책 + 거리 + 야간)
   WWDN: {
     mz: {
       title: "새벽 한강 감성 변태형",
@@ -210,35 +387,8 @@ export const WORKOUT_MBTI_DICTIONARY = {
     adult: {
       title: "야간 낭만형",
       description:
-        "조용한 밤하늘을 벗 삼아 사색과 낭만을 즐기는 야간 산책가 🌌",
-      emoji: "🚶‍♂️",
-    },
-  },
-  // W(주말) + R(러너) + F(칼로리) + N(야간)
-  WRFN: {
-    mz: {
-      title: "평일 요양, 주말 폭주형",
-      description: "평일엔 침대 누워있다가 주말 밤만 되면 에너자이저 빙의함 🔋",
-      emoji: "💥",
-    },
-    adult: {
-      title: "주말 버닝형",
-      description:
-        "평일엔 생업에 집중하고, 주말에 에너지를 대폭발시키는 반전 매력파 🔋",
-      emoji: "⚡",
-    },
-  },
-  // E(매일) + W(산책) + F(칼로리) + M(아침)
-  EWFM: {
-    mz: {
-      title: "미라클모닝 중독형",
-      description: "눈 뜨자마자 운동 안 켜면 온몸에 가시가 돋는 자기관리 AI 🤖",
-      emoji: "📊",
-    },
-    adult: {
-      title: "철저한 모범형",
-      description: "매일 아침 규칙적인 유산소로 건강한 삶을 개척하는 철인 🦾",
-      emoji: "💯",
+        "조용한 밤하늘을 벗 삼아 사색과 낭만을 즐기는 야간 산책가 🚶‍♂️",
+      emoji: "🌌",
     },
   },
 };

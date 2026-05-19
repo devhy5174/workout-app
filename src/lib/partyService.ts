@@ -67,6 +67,35 @@ async function withLeaderNicknames(rows: any[]): Promise<Party[]> {
   }));
 }
 
+export async function hasActivePartyMember(myUserId: string): Promise<boolean> {
+  const { data: myMemberships } = await supabase
+    .from("party_members")
+    .select("party_id")
+    .eq("user_id", myUserId);
+
+  if (!myMemberships || myMemberships.length === 0) return false;
+
+  const partyIds = myMemberships.map((r: any) => r.party_id);
+
+  const { data: otherMembers } = await supabase
+    .from("party_members")
+    .select("user_id")
+    .in("party_id", partyIds)
+    .neq("user_id", myUserId);
+
+  if (!otherMembers || otherMembers.length === 0) return false;
+
+  const memberIds = [...new Set(otherMembers.map((m: any) => m.user_id))];
+
+  const { count } = await supabase
+    .from("active_sessions")
+    .select("*", { count: "exact", head: true })
+    .in("user_id", memberIds)
+    .eq("is_active", true);
+
+  return (count ?? 0) > 0;
+}
+
 export async function getPartyActiveCount(partyId: string): Promise<number> {
   const { data: members } = await supabase
     .from("party_members")

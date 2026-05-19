@@ -1,6 +1,9 @@
+import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { HiHome, HiUserGroup, HiCog, HiUser } from "react-icons/hi";
 import { HiChatBubbleLeftRight, HiTrophy } from "react-icons/hi2";
+import { useUser } from "../../context/UserContext";
+import { hasActivePartyMember } from "../../lib/partyService";
 
 const navItems = [
   { to: "/", icon: HiHome, label: "홈" },
@@ -13,20 +16,41 @@ const navItems = [
 
 export default function BottomNav() {
   const { pathname } = useLocation();
+  const { user } = useUser();
+  const [partyActive, setPartyActive] = useState(false);
+
+  useEffect(() => {
+    if (!user?.id) return;
+    hasActivePartyMember(user.id).then(setPartyActive);
+  }, [user?.id]);
+
+  useEffect(() => {
+    if (pathname === "/party") setPartyActive(false);
+  }, [pathname]);
+
   if (pathname === "/workout") return null;
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-10 bg-white border-t border-gray-100 flex max-w-md mx-auto">
       {navItems.map(({ to, icon: Icon, label }) => {
         const active = pathname === to;
+        const isParty = to === "/party";
         return (
           <Link
             key={to}
             to={to}
-            className={`flex-1 flex flex-col items-center py-2 gap-0.5 transition ${
+            className={`relative flex-1 flex flex-col items-center py-2 gap-0.5 transition ${
               active ? "text-[var(--color-primary)]" : "text-gray-400"
             }`}
           >
+            {isParty && partyActive && (
+              <span className="absolute -top-7 left-45 -translate-x-1/2 animate-bounce pointer-events-none z-20">
+                <span className="relative flex items-center whitespace-nowrap bg-primary text-white text-[9px] font-extrabold px-2 py-0.5 rounded-full shadow-md">
+                  파티원 운동중!
+                  <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-0 h-0 border-l-[4px] border-l-transparent border-r-[4px] border-r-transparent border-t-[4px] border-t-primary" />
+                </span>
+              </span>
+            )}
             <Icon className="text-xl" />
             <span className="text-[9px] font-semibold">{label}</span>
           </Link>

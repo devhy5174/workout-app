@@ -1,6 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { HiLockClosed } from "react-icons/hi2";
 import { useNotices } from "../context/NoticesContext";
 import { useActivityType } from "../context/ActivityTypeContext";
 import { useCharacter } from "../context/CharacterContext";
@@ -561,31 +560,24 @@ export default function Home() {
         )}
       </div>
 
-      {/* 유산소 MBTI 미니 카드 */}
-      <button
-        type="button"
-        onClick={() => navigate("/mypage?tab=stats")}
-        className="mx-4 mt-3 w-auto bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl px-4 py-3 flex items-center gap-3 active:scale-95 transition-transform text-left"
-        aria-label="유산소 MBTI 통계 페이지로 이동"
-      >
-        <div className="flex flex-col flex-1 min-w-0">
-          <p className="text-indigo-200 text-[10px] font-bold mb-0.5">이번달 유산소 MBTI</p>
-          {isPremium && mbtiData ? (
+      {/* 유산소 MBTI 미니 카드 — 프리미엄 전용 */}
+      {isPremium && mbtiData && (
+        <button
+          type="button"
+          onClick={() => navigate("/mypage?tab=stats")}
+          className="mx-4 mt-3 w-auto bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl px-4 py-3 flex items-center gap-3 active:scale-95 transition-transform text-left"
+          aria-label="유산소 MBTI 통계 페이지로 이동"
+        >
+          <div className="flex flex-col flex-1 min-w-0">
+            <p className="text-indigo-200 text-[10px] font-bold mb-0.5">이번달 유산소 MBTI</p>
             <div className="flex items-center gap-2">
               <span className="text-white font-black text-base">{mbtiData.code}</span>
               <span className="text-indigo-100 text-xs font-semibold truncate">{mbtiData.badge?.title} {mbtiData.badge?.emoji}</span>
             </div>
-          ) : mbtiData ? (
-            <div className="flex items-center gap-1.5">
-              <HiLockClosed className="text-amber-300 text-sm flex-shrink-0" />
-              <span className="text-white/70 text-xs font-semibold">프리미엄 구독 시 확인 가능</span>
-            </div>
-          ) : (
-            <span className="text-white/60 text-xs font-semibold">이번 달 운동을 시작해보세요!</span>
-          )}
-        </div>
-        <span className="text-white/50 text-xs font-bold flex-shrink-0">통계 보기 →</span>
-      </button>
+          </div>
+          <span className="text-white/50 text-xs font-bold flex-shrink-0">통계 보기 →</span>
+        </button>
+      )}
 
       {/* 파티 활동 카드 */}
       <div className="mx-4 mt-4 bg-white rounded-3xl shadow-sm">

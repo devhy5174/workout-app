@@ -93,11 +93,50 @@ const PremiumReportSection: React.FC<PremiumSectionProps> = ({
 
         <div className="relative">
           {/* 프리미엄 blur */}
+
           <div
             className={`space-y-4 transition-all duration-500 ${
               !isPremium ? "blur-md pointer-events-none select-none" : ""
             }`}
           >
+            {/* 유산소 mbti */}
+            <div>
+              {/* 섹션 제목 */}
+              <div className="flex items-center gap-1.5 mb-3 px-1">
+                <span className="text-base font-extrabold text-gray-800">
+                  📊 유산소 MBTI
+                </span>
+                <button
+                  onClick={() => setShowMbtiInfo(true)}
+                  className="text-gray-400 hover:text-gray-600 transition-colors"
+                  aria-label="유산소 MBTI 안내"
+                >
+                  <HiInformationCircle className="text-lg" />
+                </button>
+              </div>
+
+              <div className="relative bg-gradient-to-br from-indigo-500 to-purple-600 p-6 rounded-3xl text-white">
+                <div className="flex items-start mb-6">
+                  <div>
+                    <p className="text-indigo-100 text-xs font-bold mb-1">
+                      MONTHLY STYLE
+                    </p>
+                    <h3 className="text-2xl font-black">
+                      {mbtiCode} {badge?.emoji}
+                    </h3>
+                    <p className="text-sm text-indigo-100 mt-1">
+                      {badge?.title}{" "}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="bg-white/10 rounded-2xl p-5 backdrop-blur-sm">
+                  <p className="text-sm leading-relaxed text-indigo-50">
+                    {badge?.description}
+                  </p>
+                </div>
+              </div>
+            </div>
             {/* 리포트 카드 */}
             <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
               <div className="flex items-center justify-between mb-5">
@@ -149,45 +188,6 @@ const PremiumReportSection: React.FC<PremiumSectionProps> = ({
                     </div>
                   </div>
                 ))}
-              </div>
-            </div>
-
-            {/* 유산소 mbti */}
-            <div>
-              {/* 섹션 제목 */}
-              <div className="flex items-center gap-1.5 mb-3 px-1">
-                <span className="text-base font-extrabold text-gray-800">
-                  📊 유산소 MBTI
-                </span>
-                <button
-                  onClick={() => setShowMbtiInfo(true)}
-                  className="text-gray-400 hover:text-gray-600 transition-colors"
-                  aria-label="유산소 MBTI 안내"
-                >
-                  <HiInformationCircle className="text-lg" />
-                </button>
-              </div>
-
-              <div className="relative bg-gradient-to-br from-indigo-500 to-purple-600 p-6 rounded-3xl text-white">
-                <div className="flex items-start mb-6">
-                  <div>
-                    <p className="text-indigo-100 text-xs font-bold mb-1">
-                      MONTHLY STYLE
-                    </p>
-                    <h3 className="text-2xl font-black">
-                      {mbtiCode} {badge?.emoji}
-                    </h3>
-                    <p className="text-sm text-indigo-100 mt-1">
-                      {badge?.title}{" "}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="bg-white/10 rounded-2xl p-5 backdrop-blur-sm">
-                  <p className="text-sm leading-relaxed text-indigo-50">
-                    {badge?.description}
-                  </p>
-                </div>
               </div>
             </div>
           </div>
@@ -251,9 +251,15 @@ const PremiumReportSection: React.FC<PremiumSectionProps> = ({
 
             <div className="space-y-2">
               {[
-                { code: "E / W", desc: "꾸준 운동형(Everyday) vs 주말 몰빵형(Weekend)" },
+                {
+                  code: "E / W",
+                  desc: "꾸준 운동형(Everyday) vs 주말 몰빵형(Weekend)",
+                },
                 { code: "R / W", desc: "러너형(Runner) vs 산책형(Walker)" },
-                { code: "F / D", desc: "칼로리 소각형(Fatburn) vs 거리 정복형(Distance)" },
+                {
+                  code: "F / D",
+                  desc: "칼로리 소각형(Fatburn) vs 거리 정복형(Distance)",
+                },
                 { code: "M / N", desc: "아침형(Morning) vs 야행성형(Night)" },
               ].map(({ code, desc }) => (
                 <div
