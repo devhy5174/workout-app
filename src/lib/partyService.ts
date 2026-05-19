@@ -254,6 +254,45 @@ export async function deleteParty(
   return { error: error?.message ?? null };
 }
 
+/** 방장 나가기 — 다른 멤버에게 자동 위임 후 탈퇴, 혼자면 파티 해체 */
+export async function leavePartyAsLeader(
+  partyId: string,
+  leaderId: string,
+): Promise<{ error: string | null; dissolved: boolean }> {
+  // 나 제외한 멤버 중 가장 오래된 사람 찾기
+  const { data: others } = await supabase
+    .from("party_members")
+    .select("user_id, joined_at")
+    .eq("party_id", partyId)
+    .neq("user_id", leaderId)
+    .order("joined_at", { ascending: true })
+    .limit(1);
+
+  // 혼자 남아있으면 파티 해체
+  if (!others || others.length === 0) {
+    const { error } = await supabase.from("parties").delete().eq("id", partyId);
+    return { error: error?.message ?? null, dissolved: true };
+  }
+
+  const newLeaderId = others[0].user_id;
+
+  // 방장 위임
+  const { error: updateError } = await supabase
+    .from("parties")
+    .update({ created_by: newLeaderId })
+    .eq("id", partyId);
+  if (updateError) return { error: updateError.message, dissolved: false };
+
+  // 파티 탈퇴
+  const { error: leaveError } = await supabase
+    .from("party_members")
+    .delete()
+    .eq("party_id", partyId)
+    .eq("user_id", leaderId);
+
+  return { error: leaveError?.message ?? null, dissolved: false };
+}
+
 export type PartyTodayStats = {
   totalSteps: number;
   avgSteps: number;

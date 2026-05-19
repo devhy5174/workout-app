@@ -16,6 +16,7 @@ import {
   sendPartyNotice,
   deletePartyNotice,
   deleteParty,
+  leavePartyAsLeader,
 } from "../lib/partyService";
 import type {
   Party,
@@ -477,6 +478,58 @@ function Toast({ message, icon = "🎉" }: { message: string; icon?: string }) {
   );
 }
 
+function LeaderLeaveModal({
+  partyName,
+  hasOtherMembers,
+  onConfirm,
+  onCancel,
+}: {
+  partyName: string;
+  hasOtherMembers: boolean;
+  onConfirm: () => void;
+  onCancel: () => void;
+}) {
+  return (
+    <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center px-6">
+      <div className="w-full max-w-sm bg-white rounded-3xl p-7 flex flex-col items-center gap-4 shadow-xl">
+        <span className="text-5xl">{hasOtherMembers ? "👑" : "💥"}</span>
+        <p className="font-extrabold text-gray-800 text-lg text-center">
+          {hasOtherMembers ? "방장을 넘기고 나갈까요?" : "파티를 나갈까요?"}
+        </p>
+        <p className="text-sm text-gray-400 text-center leading-relaxed">
+          {hasOtherMembers ? (
+            <>
+              <span className="font-bold text-gray-600">"{partyName}"</span> 파티의<br />
+              방장이 가장 오래된 멤버에게<br />
+              자동으로 넘어가요.
+            </>
+          ) : (
+            <>
+              혼자 남은 파티라<br />
+              나가면 <span className="font-bold text-gray-600">"{partyName}"</span> 파티가<br />
+              자동으로 해체돼요.
+            </>
+          )}
+        </p>
+        <div className="flex gap-3 w-full">
+          <button
+            onClick={onCancel}
+            className="flex-1 py-3 rounded-2xl bg-gray-100 text-sm font-bold text-gray-500 active:scale-95 transition"
+          >
+            취소
+          </button>
+          <button
+            onClick={onConfirm}
+            className="flex-1 py-3 rounded-2xl bg-red-500 text-white text-sm font-extrabold active:scale-95 transition"
+          >
+            {hasOtherMembers ? "넘기고 나가기" : "해체하고 나가기"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function DeletePartyModal({
   partyName,
   onConfirm,
@@ -645,6 +698,7 @@ export default function PartyDetail() {
   const [showJoinModal, setShowJoinModal] = useState(false);
   const [showLeaveModal, setShowLeaveModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showLeaderLeaveModal, setShowLeaderLeaveModal] = useState(false);
   const [kickTarget, setKickTarget] = useState<PartyMember | null>(null);
   const [toast, setToast] = useState<{ message: string; icon?: string } | null>(
     null,
@@ -770,6 +824,20 @@ export default function PartyDetail() {
     if (error) {
       showToast("해체에 실패했어요. 잠시 후 다시 시도해 주세요.", "⚠️");
     } else {
+      navigate("/party", { replace: true });
+    }
+  };
+
+  const handleLeaderLeave = async () => {
+    if (!party || !user) return;
+    const { error, dissolved } = await leavePartyAsLeader(party.id, user.id);
+    setShowLeaderLeaveModal(false);
+    if (error) {
+      showToast("나가기에 실패했어요. 잠시 후 다시 시도해 주세요.", "⚠️");
+    } else if (dissolved) {
+      navigate("/party", { replace: true });
+    } else {
+      showToast("파티를 나왔어요", "👋");
       navigate("/party", { replace: true });
     }
   };
@@ -1124,6 +1192,12 @@ export default function PartyDetail() {
                 👑 파티장
               </div>
               <button
+                onClick={() => setShowLeaderLeaveModal(true)}
+                className="px-4 py-3 rounded-2xl bg-gray-100 text-sm font-bold text-gray-500 active:scale-95 transition"
+              >
+                나가기
+              </button>
+              <button
                 onClick={() => setShowDeleteModal(true)}
                 className="px-4 py-3 rounded-2xl bg-red-50 text-sm font-bold text-red-400 active:scale-95 transition"
               >
@@ -1179,6 +1253,14 @@ export default function PartyDetail() {
           nickname={kickTarget.nickname}
           onConfirm={handleKickConfirm}
           onCancel={() => setKickTarget(null)}
+        />
+      )}
+      {showLeaderLeaveModal && party && (
+        <LeaderLeaveModal
+          partyName={party.name}
+          hasOtherMembers={members.filter((m) => m.user_id !== user?.id).length > 0}
+          onConfirm={handleLeaderLeave}
+          onCancel={() => setShowLeaderLeaveModal(false)}
         />
       )}
       {showDeleteModal && party && (
