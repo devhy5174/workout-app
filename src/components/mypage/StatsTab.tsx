@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   BarChart,
   Bar,
@@ -9,12 +10,17 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { useUser } from "../../context/UserContext";
+import { usePremium } from "../../context/PremiumContext";
 import { useWorkoutStats } from "../../hooks/useWorkoutStats";
 import { localDateStr } from "../../utils/streak";
+import { getPremiumTabPath } from "../../utils/premiumNavigation";
 import WorkoutCalendar from "../ui/WorkoutCalendar";
+import PremiumReportSection from "./PremiumReportSection";
 
 export default function StatsTab() {
   const { user, workoutRecords } = useUser();
+  const { isPremium } = usePremium();
+  const navigate = useNavigate();
   const { period, setPeriod, data, isLoading, periodLabel, totalSteps } =
     useWorkoutStats(user?.id ?? null, workoutRecords);
 
@@ -203,7 +209,9 @@ export default function StatsTab() {
 
           {/* 수치 */}
           <div className="flex flex-col items-center gap-1 py-2">
-            <p className="text-xs text-gray-400 font-semibold">{displayLabel}</p>
+            <p className="text-xs text-gray-400 font-semibold">
+              {displayLabel}
+            </p>
             {isLoading ? (
               <p className="text-5xl font-extrabold text-gray-200 animate-pulse">
                 —
@@ -233,7 +241,9 @@ export default function StatsTab() {
             ) : totalSteps === 0 ? (
               <div className="flex flex-col items-center justify-center h-44 gap-2 text-gray-300">
                 <span className="text-4xl">🏃</span>
-                <p className="text-sm font-bold">이 기간에 운동 기록이 없어요</p>
+                <p className="text-sm font-bold">
+                  이 기간에 운동 기록이 없어요
+                </p>
               </div>
             ) : (
               <ResponsiveContainer width="100%" height={180}>
@@ -289,6 +299,13 @@ export default function StatsTab() {
 
       {/* 운동 달력 */}
       <WorkoutCalendar workoutRecords={workoutRecords} />
+
+      {/* 프리미엄 월간 리포트 */}
+      <PremiumReportSection
+        isPremium={isPremium}
+        onUpgrade={() => navigate(getPremiumTabPath())}
+        workouts={workoutRecords}
+      />
     </div>
   );
 }

@@ -115,13 +115,14 @@ const SEASON_PREVIEWS: {
   },
 ];
 
-
 const PREMIUM_PLAN_BENEFITS = [
   "다양한 활동중 프리미엄 말풍선",
-  "광고 제거",
+  "재미있는 월간 리포트 & 나의 숨겨진 유산소 MBTI",
+  "체중 감량 & 근육 증량 맞춤형 목표 설정",
   "인증 카드 테마",
   "프리미엄 칭호",
   "나만의 대체 식단 새로고침",
+  "광고 없이 즐기는 클린 앱 환경",
 ] as const;
 
 // ── 이벤트 카드 ──────────────────────────────────────────
@@ -738,122 +739,125 @@ export default function Step() {
 
             {/* 프리미엄 아이템 선택 */}
             {isPremium && (
-            <p className="text-xs font-bold text-gray-500 px-1 flex items-center gap-1.5">
-              <HiSparkles className="text-amber-400 text-sm" />
-              구독 시 선택 가능 아이템
-            </p>
+              <p className="text-xs font-bold text-gray-500 px-1 flex items-center gap-1.5">
+                <HiSparkles className="text-amber-400 text-sm" />
+                구독 시 선택 가능 아이템
+              </p>
             )}
-            {isPremium && PREMIUM_TYPE_ORDER.map((type) => {
-              const group = premiumItems.filter((i) => i.type === type);
-              if (group.length === 0) return null;
-              const meta = TYPE_META[type];
-              return (
-                <div key={type}>
-                  <p className="text-xs font-bold text-gray-400 px-1 mb-2 flex items-center gap-1">
-                    <meta.Icon className={`text-sm ${meta.iconColor}`} />
-                    {meta.label}
-                  </p>
-                  <div className="flex flex-col gap-2">
-                    {group.map((item) => {
-                      const isUserSelectable =
-                        type === "activeBubble" ||
-                        type === "title" ||
-                        type === "postFrame";
-                      const isActive =
-                        type === "activeBubble"
-                          ? selectedBubbleId === item.id
-                          : type === "title"
-                            ? userProfile?.title === item.name
-                            : type === "postFrame"
-                              ? selectedFrameId === item.id
-                              : activePremiumItems[type] === item.id;
-                      const handlePremiumItemClick = () => {
-                        if (!isPremium && isUserSelectable) return;
-                        if (type === "activeBubble")
-                          setSelectedBubbleId(item.id);
-                        else if (type === "title") handleTitleSelect(item.name);
-                        else if (type === "postFrame")
-                          setSelectedFrameId(item.id);
-                        else togglePremiumItem(type, item.id);
-                      };
-                      return (
-                        <button
-                          key={item.id}
-                          onClick={handlePremiumItemClick}
-                          disabled={isUserSelectable && !isPremium}
-                          className={`rounded-2xl shadow-sm px-5 py-4 flex items-center gap-4 transition-all text-left w-full border-2 ${
-                            isUserSelectable && !isPremium
-                              ? "opacity-50 cursor-not-allowed"
-                              : ""
-                          } ${
-                            isActive
-                              ? "bg-white border-amber-400"
-                              : "bg-gray-50 border-transparent"
-                          }`}
-                        >
-                          <div
-                            className={`w-11 h-11 rounded-2xl flex items-center justify-center flex-shrink-0 ${
-                              (type === "activeBubble" &&
-                                BUBBLE_PREVIEWS[item.id]) ||
-                              (type === "postFrame" && POST_FRAMES[item.id])
-                                ? ""
-                                : isActive
-                                  ? meta.bgColor
-                                  : "bg-gray-100"
+            {isPremium &&
+              PREMIUM_TYPE_ORDER.map((type) => {
+                const group = premiumItems.filter((i) => i.type === type);
+                if (group.length === 0) return null;
+                const meta = TYPE_META[type];
+                return (
+                  <div key={type}>
+                    <p className="text-xs font-bold text-gray-400 px-1 mb-2 flex items-center gap-1">
+                      <meta.Icon className={`text-sm ${meta.iconColor}`} />
+                      {meta.label}
+                    </p>
+                    <div className="flex flex-col gap-2">
+                      {group.map((item) => {
+                        const isUserSelectable =
+                          type === "activeBubble" ||
+                          type === "title" ||
+                          type === "postFrame";
+                        const isActive =
+                          type === "activeBubble"
+                            ? selectedBubbleId === item.id
+                            : type === "title"
+                              ? userProfile?.title === item.name
+                              : type === "postFrame"
+                                ? selectedFrameId === item.id
+                                : activePremiumItems[type] === item.id;
+                        const handlePremiumItemClick = () => {
+                          if (!isPremium && isUserSelectable) return;
+                          if (type === "activeBubble")
+                            setSelectedBubbleId(item.id);
+                          else if (type === "title")
+                            handleTitleSelect(item.name);
+                          else if (type === "postFrame")
+                            setSelectedFrameId(item.id);
+                          else togglePremiumItem(type, item.id);
+                        };
+                        return (
+                          <button
+                            key={item.id}
+                            onClick={handlePremiumItemClick}
+                            disabled={isUserSelectable && !isPremium}
+                            className={`rounded-2xl shadow-sm px-5 py-4 flex items-center gap-4 transition-all text-left w-full border-2 ${
+                              isUserSelectable && !isPremium
+                                ? "opacity-50 cursor-not-allowed"
+                                : ""
+                            } ${
+                              isActive
+                                ? "bg-white border-amber-400"
+                                : "bg-gray-50 border-transparent"
                             }`}
                           >
-                            {type === "activeBubble" &&
-                            BUBBLE_PREVIEWS[item.id] ? (
-                              <div className="flex flex-col items-center">
-                                <div
-                                  className={`${BUBBLE_PREVIEWS[item.id].colorClass} ${BUBBLE_PREVIEWS[item.id].premium ? "animate-premium-bubble" : ""} ${BUBBLE_PREVIEWS[item.id].darkText ? "text-stone-800" : "text-white"} text-[7px] font-extrabold px-1.5 py-1.5 rounded-full whitespace-nowrap leading-none`}
-                                >
-                                  {BUBBLE_PREVIEWS[item.id].text}
-                                </div>
-                                <div
-                                  className={`w-2 h-2 ${BUBBLE_PREVIEWS[item.id].colorClass} ${BUBBLE_PREVIEWS[item.id].premium ? "animate-premium-bubble" : ""} rotate-45 rounded-[1px] -mt-1`}
-                                />
-                              </div>
-                            ) : type === "postFrame" && POST_FRAMES[item.id] ? (
-                              <div
-                                className={`p-[2px] rounded-xl ${POST_FRAMES[item.id].wrapperClass} ${isActive ? POST_FRAMES[item.id].animationClass : ""}`}
-                              >
-                                <div className="w-8 h-10 rounded-[9px] bg-white flex items-center justify-center">
-                                  <HiPhoto
-                                    className={`text-base ${isActive ? meta.iconColor : "text-gray-300"}`}
+                            <div
+                              className={`w-11 h-11 rounded-2xl flex items-center justify-center flex-shrink-0 ${
+                                (type === "activeBubble" &&
+                                  BUBBLE_PREVIEWS[item.id]) ||
+                                (type === "postFrame" && POST_FRAMES[item.id])
+                                  ? ""
+                                  : isActive
+                                    ? meta.bgColor
+                                    : "bg-gray-100"
+                              }`}
+                            >
+                              {type === "activeBubble" &&
+                              BUBBLE_PREVIEWS[item.id] ? (
+                                <div className="flex flex-col items-center">
+                                  <div
+                                    className={`${BUBBLE_PREVIEWS[item.id].colorClass} ${BUBBLE_PREVIEWS[item.id].premium ? "animate-premium-bubble" : ""} ${BUBBLE_PREVIEWS[item.id].darkText ? "text-stone-800" : "text-white"} text-[7px] font-extrabold px-1.5 py-1.5 rounded-full whitespace-nowrap leading-none`}
+                                  >
+                                    {BUBBLE_PREVIEWS[item.id].text}
+                                  </div>
+                                  <div
+                                    className={`w-2 h-2 ${BUBBLE_PREVIEWS[item.id].colorClass} ${BUBBLE_PREVIEWS[item.id].premium ? "animate-premium-bubble" : ""} rotate-45 rounded-[1px] -mt-1`}
                                   />
                                 </div>
-                              </div>
-                            ) : (
-                              <meta.Icon
-                                className={`text-xl ${isActive ? meta.iconColor : "text-gray-400"}`}
-                              />
-                            )}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p
-                              className={`font-bold text-sm ${isActive ? "text-gray-800" : "text-gray-400"}`}
-                            >
-                              {item.name}
-                            </p>
-                            <p className="text-xs text-gray-400 mt-0.5">
-                              {item.description}
-                            </p>
-                          </div>
-                          <div
-                            className={`w-5 h-5 rounded-full border-2 flex-shrink-0 transition-all ${
-                              isActive
-                                ? "border-amber-400 bg-amber-400"
-                                : "border-gray-200 bg-white"
-                            }`}
-                          />
-                        </button>
-                      );
-                    })}
+                              ) : type === "postFrame" &&
+                                POST_FRAMES[item.id] ? (
+                                <div
+                                  className={`p-[2px] rounded-xl ${POST_FRAMES[item.id].wrapperClass} ${isActive ? POST_FRAMES[item.id].animationClass : ""}`}
+                                >
+                                  <div className="w-8 h-10 rounded-[9px] bg-white flex items-center justify-center">
+                                    <HiPhoto
+                                      className={`text-base ${isActive ? meta.iconColor : "text-gray-300"}`}
+                                    />
+                                  </div>
+                                </div>
+                              ) : (
+                                <meta.Icon
+                                  className={`text-xl ${isActive ? meta.iconColor : "text-gray-400"}`}
+                                />
+                              )}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p
+                                className={`font-bold text-sm ${isActive ? "text-gray-800" : "text-gray-400"}`}
+                              >
+                                {item.name}
+                              </p>
+                              <p className="text-xs text-gray-400 mt-0.5">
+                                {item.description}
+                              </p>
+                            </div>
+                            <div
+                              className={`w-5 h-5 rounded-full border-2 flex-shrink-0 transition-all ${
+                                isActive
+                                  ? "border-amber-400 bg-amber-400"
+                                  : "border-gray-200 bg-white"
+                              }`}
+                            />
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
-                </div>
-              );
-            })}
+                );
+              })}
           </>
         )}
 

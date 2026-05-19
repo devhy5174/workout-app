@@ -1,12 +1,16 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { MdDirectionsRun } from "react-icons/md";
+import { FaApple } from "react-icons/fa6";
+import { FcGoogle } from "react-icons/fc";
 import { useUser } from "../context/UserContext";
 import { supabase } from "../lib/supabase";
+import { RiKakaoTalkFill } from "react-icons/ri";
 
 type Mode = "login" | "signup" | "forgot";
 
-const BG = "linear-gradient(150deg, #ffac60 0%, #ff7433 40%, #ff5733 75%, #e8401a 100%)";
+const BG =
+  "linear-gradient(150deg, #ffac60 0%, #ff7433 40%, #ff5733 75%, #e8401a 100%)";
 
 export default function Auth() {
   const { login } = useUser();
@@ -86,6 +90,38 @@ export default function Auth() {
     else handleForgot();
   };
 
+  // TODO: Supabase 대시보드 → Authentication → Providers → Kakao 활성화 후 동작
+  // 카카오 디벨로퍼스(developers.kakao.com)에서 REST API 키 발급 필요
+  const handleKakaoLogin = async () => {
+    setError(null);
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "kakao",
+      options: { redirectTo: `${window.location.origin}/` },
+    });
+    if (error) setError(toKorean(error.message));
+  };
+
+  const handleGoogleLogin = async () => {
+    setError(null);
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: { redirectTo: `${window.location.origin}/` },
+    });
+    if (error) setError(toKorean(error.message));
+  };
+
+  // TODO: Supabase 대시보드 → Authentication → Providers → Apple 활성화 후 동작
+  // Apple Developer 계정($99/년) + Service ID 발급 필요
+  // Capacitor iOS: 나중에 @capacitor/sign-in-with-apple + signInWithIdToken 으로 교체
+  const handleAppleLogin = async () => {
+    setError(null);
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "apple",
+      options: { redirectTo: `${window.location.origin}/` },
+    });
+    if (error) setError(toKorean(error.message));
+  };
+
   if (signupDone) {
     return (
       <div
@@ -130,11 +166,16 @@ export default function Auth() {
           </h2>
           <p className="text-white/70 text-sm leading-relaxed mb-8">
             <span className="text-white font-semibold">{email}</span>로<br />
-            비밀번호 재설정 링크를 보냈어요.<br />
+            비밀번호 재설정 링크를 보냈어요.
+            <br />
             메일함을 확인해주세요.
           </p>
           <button
-            onClick={() => { setMode("login"); setForgotDone(false); setEmail(""); }}
+            onClick={() => {
+              setMode("login");
+              setForgotDone(false);
+              setEmail("");
+            }}
             aria-label="로그인으로 이동"
             className="w-full py-4 rounded-2xl font-bold text-sm"
             style={{ background: "white", color: "var(--color-primary)" }}
@@ -158,7 +199,10 @@ export default function Auth() {
             className="mb-4"
             style={{ filter: "drop-shadow(0 4px 16px rgba(0,0,0,0.3))" }}
           >
-            <MdDirectionsRun className="text-white mx-auto" style={{ fontSize: "6rem" }} />
+            <MdDirectionsRun
+              className="text-white mx-auto"
+              style={{ fontSize: "6rem" }}
+            />
           </div>
           <h1 className="text-3xl font-black text-white tracking-tight">
             함께 걸어요
@@ -177,7 +221,10 @@ export default function Auth() {
             {(["login", "signup"] as Mode[]).map((m) => (
               <button
                 key={m}
-                onClick={() => { setMode(m); setError(null); }}
+                onClick={() => {
+                  setMode(m);
+                  setError(null);
+                }}
                 className="flex-1 py-2.5 rounded-xl text-sm font-bold transition-all"
                 style={
                   mode === m
@@ -195,7 +242,10 @@ export default function Auth() {
         {mode === "forgot" && (
           <div className="w-full mb-6">
             <button
-              onClick={() => { setMode("login"); setError(null); }}
+              onClick={() => {
+                setMode("login");
+                setError(null);
+              }}
               className="text-white/60 text-sm font-semibold mb-4 flex items-center gap-1"
               aria-label="뒤로가기"
             >
@@ -239,7 +289,13 @@ export default function Auth() {
           <button
             type="submit"
             disabled={isSubmitting}
-            aria-label={mode === "login" ? "로그인" : mode === "signup" ? "회원가입" : "재설정 메일 보내기"}
+            aria-label={
+              mode === "login"
+                ? "로그인"
+                : mode === "signup"
+                  ? "회원가입"
+                  : "재설정 메일 보내기"
+            }
             className="w-full py-4 rounded-2xl font-black text-sm mt-2 disabled:opacity-50 transition-opacity shadow-sm"
             style={{ background: "white", color: "var(--color-primary)" }}
           >
@@ -256,13 +312,69 @@ export default function Auth() {
           {mode === "login" && (
             <button
               type="button"
-              onClick={() => { setMode("forgot"); setError(null); }}
+              onClick={() => {
+                setMode("forgot");
+                setError(null);
+              }}
               className="w-full text-center text-white/50 text-xs py-1 hover:text-white/80 transition-colors"
             >
               비밀번호를 잊으셨나요?
             </button>
           )}
         </form>
+
+        {/* 소셜 로그인 (forgot 모드에서는 숨김) */}
+        {mode !== "forgot" && (
+          <div className="w-full mt-6">
+            <div className="flex items-center gap-3 mb-5">
+              <div className="flex-1 h-px bg-white/20" />
+              <span className="text-white/40 text-xs font-semibold">또는</span>
+              <div className="flex-1 h-px bg-white/20" />
+            </div>
+
+            <div className="flex justify-center gap-4">
+              {/* 카카오 로그인 */}
+              <button
+                type="button"
+                onClick={handleKakaoLogin}
+                disabled={isSubmitting}
+                aria-label="카카오로 로그인"
+                className="w-10 h-10 rounded-full flex items-center justify-center disabled:opacity-50 transition-transform shadow-md active:scale-95"
+                style={{ backgroundColor: "#FEE500" }} // 카카오 공식 노란색 배경
+              >
+                {/* 노란 동그라미 한가운데에 공식 갈색 말풍선 심볼만 딱 박아줍니다 */}
+                <RiKakaoTalkFill
+                  size={26} // 버튼 크기(w-11)에 딱 예쁘게 들어가는 사이즈
+                  color="#3C1E1E" // 카카오 공식 시그니처 갈색
+                />
+              </button>
+
+              {/* 구글 로그인 */}
+              <button
+                type="button"
+                onClick={handleGoogleLogin}
+                disabled={isSubmitting}
+                aria-label="Google로 로그인"
+                className="w-10 h-10 rounded-full flex items-center justify-center disabled:opacity-50 transition-transform shadow-md active:scale-95"
+                style={{ background: "#FFFFFF" }}
+              >
+                <FcGoogle className="text-[22px]" />
+              </button>
+
+              {/* 애플 로그인 */}
+              <button
+                type="button"
+                onClick={handleAppleLogin}
+                disabled={isSubmitting}
+                aria-label="Apple로 로그인"
+                className="w-10 h-10 rounded-full flex items-center justify-center disabled:opacity-50 transition-transform shadow-md active:scale-95"
+                style={{ background: "#000000", color: "#FFFFFF" }}
+              >
+                <FaApple className="text-[22px]" />
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
