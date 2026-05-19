@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { MdDirectionsRun } from "react-icons/md";
-import { FaApple } from "react-icons/fa6";
 import { FcGoogle } from "react-icons/fc";
 import { useUser } from "../context/UserContext";
 import { supabase } from "../lib/supabase";
@@ -90,13 +89,13 @@ export default function Auth() {
     else handleForgot();
   };
 
-  // TODO: Supabase 대시보드 → Authentication → Providers → Kakao 활성화 후 동작
+  // 완료: Supabase 대시보드 → Authentication → Providers → Kakao 활성화 후 동작
   // 카카오 디벨로퍼스(developers.kakao.com)에서 REST API 키 발급 필요
   const handleKakaoLogin = async () => {
     setError(null);
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "kakao",
-      options: { redirectTo: `${window.location.origin}/` },
+      options: { redirectTo: `${window.location.origin}/` }, //로그인또는 회원가입후 되돌려지는 url주소
     });
     if (error) setError(toKorean(error.message));
   };
@@ -110,17 +109,17 @@ export default function Auth() {
     if (error) setError(toKorean(error.message));
   };
 
-  // TODO: Supabase 대시보드 → Authentication → Providers → Apple 활성화 후 동작
+  // TODO: 애플로그인 보류 진행시 활성화시켜 진행 Supabase 대시보드 → Authentication → Providers → Apple 활성화 후 동작
   // Apple Developer 계정($99/년) + Service ID 발급 필요
   // Capacitor iOS: 나중에 @capacitor/sign-in-with-apple + signInWithIdToken 으로 교체
-  const handleAppleLogin = async () => {
-    setError(null);
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: "apple",
-      options: { redirectTo: `${window.location.origin}/` },
-    });
-    if (error) setError(toKorean(error.message));
-  };
+  // const handleAppleLogin = async () => {
+  //   setError(null);
+  //   const { error } = await supabase.auth.signInWithOAuth({
+  //     provider: "apple",
+  //     options: { redirectTo: `${window.location.origin}/` },
+  //   });
+  //   if (error) setError(toKorean(error.message));
+  // };
 
   if (signupDone) {
     return (
@@ -362,7 +361,7 @@ export default function Auth() {
               </button>
 
               {/* 애플 로그인 */}
-              <button
+              {/* <button
                 type="button"
                 onClick={handleAppleLogin}
                 disabled={isSubmitting}
@@ -371,7 +370,7 @@ export default function Auth() {
                 style={{ background: "#000000", color: "#FFFFFF" }}
               >
                 <FaApple className="text-[22px]" />
-              </button>
+              </button> */}
             </div>
           </div>
         )}
