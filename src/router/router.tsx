@@ -26,7 +26,6 @@ import { useUser } from "../context/UserContext";
 import { EventsProvider } from "../context/EventsContext";
 import { NoticesProvider } from "../context/NoticesContext";
 import LoadingScreen from "../components/ui/LoadingScreen";
-import FloatingNotificationButton from "../components/notifications/FloatingNotificationButton";
 
 function AuthGuard({ children }: { children: React.ReactNode }) {
   const { user, isLoading } = useUser();
@@ -51,7 +50,6 @@ function ProtectedLayout() {
 
   return (
     <div className="h-screen bg-gray-50 flex flex-col max-w-md mx-auto">
-      <FloatingNotificationButton />
       <main className="flex-1 overflow-y-auto">
         <Outlet />
       </main>

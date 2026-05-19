@@ -22,6 +22,9 @@ import { PartyHighlightTicker } from "../components/ui/PartyHighlightTicker";
 import WeatherWidget from "../components/ui/WeatherWidget";
 import { calculateWorkoutMBTI } from "../utils/premiumMonthlyReportUtils";
 import { WORKOUT_MBTI_DICTIONARY } from "../data/premiumReportData";
+import { HiBell } from "react-icons/hi";
+import { useNotifications } from "../hooks/useNotifications";
+import { NotificationDrawer } from "../components/notifications/NotificationDrawer";
 
 type DisplayUser = {
   nickname: string;
@@ -105,7 +108,7 @@ export default function Home() {
   const { activeNotice, dismissNotice } = useNotices();
   const { selectedActivityType } = useActivityType();
   const { selectedCharacter } = useCharacter();
-  const { userGoal, workoutRecords, userProfile } = useUser();
+  const { userGoal, workoutRecords, userProfile, user } = useUser();
   const { isPremium } = usePremium();
   const {
     topParties,
@@ -123,6 +126,9 @@ export default function Home() {
   // 페이지 로드마다 캐릭터에 맞는 랜덤 메시지
   const activityType = selectedActivityType?.type ?? "walker";
   const { weather, condition: weatherCondition } = useWeather();
+  const [notifOpen, setNotifOpen] = useState(false);
+  const { notifications, unreadCount, isLoading, markAsRead, markAllAsRead, deleteNotification } =
+    useNotifications(user?.id ?? null);
   const [bubbleMsg, setBubbleMsg] = useState(() =>
     getRandomMessage(activityType),
   );
@@ -267,7 +273,7 @@ export default function Home() {
         </div>
       )}
 
-      {/* 상단 Streak + 날씨 */}
+      {/* 상단 Streak + 날씨 + 알림 */}
       <div className="flex justify-between items-center px-5 pt-4 pb-2">
         <div className="flex items-center gap-2 bg-primary-light rounded-full px-4 py-1.5">
           <span className="text-lg">🔥</span>
@@ -275,8 +281,34 @@ export default function Home() {
             {streak}일 연속 운동 중!
           </span>
         </div>
-        <WeatherWidget weather={weather} />
+        <div className="flex items-center gap-2">
+          <WeatherWidget weather={weather} />
+          <button
+            onClick={() => setNotifOpen(true)}
+            aria-label={`알림${unreadCount > 0 ? ` (${unreadCount}개)` : ""}`}
+            className="relative w-7 h-7 rounded-full flex items-center justify-center bg-white/80 shadow-sm border border-gray-100"
+          >
+            <HiBell size={13} className="text-gray-400" />
+            {unreadCount > 0 && (
+              <span className="absolute -top-0.5 -right-0.5 min-w-[14px] h-3.5 px-0.5 rounded-full bg-red-500 text-white text-[8px] font-bold flex items-center justify-center leading-none">
+                {unreadCount > 99 ? "99+" : unreadCount}
+              </span>
+            )}
+          </button>
+        </div>
       </div>
+
+      {notifOpen && (
+        <NotificationDrawer
+          notifications={notifications}
+          unreadCount={unreadCount}
+          isLoading={isLoading}
+          onRead={markAsRead}
+          onMarkAllRead={markAllAsRead}
+          onDelete={deleteNotification}
+          onClose={() => setNotifOpen(false)}
+        />
+      )}
 
       {/* 캐릭터 + 말풍선 */}
       <div className="flex flex-col items-center px-6 pt-4 pb-2 mb-3">
