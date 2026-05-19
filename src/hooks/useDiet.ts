@@ -16,6 +16,7 @@ import {
   getPersonalDailyKcalTarget,
   getWorkoutTargetKcal,
   resolveMealMenuIndices,
+  type DietGoal,
   type MainMealTime,
   type MealMenuIndices,
 } from "../utils/dietScaling";
@@ -53,6 +54,7 @@ export function useDiet() {
 
   const [burnedKcal, setBurnedKcal] = useState(0);
   const [showDietInfo, setShowDietInfo] = useState(false);
+  const [dietGoal, setDietGoal] = useState<DietGoal>("loss");
   const [mealMenuIndices, setMealMenuIndices] = useState<MealMenuIndices>(() =>
     loadMealIndices(selectedActivityType, isPremium),
   );
@@ -102,8 +104,8 @@ export function useDiet() {
   const kcalRemaining = Math.max(workoutTargetKcal - burnedKcal, 0);
 
   const scaledMeals = useMemo(
-    () => buildScaledMeals(personalDailyKcalTarget, mealMenuIndices),
-    [personalDailyKcalTarget, mealMenuIndices],
+    () => buildScaledMeals(personalDailyKcalTarget, mealMenuIndices, dietGoal),
+    [personalDailyKcalTarget, mealMenuIndices, dietGoal],
   );
 
   const rotateMealMenu = useCallback(
@@ -139,6 +141,8 @@ export function useDiet() {
     activityType,
     showDietInfo,
     setShowDietInfo,
+    dietGoal,
+    setDietGoal,
     userProfile,
     isPremium,
     togglePremium,

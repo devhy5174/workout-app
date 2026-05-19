@@ -50,6 +50,14 @@ export const WORKOUT_TARGET_LABELS: {
 export const FALLBACK_DAILY_KCAL_TARGET = 1800;
 export const DEFICIT_KCAL = 300;
 
+export type DietGoal = "loss" | "maintain" | "gain";
+
+export const DIET_GOAL_MEAL_OFFSETS: Record<DietGoal, number> = {
+  loss: 0,
+  maintain: 100,
+  gain: 200,
+};
+
 export function getWorkoutTargetKcal(type: ActivityTypes | null): number {
   if (!type) return DEFAULT_WORKOUT_TARGET_KCAL;
   return WORKOUT_TARGET_KCAL[type];
@@ -185,15 +193,16 @@ export function scaleMeal(
   personalDailyKcalTarget: number,
   ratio: number,
   menu: RecommendedMenu,
+  goalMealKcalOffset: number = 0,
 ): {
   personalizedMealKcal: number;
   scaleFactor: number;
   scaledFoods: ScaledFood[];
 } {
-  const personalizedMealKcal = Math.round(personalDailyKcalTarget * ratio);
+  const personalizedMealKcal =
+    Math.round(personalDailyKcalTarget * ratio) + goalMealKcalOffset;
   const baseKcal = menu.totalNutrition.kcal;
-  const scaleFactor =
-    baseKcal > 0 ? personalizedMealKcal / baseKcal : 1;
+  const scaleFactor = baseKcal > 0 ? personalizedMealKcal / baseKcal : 1;
 
   const scaledFoods = menu.foods.map((food) => ({
     name: food.name,
@@ -207,7 +216,10 @@ export function scaleMeal(
 export function buildScaledMeals(
   personalDailyKcalTarget: number,
   mealMenuIndices: MealMenuIndices,
+  dietGoal: DietGoal = "loss",
 ): ScaledMeal[] {
+  const goalMealKcalOffset = DIET_GOAL_MEAL_OFFSETS[dietGoal];
+
   return MEAL_CONFIGS.flatMap(({ time, label, ratio }) => {
     const menu = getMenuByIndex(time, mealMenuIndices[time]);
     if (!menu) return [];
@@ -216,6 +228,7 @@ export function buildScaledMeals(
       personalDailyKcalTarget,
       ratio,
       menu,
+      goalMealKcalOffset,
     );
 
     return [

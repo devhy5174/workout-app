@@ -1,10 +1,19 @@
+import { useNavigate } from "react-router-dom";
 import { useDiet } from "../hooks/useDiet";
 import WorkoutGoalTracker from "../components/diet/WorkoutGoalTracker";
 import DietInfoModal from "../components/diet/DietInfoModal";
 import MealRecommendationCard from "../components/diet/MealRecommendationCard";
 import MealPremiumActions from "../components/diet/MealPremiumActions";
+import type { DietGoal } from "../utils/dietScaling";
+
+const GOAL_TABS: { value: DietGoal; label: string; emoji: string; color: string; activeClass: string }[] = [
+  { value: "loss", label: "체중 감량", emoji: "🔵", color: "text-blue-500", activeClass: "bg-blue-500 text-white" },
+  { value: "maintain", label: "체중 유지", emoji: "🟢", color: "text-green-500", activeClass: "bg-green-500 text-white" },
+  { value: "gain", label: "근육 증량", emoji: "🟠", color: "text-orange-500", activeClass: "bg-orange-500 text-white" },
+];
 
 export default function Diet() {
+  const navigate = useNavigate();
   const {
     burnedKcal,
     workoutTargetKcal,
@@ -17,11 +26,24 @@ export default function Diet() {
     selectedActivityType,
     showDietInfo,
     setShowDietInfo,
+    dietGoal,
+    setDietGoal,
     userProfile,
     isPremium,
     rotateMealMenu,
     charDiet,
   } = useDiet();
+
+  function handleGoalSelect(goal: DietGoal) {
+    if (goal !== "loss" && !isPremium) {
+      alert(
+        "체중 유지 및 근육 증량 목표 식단은 프리미엄 프로 전용 기능입니다!\n설정에서 프리미엄으로 업그레이드해 보세요.",
+      );
+      navigate("/settings");
+      return;
+    }
+    setDietGoal(goal);
+  }
 
   return (
     <div className="flex flex-col gap-4 px-4 pt-5 pb-20 h-full overflow-y-auto bg-bg">
@@ -103,6 +125,28 @@ export default function Diet() {
         <div className="flex-1 h-px bg-gray-200" />
         <p className="text-xs font-bold text-gray-400">오늘의 3끼 추천</p>
         <div className="flex-1 h-px bg-gray-200" />
+      </div>
+
+      <div className="bg-white rounded-2xl shadow-sm p-1.5 flex gap-1">
+        {GOAL_TABS.map((tab) => (
+          <button
+            key={tab.value}
+            type="button"
+            onClick={() => handleGoalSelect(tab.value)}
+            aria-label={`${tab.label} 목표 선택`}
+            className={`flex-1 flex items-center justify-center gap-1 py-2 rounded-xl text-xs font-bold transition-all min-h-[44px] ${
+              dietGoal === tab.value
+                ? tab.activeClass + " shadow-sm"
+                : "text-gray-400 hover:bg-gray-50"
+            }`}
+          >
+            <span>{tab.emoji}</span>
+            <span>{tab.label}</span>
+            {tab.value !== "loss" && !isPremium && (
+              <span className="text-[9px] font-extrabold opacity-70">PRO</span>
+            )}
+          </button>
+        ))}
       </div>
 
       {scaledMeals.map((meal) => (

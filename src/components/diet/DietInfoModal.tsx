@@ -56,11 +56,10 @@ export default function DietInfoModal({
             💡 어떻게 계산되나요?
           </p>
           <p className="text-xs text-gray-500 leading-relaxed">
-            회원님이 선택한 활동 유형(산책러, 파워워커, 러너, 등산가)에 따라
-            하루에 운동으로 소모하면 좋은{" "}
-            <span className="font-bold text-gray-700">권장 운동 칼로리</span>를
-            안내해 드려요. 상단 트래커는 오늘 실제 소모 칼로리와 이 목표를
-            비교해요.
+            회원님이 선택한 활동 유형에 맞춰 하루에 운동으로 소모하면 좋은{" "}
+            <span className="font-bold text-gray-700">권장 운동 목표</span>를
+            안내해 드려요. 상단 트래커는 오늘 실제 걸음 수로 소모한 칼로리와 이
+            목표를 실시간으로 비교합니다.
           </p>
         </div>
 
@@ -137,28 +136,31 @@ export default function DietInfoModal({
 
         <div className="flex flex-col gap-2">
           <p className="text-sm font-extrabold text-gray-800">
-            🎯 권장 섭취량 목표별 가이드 (총 대사량 기준)
+            🎯 맞춤 식단 칼로리 가이드
           </p>
           <p className="text-xs text-gray-500 leading-relaxed">
-            하단 3끼 추천 식단은 신체 정보로 계산한 하루 총 대사량(TDEE)에서
-            감량 목표(−300 kcal)를 반영한 맞춤 섭취량을 기준으로 비율 조정해
-            보여드려요.
+            하단 3끼 추천 식단은 회원님의{" "}
+            <span className="font-bold text-gray-700">
+              기초대사량(BMR)과 선택하신 활동량, 그리고 감량 목표(−300 kcal)를
+              종합하여
+            </span>{" "}
+            하루에 섭취해야 할 가장 이상적인 칼로리 비율로 나누어 추천해 드려요.
           </p>
           <div className="flex flex-col gap-1.5">
             {[
               {
                 label: "체중 감량",
-                desc: "− 300~500 kcal",
+                desc: "기본 계산량에서 −300 kcal 덜 섭취",
                 color: "text-blue-500",
               },
               {
                 label: "체중 유지",
-                desc: "그대로",
+                desc: "기본 계산량 그대로 섭취",
                 color: "text-green-500",
               },
               {
                 label: "근육 증량",
-                desc: "+ 300~500 kcal",
+                desc: "기본 계산량에서 +300 kcal 더 섭취",
                 color: "text-orange-500",
               },
             ].map(({ label, desc, color }) => (
