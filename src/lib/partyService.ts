@@ -259,13 +259,12 @@ export async function leavePartyAsLeader(
   partyId: string,
   leaderId: string,
 ): Promise<{ error: string | null; dissolved: boolean }> {
-  // 나 제외한 멤버 중 가장 오래된 사람 찾기
+  // 나 제외한 멤버 확인
   const { data: others } = await supabase
     .from("party_members")
-    .select("user_id, joined_at")
+    .select("user_id")
     .eq("party_id", partyId)
     .neq("user_id", leaderId)
-    .order("joined_at", { ascending: true })
     .limit(1);
 
   // 혼자 남아있으면 파티 해체
@@ -274,14 +273,11 @@ export async function leavePartyAsLeader(
     return { error: error?.message ?? null, dissolved: true };
   }
 
-  const newLeaderId = others[0].user_id;
-
-  // 방장 위임
-  const { error: updateError } = await supabase
-    .from("parties")
-    .update({ created_by: newLeaderId })
-    .eq("id", partyId);
-  if (updateError) return { error: updateError.message, dissolved: false };
+  // RPC로 방장 위임 (SECURITY DEFINER라 RLS 우회)
+  const { error: rpcError } = await supabase.rpc("transfer_party_leadership", {
+    p_party_id: partyId,
+  });
+  if (rpcError) return { error: rpcError.message, dissolved: false };
 
   // 파티 탈퇴
   const { error: leaveError } = await supabase
