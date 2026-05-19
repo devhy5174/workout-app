@@ -1,19 +1,45 @@
-import { useNavigate } from "react-router-dom";
+import { useState } from "react";
+import { HiLockClosed } from "react-icons/hi2";
 import { useDiet } from "../hooks/useDiet";
 import WorkoutGoalTracker from "../components/diet/WorkoutGoalTracker";
 import DietInfoModal from "../components/diet/DietInfoModal";
 import MealRecommendationCard from "../components/diet/MealRecommendationCard";
 import MealPremiumActions from "../components/diet/MealPremiumActions";
+import PremiumModal from "../components/ui/PremiumModal";
 import type { DietGoal } from "../utils/dietScaling";
 
-const GOAL_TABS: { value: DietGoal; label: string; emoji: string; color: string; activeClass: string }[] = [
-  { value: "loss", label: "체중 감량", emoji: "🔵", color: "text-blue-500", activeClass: "bg-blue-500 text-white" },
-  { value: "maintain", label: "체중 유지", emoji: "🟢", color: "text-green-500", activeClass: "bg-green-500 text-white" },
-  { value: "gain", label: "근육 증량", emoji: "🟠", color: "text-orange-500", activeClass: "bg-orange-500 text-white" },
+const GOAL_TABS: {
+  value: DietGoal;
+  label: string;
+  emoji: string;
+  color: string;
+  activeClass: string;
+}[] = [
+  {
+    value: "loss",
+    label: "체중 감량",
+    emoji: "🔵",
+    color: "text-blue-500",
+    activeClass: "bg-blue-500 text-white",
+  },
+  {
+    value: "maintain",
+    label: "체중 유지",
+    emoji: "🟢",
+    color: "text-green-500",
+    activeClass: "bg-green-500 text-white",
+  },
+  {
+    value: "gain",
+    label: "근육 증량",
+    emoji: "🟠",
+    color: "text-orange-500",
+    activeClass: "bg-orange-500 text-white",
+  },
 ];
 
 export default function Diet() {
-  const navigate = useNavigate();
+  const [showPremiumModal, setShowPremiumModal] = useState(false);
   const {
     burnedKcal,
     workoutTargetKcal,
@@ -36,10 +62,7 @@ export default function Diet() {
 
   function handleGoalSelect(goal: DietGoal) {
     if (goal !== "loss" && !isPremium) {
-      alert(
-        "체중 유지 및 근육 증량 목표 식단은 프리미엄 프로 전용 기능입니다!\n설정에서 프리미엄으로 업그레이드해 보세요.",
-      );
-      navigate("/settings");
+      setShowPremiumModal(true);
       return;
     }
     setDietGoal(goal);
@@ -143,7 +166,7 @@ export default function Diet() {
             <span>{tab.emoji}</span>
             <span>{tab.label}</span>
             {tab.value !== "loss" && !isPremium && (
-              <span className="text-[9px] font-extrabold opacity-70">PRO</span>
+              <HiLockClosed className="text-amber-500 text-xs" aria-hidden />
             )}
           </button>
         ))}
@@ -179,6 +202,14 @@ export default function Diet() {
           age={userProfile?.age ?? null}
           height={userProfile?.height ?? null}
           weight={userProfile?.weight ?? null}
+        />
+      )}
+
+      {showPremiumModal && (
+        <PremiumModal
+          onClose={() => setShowPremiumModal(false)}
+          title="프리미엄 전용 기능"
+          description="체중 유지·근육 증량 맞춤 식단은 프리미엄 구독자만 이용할 수 있어요. 구독하고 내 목표에 딱 맞는 식단을 받아보세요!"
         />
       )}
     </div>
