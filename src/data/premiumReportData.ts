@@ -158,7 +158,8 @@ export const STEP_MESSAGES = [
 // 5. MBTI 사전 (WORKOUT_MBTI_DICTIONARY)
 // ==========================================
 export const WORKOUT_MBTI_DICTIONARY = {
-  ESFA: {
+  // E(매일) + R(러너) + F(칼로리) + M(아침)
+  ERFM: {
     mz: {
       title: "불꽃 경주마형",
       description: "새벽부터 심장 터트리고 출근하는 맑은 눈의 광인 🐎",
@@ -170,7 +171,8 @@ export const WORKOUT_MBTI_DICTIONARY = {
       emoji: "🌅",
     },
   },
-  ESFN: {
+  // E(매일) + R(러너) + F(칼로리) + N(야간)
+  ERFN: {
     mz: {
       title: "야간 심야 야생마형",
       description: "퇴근하고 야간 러닝으로 스트레스 다 조지는 분노의 질주러 🌃",
@@ -183,7 +185,8 @@ export const WORKOUT_MBTI_DICTIONARY = {
       emoji: "👟",
     },
   },
-  EWDA: {
+  // E(매일) + W(산책) + D(거리) + M(아침)
+  EWDM: {
     mz: {
       title: "새벽 안개 빌런형",
       description: "아무도 없는 아침 공기 다 마시고 다니는 지독한 루틴러 🌿",
@@ -196,6 +199,7 @@ export const WORKOUT_MBTI_DICTIONARY = {
       emoji: "🧘",
     },
   },
+  // W(주말) + W(산책) + D(거리) + N(야간)
   WWDN: {
     mz: {
       title: "새벽 한강 감성 변태형",
@@ -210,7 +214,8 @@ export const WORKOUT_MBTI_DICTIONARY = {
       emoji: "🚶‍♂️",
     },
   },
-  WSFN: {
+  // W(주말) + R(러너) + F(칼로리) + N(야간)
+  WRFN: {
     mz: {
       title: "평일 요양, 주말 폭주형",
       description: "평일엔 침대 누워있다가 주말 밤만 되면 에너자이저 빙의함 🔋",
@@ -223,7 +228,8 @@ export const WORKOUT_MBTI_DICTIONARY = {
       emoji: "⚡",
     },
   },
-  EWFA: {
+  // E(매일) + W(산책) + F(칼로리) + M(아침)
+  EWFM: {
     mz: {
       title: "미라클모닝 중독형",
       description: "눈 뜨자마자 운동 안 켜면 온몸에 가시가 돋는 자기관리 AI 🤖",

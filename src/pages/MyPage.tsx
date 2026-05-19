@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import Diet from "./Diet";
 import InfoTab from "../components/mypage/InfoTab";
 import WorkoutHistoryTab from "../components/mypage/WorkoutHistoryTab";
@@ -13,8 +14,16 @@ const tabs: { id: Tab; label: string }[] = [
   { id: "workout", label: "운동기록" },
 ];
 
+function isValidTab(v: string | null): v is Tab {
+  return v === "info" || v === "diet" || v === "workout" || v === "stats";
+}
+
 export default function MyPage() {
-  const [activeTab, setActiveTab] = useState<Tab>("info");
+  const [searchParams] = useSearchParams();
+  const initialTab = searchParams.get("tab");
+  const [activeTab, setActiveTab] = useState<Tab>(
+    isValidTab(initialTab) ? initialTab : "info",
+  );
 
   return (
     <div className="flex flex-col h-full bg-bg">

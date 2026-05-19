@@ -1,12 +1,5 @@
 import React, { useState } from "react";
-import {
-  HiLockClosed,
-  HiShare,
-  HiBadgeCheck,
-  HiMap,
-  HiInformationCircle,
-  HiX,
-} from "react-icons/hi";
+import { HiLockClosed, HiMap, HiInformationCircle, HiX } from "react-icons/hi";
 
 import {
   generateMonthlyCards,
@@ -28,7 +21,7 @@ const PremiumReportSection: React.FC<PremiumSectionProps> = ({
   onUpgrade,
   workouts,
 }) => {
-  const [drillStyle, setDrillStyle] = useState<DrillStyle>("mz");
+  const [drillStyle, setDrillStyle] = useState<DrillStyle>("adult");
   const [showMbtiInfo, setShowMbtiInfo] = useState(false);
 
   // 월간 합산
@@ -159,7 +152,7 @@ const PremiumReportSection: React.FC<PremiumSectionProps> = ({
               </div>
             </div>
 
-            {/* 운동 스타일 뱃지 */}
+            {/* 유산소 mbti */}
             <div>
               {/* 섹션 제목 */}
               <div className="flex items-center gap-1.5 mb-3 px-1">
@@ -176,13 +169,6 @@ const PremiumReportSection: React.FC<PremiumSectionProps> = ({
               </div>
 
               <div className="relative bg-gradient-to-br from-indigo-500 to-purple-600 p-6 rounded-3xl text-white">
-                <button
-                  className="absolute top-4 right-4 bg-white/20 hover:bg-white/30 transition-colors p-2 rounded-full"
-                  aria-label="공유하기"
-                >
-                  <HiShare className="text-base text-white" />
-                </button>
-
                 <div className="flex items-start mb-6">
                   <div>
                     <p className="text-indigo-100 text-xs font-bold mb-1">
@@ -258,17 +244,17 @@ const PremiumReportSection: React.FC<PremiumSectionProps> = ({
             <p className="text-sm text-gray-600 leading-relaxed mb-5">
               유저님의 한 달 운동 데이터를 분석하여{" "}
               <span className="font-bold text-gray-800">
-                [요일(E/W) · 속도(R/W) · 목적(F/D) · 시간(M/N)]
+                [빈도(E/W) · 속도(R/W) · 목적(F/D) · 시간(M/N)]
               </span>
               의 앞 글자를 조합해 만든 유니크한 운동 성향 지표입니다!
             </p>
 
             <div className="space-y-2">
               {[
-                { code: "E / W", desc: "평일형(Everyday) vs 주말형(Weekend)" },
-                { code: "R / W", desc: "러닝형(Running) vs 워킹형(Walking)" },
-                { code: "F / D", desc: "지방연소형(Fat) vs 거리형(Distance)" },
-                { code: "M / N", desc: "아침형(Morning) vs 야간형(Night)" },
+                { code: "E / W", desc: "꾸준 운동형(Everyday) vs 주말 몰빵형(Weekend)" },
+                { code: "R / W", desc: "러너형(Runner) vs 산책형(Walker)" },
+                { code: "F / D", desc: "칼로리 소각형(Fatburn) vs 거리 정복형(Distance)" },
+                { code: "M / N", desc: "아침형(Morning) vs 야행성형(Night)" },
               ].map(({ code, desc }) => (
                 <div
                   key={code}

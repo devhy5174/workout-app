@@ -1,9 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { HiLockClosed } from "react-icons/hi2";
 import { useNotices } from "../context/NoticesContext";
 import { useActivityType } from "../context/ActivityTypeContext";
 import { useCharacter } from "../context/CharacterContext";
 import { useUser } from "../context/UserContext";
+import { usePremium } from "../context/PremiumContext";
 import { storage } from "../utils/storage";
 import {
   calculateStreak,
@@ -19,6 +21,8 @@ import { useWeeklyTop3 } from "../hooks/useWeeklyTop3";
 import { usePartyHighlights } from "../hooks/usePartyHighlights";
 import { PartyHighlightTicker } from "../components/ui/PartyHighlightTicker";
 import WeatherWidget from "../components/ui/WeatherWidget";
+import { calculateWorkoutMBTI } from "../utils/premiumMonthlyReportUtils";
+import { WORKOUT_MBTI_DICTIONARY } from "../data/premiumReportData";
 
 type DisplayUser = {
   nickname: string;
@@ -103,6 +107,7 @@ export default function Home() {
   const { selectedActivityType } = useActivityType();
   const { selectedCharacter } = useCharacter();
   const { userGoal, workoutRecords, userProfile } = useUser();
+  const { isPremium } = usePremium();
   const {
     topParties,
     trendingParties,
@@ -186,6 +191,45 @@ export default function Home() {
     }
     setBubbleMsg(getRandomMessage(activityType));
   };
+
+  // 이번 달 MBTI 계산
+  const mbtiData = useMemo(() => {
+    const now = new Date();
+    const thisMonth = now.getMonth();
+    const thisYear = now.getFullYear();
+    const monthly = workoutRecords.filter((w) => {
+      const d = new Date(w.created_at ?? w.date);
+      return d.getFullYear() === thisYear && d.getMonth() === thisMonth;
+    });
+    if (monthly.length === 0) return null;
+
+    const totalDistance = monthly.reduce((s, w) => s + w.distance, 0);
+    const totalCalories = monthly.reduce((s, w) => s + w.calories, 0);
+    const totalDuration = monthly.reduce((s, w) => s + w.duration, 0);
+    const averageSpeed = totalDistance / Math.max(totalDuration / 3600, 1);
+    const uniqueDays = new Set(monthly.map((w) => new Date(w.created_at ?? w.date).toISOString().split("T")[0]));
+    let weekendCount = 0, weekdayCount = 0, morningCount = 0, nightCount = 0;
+    monthly.forEach((w) => {
+      const d = new Date(w.created_at ?? w.date);
+      const day = d.getDay();
+      const hour = d.getHours();
+      if (day === 5 || day === 6 || day === 0) weekendCount++; else weekdayCount++;
+      if (hour >= 6 && hour <= 10) morningCount++;
+      if (hour >= 19 && hour <= 23) nightCount++;
+    });
+    const code = calculateWorkoutMBTI({
+      workoutDays: uniqueDays.size,
+      weekendWorkoutCount: weekendCount,
+      weekdayWorkoutCount: weekdayCount,
+      averageSpeed,
+      totalDistance,
+      totalCalories,
+      morningWorkoutCount: morningCount,
+      nightWorkoutCount: nightCount,
+    });
+    const entry = WORKOUT_MBTI_DICTIONARY[code as keyof typeof WORKOUT_MBTI_DICTIONARY];
+    return { code, badge: entry?.adult };
+  }, [workoutRecords]);
 
   // 오늘 목표 진행률
   const today = localDateStr(new Date());
@@ -516,6 +560,32 @@ export default function Home() {
           </div>
         )}
       </div>
+
+      {/* 유산소 MBTI 미니 카드 */}
+      <button
+        type="button"
+        onClick={() => navigate("/mypage?tab=stats")}
+        className="mx-4 mt-3 w-auto bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl px-4 py-3 flex items-center gap-3 active:scale-95 transition-transform text-left"
+        aria-label="유산소 MBTI 통계 페이지로 이동"
+      >
+        <div className="flex flex-col flex-1 min-w-0">
+          <p className="text-indigo-200 text-[10px] font-bold mb-0.5">이번달 유산소 MBTI</p>
+          {isPremium && mbtiData ? (
+            <div className="flex items-center gap-2">
+              <span className="text-white font-black text-base">{mbtiData.code}</span>
+              <span className="text-indigo-100 text-xs font-semibold truncate">{mbtiData.badge?.title} {mbtiData.badge?.emoji}</span>
+            </div>
+          ) : mbtiData ? (
+            <div className="flex items-center gap-1.5">
+              <HiLockClosed className="text-amber-300 text-sm flex-shrink-0" />
+              <span className="text-white/70 text-xs font-semibold">프리미엄 구독 시 확인 가능</span>
+            </div>
+          ) : (
+            <span className="text-white/60 text-xs font-semibold">이번 달 운동을 시작해보세요!</span>
+          )}
+        </div>
+        <span className="text-white/50 text-xs font-bold flex-shrink-0">통계 보기 →</span>
+      </button>
 
       {/* 파티 활동 카드 */}
       <div className="mx-4 mt-4 bg-white rounded-3xl shadow-sm">

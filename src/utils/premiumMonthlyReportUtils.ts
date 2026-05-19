@@ -5,6 +5,8 @@ import {
   STEP_MESSAGES,
 } from "../data/premiumReportData";
 
+export type WorkoutMBTI = "ERFM" | "ERFN" | "EWDM" | "WWDN" | "WRFN" | "EWFM";
+
 export type DrillStyle = "mz" | "adult";
 
 function findMessage(
@@ -20,8 +22,20 @@ export function getDistanceMessage(totalDistance: number, style: DrillStyle) {
   return findMessage(DISTANCE_MESSAGES, totalDistance, style);
 }
 
-export function getCaloriesMessage(totalCalories: number, style: DrillStyle) {
-  return findMessage(CALORIE_MESSAGES, totalCalories, style);
+export function getCaloriesMessage(
+  totalCalories: number,
+
+  style: DrillStyle,
+) {
+  const chickenCount = Math.floor(totalCalories / 2200);
+
+  const tanghuluCount = Math.floor(totalCalories / 200);
+
+  if (style === "mz") {
+    return `탕후루 ${tanghuluCount}개 삭제 🍡`;
+  }
+
+  return `치킨 ${chickenCount}마리 삭제 🍗`;
 }
 
 export function getStepsMessage(totalSteps: number, style: DrillStyle) {
@@ -66,14 +80,14 @@ export function calculateWorkoutMBTI({
   const frequency =
     workoutDays >= 15 || weekdayWorkoutCount > weekendWorkoutCount ? "E" : "W";
 
-  const speed = averageSpeed >= 7 ? "S" : "W";
+  const speed = averageSpeed >= 7 ? "R" : "W";
 
   const caloriePerKm = totalCalories / Math.max(totalDistance, 1);
   const purpose = caloriePerKm > 80 ? "F" : "D";
 
-  const time = morningWorkoutCount >= nightWorkoutCount ? "A" : "N";
+  const time = morningWorkoutCount >= nightWorkoutCount ? "M" : "N";
 
-  return `${frequency}${speed}${purpose}${time}`;
+  return `${frequency}${speed}${purpose}${time}` as WorkoutMBTI;
 }
 
 export function generateMonthlyCards(
