@@ -301,9 +301,10 @@ export default function Home() {
           <button
             onClick={() => setNotifOpen(true)}
             aria-label={`알림${unreadCount > 0 ? ` (${unreadCount}개)` : ""}`}
-            className="relative w-7 h-7 rounded-full flex items-center justify-center bg-white/80 shadow-sm border border-gray-100"
+            className="relative w-8 h-8 rounded-full flex items-center justify-center shadow-sm"
+            style={{ background: "linear-gradient(135deg, var(--color-primary), var(--color-secondary))" }}
           >
-            <HiBell size={14} className="text-gray-400" />
+            <HiBell size={16} className="text-white" />
             {unreadCount > 0 && (
               <span className="absolute -top-0.5 -right-0.5 min-w-[14px] h-3.5 px-0.5 rounded-full bg-red-500 text-white text-[8px] font-bold flex items-center justify-center leading-none">
                 {unreadCount > 99 ? "99+" : unreadCount}
