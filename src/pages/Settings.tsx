@@ -13,17 +13,13 @@ import {
   HiColorSwatch,
   HiBadgeCheck,
   HiX,
-  HiUserGroup,
-  HiFire,
-  HiClock,
-  HiSpeakerphone,
-  HiLightningBolt,
 } from "react-icons/hi";
 import { useTheme } from "../context/ThemeContext";
 import { useUser } from "../context/UserContext";
-import { useSettings, type Language, type NotificationKey } from "../hooks/useSettings";
+import { useSettings, type Language } from "../hooks/useSettings";
 import Modal from "../components/ui/Modal";
 import SettingsRow from "../components/ui/SettingsRow";
+import { NotificationSheet } from "../components/settings/NotificationSheet";
 import {
   NICKNAME_CHANGE_COOLDOWN_DAYS,
   NICKNAME_MAX_LENGTH,
@@ -44,25 +40,6 @@ const LANGUAGE_LABELS: Record<Language, string> = {
   ko: "한국어",
   en: "English",
 };
-
-// ── 토글 스위치 ──────────────────────────────────────────
-function Toggle({ on, onToggle }: { on: boolean; onToggle: () => void }) {
-  return (
-    <button
-      onClick={onToggle}
-      aria-label={on ? "끄기" : "켜기"}
-      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors flex-shrink-0 ${
-        on ? "bg-[var(--color-primary)]" : "bg-gray-200"
-      }`}
-    >
-      <span
-        className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition-transform ${
-          on ? "translate-x-6" : "translate-x-1"
-        }`}
-      />
-    </button>
-  );
-}
 
 // ── 언어 선택 시트 ───────────────────────────────────────
 function LanguageSheet({
@@ -176,11 +153,15 @@ function NicknameSheet({
   // 실시간 중복 체크 (500ms 디바운스)
   useEffect(() => {
     const trimmed = value.trim();
-    if (!trimmed || trimmed === current || validateNicknameLocally(trimmed)) return;
+    if (!trimmed || trimmed === current || validateNicknameLocally(trimmed))
+      return;
 
     setIsCheckingDuplicate(true);
     const timer = setTimeout(async () => {
-      const { isDuplicate } = await checkNicknameDuplicate(trimmed, currentUserId);
+      const { isDuplicate } = await checkNicknameDuplicate(
+        trimmed,
+        currentUserId,
+      );
       setIsCheckingDuplicate(false);
       if (isDuplicate) setError("이미 사용 중인 닉네임이에요.");
     }, 500);
@@ -200,7 +181,10 @@ function NicknameSheet({
   async function handleSave() {
     const trimmed = value.trim();
     const localError = validateNicknameLocally(trimmed);
-    if (localError) { setError(localError); return; }
+    if (localError) {
+      setError(localError);
+      return;
+    }
     if (error) return;
 
     setIsSaving(true);
@@ -230,20 +214,28 @@ function NicknameSheet({
           <div className="flex flex-col items-center gap-4 py-4">
             <div
               className="w-16 h-16 rounded-full flex items-center justify-center"
-              style={{ background: "linear-gradient(135deg, var(--color-primary), var(--color-secondary))" }}
+              style={{
+                background:
+                  "linear-gradient(135deg, var(--color-primary), var(--color-secondary))",
+              }}
             >
               <HiBadgeCheck size={36} className="text-white" />
             </div>
             <div className="text-center">
               <p className="text-lg font-extrabold text-gray-800">변경 완료!</p>
               <p className="text-sm text-gray-400 mt-1">
-                닉네임이 <span className="font-bold text-gray-600">{value.trim()}</span> 으로 변경됐어요.
+                닉네임이{" "}
+                <span className="font-bold text-gray-600">{value.trim()}</span>{" "}
+                으로 변경됐어요.
               </p>
             </div>
             <button
               onClick={onClose}
               className="mt-2 w-full py-4 rounded-2xl text-white font-extrabold text-base active:scale-95 transition shadow-md"
-              style={{ background: "linear-gradient(135deg, var(--color-primary), var(--color-secondary))" }}
+              style={{
+                background:
+                  "linear-gradient(135deg, var(--color-primary), var(--color-secondary))",
+              }}
             >
               확인
             </button>
@@ -251,7 +243,9 @@ function NicknameSheet({
         ) : (
           <>
             <div className="flex items-center justify-between mb-5">
-              <h3 className="text-lg font-extrabold text-gray-800">닉네임 변경</h3>
+              <h3 className="text-lg font-extrabold text-gray-800">
+                닉네임 변경
+              </h3>
               <button
                 onClick={onClose}
                 className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500"
@@ -268,10 +262,13 @@ function NicknameSheet({
                   <HiLockClosed size={28} className="text-gray-400" />
                 </div>
                 <p className="text-sm font-bold text-gray-700 text-center">
-                  닉네임은 {NICKNAME_CHANGE_COOLDOWN_DAYS}일에 한 번 변경할 수 있어요.
+                  닉네임은 {NICKNAME_CHANGE_COOLDOWN_DAYS}일에 한 번 변경할 수
+                  있어요.
                 </p>
                 <div className="bg-orange-50 border border-orange-100 rounded-2xl px-5 py-3 text-center w-full">
-                  <p className="text-xs text-gray-400 mb-0.5">다음 변경 가능일까지</p>
+                  <p className="text-xs text-gray-400 mb-0.5">
+                    다음 변경 가능일까지
+                  </p>
                   <p className="text-xl font-extrabold text-[var(--color-primary)]">
                     {remainingDays}일 남음
                   </p>
@@ -286,7 +283,9 @@ function NicknameSheet({
             ) : (
               /* 변경 폼 */
               <>
-                <div className={`flex items-center gap-2 rounded-2xl px-4 py-3 mb-2 ${error ? "bg-red-50" : "bg-gray-50"}`}>
+                <div
+                  className={`flex items-center gap-2 rounded-2xl px-4 py-3 mb-2 ${error ? "bg-red-50" : "bg-gray-50"}`}
+                >
                   <input
                     type="text"
                     value={value}
@@ -296,20 +295,35 @@ function NicknameSheet({
                     className="flex-1 bg-transparent text-base font-bold text-gray-800 outline-none placeholder:text-gray-300"
                     autoFocus
                   />
-                  <span className="text-xs text-gray-400">{value.length}/{NICKNAME_MAX_LENGTH}</span>
+                  <span className="text-xs text-gray-400">
+                    {value.length}/{NICKNAME_MAX_LENGTH}
+                  </span>
                 </div>
                 <p className="text-xs text-gray-400 px-1 mb-1">
                   한글·영문·숫자만 사용 가능 · 공백·특수문자 불가
                 </p>
-                {error && <p className="text-xs text-red-500 mb-1 px-1">{error}</p>}
+                {error && (
+                  <p className="text-xs text-red-500 mb-1 px-1">{error}</p>
+                )}
                 {!error && isCheckingDuplicate && (
-                  <p className="text-xs text-gray-400 mb-1 px-1">중복 확인 중...</p>
+                  <p className="text-xs text-gray-400 mb-1 px-1">
+                    중복 확인 중...
+                  </p>
                 )}
                 <button
                   onClick={handleSave}
-                  disabled={isSaving || !value.trim() || value.trim() === current || !!error || isCheckingDuplicate}
+                  disabled={
+                    isSaving ||
+                    !value.trim() ||
+                    value.trim() === current ||
+                    !!error ||
+                    isCheckingDuplicate
+                  }
                   className="mt-3 w-full py-4 rounded-2xl text-white font-extrabold text-base active:scale-95 transition shadow-md disabled:opacity-50"
-                  style={{ background: "linear-gradient(135deg, var(--color-primary), var(--color-secondary))" }}
+                  style={{
+                    background:
+                      "linear-gradient(135deg, var(--color-primary), var(--color-secondary))",
+                  }}
                 >
                   {isSaving ? "저장 중..." : "저장하기"}
                 </button>
@@ -359,151 +373,6 @@ function TextSheet({
   );
 }
 
-// ── 서브 알림 행 ──────────────────────────────────────────
-function SubNotificationRow({
-  icon,
-  label,
-  description,
-  on,
-  onToggle,
-  disabled,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  description?: string;
-  on: boolean;
-  onToggle: () => void;
-  disabled?: boolean;
-}) {
-  return (
-    <div
-      className={`flex items-center gap-3 px-5 py-3.5 pl-12 transition-all ${
-        disabled ? "opacity-40" : ""
-      }`}
-    >
-      <span className="w-5 h-5 flex items-center justify-center flex-shrink-0 text-gray-300">
-        {icon}
-      </span>
-      <div className="flex-1 min-w-0">
-        <p className="text-sm font-semibold text-gray-600">{label}</p>
-        {description && (
-          <p className="text-xs text-gray-400 mt-0.5">{description}</p>
-        )}
-      </div>
-      <Toggle on={on && !disabled} onToggle={disabled ? () => {} : onToggle} />
-    </div>
-  );
-}
-
-// ── 알림 상세 설정 시트 ──────────────────────────────────
-function NotificationSheet({
-  settings,
-  toggleNotification,
-  onClose,
-}: {
-  settings: ReturnType<typeof import("../hooks/useSettings").useSettings>["settings"];
-  toggleNotification: (key: NotificationKey) => void;
-  onClose: () => void;
-}) {
-  return (
-    <div
-      className="fixed inset-0 z-50 flex items-end bg-black/40"
-      onClick={onClose}
-    >
-      <div
-        className="w-full max-w-md mx-auto bg-white rounded-t-3xl shadow-2xl overflow-hidden"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* 헤더 */}
-        <div className="flex items-center justify-between px-6 pt-6 pb-4">
-          <h3 className="text-lg font-extrabold text-gray-800">알림 설정</h3>
-          <button
-            onClick={onClose}
-            className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500"
-            aria-label="닫기"
-          >
-            <HiX size={16} />
-          </button>
-        </div>
-
-        <div className="flex flex-col gap-3 px-4 pb-10 overflow-y-auto max-h-[70vh]">
-          {/* 운동 알림 그룹 */}
-          <div className="bg-gray-50 rounded-2xl overflow-hidden">
-            <div className="flex items-center gap-3 px-4 py-4">
-              <span className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0"
-                style={{ background: "linear-gradient(135deg, var(--color-primary), var(--color-secondary))" }}>
-                <HiBell size={16} className="text-white" />
-              </span>
-              <div className="flex-1">
-                <p className="text-sm font-extrabold text-gray-800">운동 알림</p>
-                <p className="text-xs text-gray-400 mt-0.5">운동 관련 알림 전체</p>
-              </div>
-              <Toggle
-                on={settings.workoutNotification}
-                onToggle={() => toggleNotification("workoutNotification")}
-              />
-            </div>
-            {settings.workoutNotification && (
-              <div className="border-t border-gray-100 divide-y divide-gray-100">
-                <SubNotificationRow
-                  icon={<HiClock size={15} />}
-                  label="운동 시작 리마인더"
-                  description="매일 정해진 시간에 운동 알림"
-                  on={settings.workoutReminderNotification}
-                  onToggle={() => toggleNotification("workoutReminderNotification")}
-                />
-                <SubNotificationRow
-                  icon={<HiFire size={15} />}
-                  label="스트릭 유지 알림"
-                  description="오늘 운동 안 했을 때 저녁에 알림"
-                  on={settings.streakNotification}
-                  onToggle={() => toggleNotification("streakNotification")}
-                />
-              </div>
-            )}
-          </div>
-
-          {/* 파티 알림 그룹 */}
-          <div className="bg-gray-50 rounded-2xl overflow-hidden">
-            <div className="flex items-center gap-3 px-4 py-4">
-              <span className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0"
-                style={{ background: "linear-gradient(135deg, var(--color-primary), var(--color-secondary))" }}>
-                <HiUserGroup size={16} className="text-white" />
-              </span>
-              <div className="flex-1">
-                <p className="text-sm font-extrabold text-gray-800">파티 알림</p>
-                <p className="text-xs text-gray-400 mt-0.5">파티 관련 알림 전체</p>
-              </div>
-              <Toggle
-                on={settings.partyNotification}
-                onToggle={() => toggleNotification("partyNotification")}
-              />
-            </div>
-            {settings.partyNotification && (
-              <div className="border-t border-gray-100 divide-y divide-gray-100">
-                <SubNotificationRow
-                  icon={<HiLightningBolt size={15} />}
-                  label="파티 시작 전 알림"
-                  description="파티 시작 30분 전에 알림"
-                  on={settings.partyStartNotification}
-                  onToggle={() => toggleNotification("partyStartNotification")}
-                />
-                <SubNotificationRow
-                  icon={<HiSpeakerphone size={15} />}
-                  label="파티 공지"
-                  description="방장이 공지를 올렸을 때 알림"
-                  on={settings.partyAnnouncementNotification}
-                  onToggle={() => toggleNotification("partyAnnouncementNotification")}
-                />
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 // ── 섹션 헤더 ────────────────────────────────────────────
 function SectionLabel({ label }: { label: string }) {
   return (
@@ -512,8 +381,14 @@ function SectionLabel({ label }: { label: string }) {
 }
 
 // ── Settings 메인 ────────────────────────────────────────
-type Sheet = "language" | "nickname" | "privacy" | "terms" | "appinfo" | "notification" | null;
-
+type Sheet =
+  | "language"
+  | "nickname"
+  | "privacy"
+  | "terms"
+  | "appinfo"
+  | "notification"
+  | null;
 
 export default function Settings() {
   const { theme, setTheme } = useTheme();

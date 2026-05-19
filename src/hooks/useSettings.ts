@@ -7,16 +7,20 @@ export type NotificationKey =
   | "workoutReminderNotification"
   | "streakNotification"
   | "partyNotification"
-  | "partyStartNotification"
-  | "partyAnnouncementNotification";
+  | "partyActivityNotification"
+  | "dietNotification"
+  | "dietBurnNotification"
+  | "dietRewardNotification";
 
 type SettingsState = {
   workoutNotification: boolean;
   workoutReminderNotification: boolean;
   streakNotification: boolean;
   partyNotification: boolean;
-  partyStartNotification: boolean;
-  partyAnnouncementNotification: boolean;
+  partyActivityNotification: boolean;
+  dietNotification: boolean;
+  dietBurnNotification: boolean;
+  dietRewardNotification: boolean;
   language: Language;
 };
 
@@ -27,8 +31,10 @@ const defaults: SettingsState = {
   workoutReminderNotification: true,
   streakNotification: true,
   partyNotification: true,
-  partyStartNotification: true,
-  partyAnnouncementNotification: true,
+  partyActivityNotification: true,
+  dietNotification: true,
+  dietBurnNotification: true,
+  dietRewardNotification: true,
   language: "ko",
 };
 
