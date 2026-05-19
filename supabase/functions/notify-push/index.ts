@@ -19,10 +19,10 @@ type PushPayload = {
 };
 
 Deno.serve(async (req) => {
-  // notify-scheduled 등 내부 호출만 허용
-  const authHeader = req.headers.get("Authorization");
+  // x-cron-secret 헤더로 인증 (Authorization은 Supabase JWT 전용)
+  const cronSecret = req.headers.get("x-cron-secret");
   const expectedToken = Deno.env.get("CRON_SECRET");
-  if (expectedToken && authHeader !== `Bearer ${expectedToken}`) {
+  if (expectedToken && cronSecret !== expectedToken) {
     return new Response("Unauthorized", { status: 401 });
   }
 

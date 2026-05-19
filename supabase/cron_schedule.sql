@@ -19,8 +19,8 @@ BEGIN
   PERFORM net.http_post(
     url     := 'https://arqxwbtvezqrkuyjjvlw.supabase.co/functions/v1/notify-scheduled',
     headers := jsonb_build_object(
-      'Content-Type',  'application/json',
-      'Authorization', 'Bearer bcec67cc85eb5d362757a35fef4a336e83fe6d78750101d06668a78ad410764e'
+      'Content-Type',   'application/json',
+      'x-cron-secret',  'bcec67cc85eb5d362757a35fef4a336e83fe6d78750101d06668a78ad410764e'
     ),
     body    := jsonb_build_object('type', schedule_type)
   );

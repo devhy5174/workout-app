@@ -27,10 +27,10 @@ type ScheduleType =
   | "diet_dinner";       // 오후 6시 KST  — 오늘 운동 완료한 유저
 
 Deno.serve(async (req) => {
-  // pg_cron은 GET 또는 POST 가능. Authorization 헤더 검증
-  const authHeader = req.headers.get("Authorization");
+  // x-cron-secret 헤더로 인증 (Authorization은 Supabase JWT 전용)
+  const cronSecret = req.headers.get("x-cron-secret");
   const expectedToken = Deno.env.get("CRON_SECRET");
-  if (expectedToken && authHeader !== `Bearer ${expectedToken}`) {
+  if (expectedToken && cronSecret !== expectedToken) {
     return new Response("Unauthorized", { status: 401 });
   }
 
@@ -288,7 +288,7 @@ Deno.serve(async (req) => {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        ...(cronSecret ? { Authorization: `Bearer ${cronSecret}` } : {}),
+        ...(expectedToken ? { "x-cron-secret": expectedToken } : {}),
       },
       body: JSON.stringify({
         userIds: uniqueUserIds,
