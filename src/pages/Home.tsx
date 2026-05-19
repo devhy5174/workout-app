@@ -127,8 +127,14 @@ export default function Home() {
   const activityType = selectedActivityType?.type ?? "walker";
   const { weather, condition: weatherCondition } = useWeather();
   const [notifOpen, setNotifOpen] = useState(false);
-  const { notifications, unreadCount, isLoading, markAsRead, markAllAsRead, deleteNotification } =
-    useNotifications(user?.id ?? null);
+  const {
+    notifications,
+    unreadCount,
+    isLoading,
+    markAsRead,
+    markAllAsRead,
+    deleteNotification,
+  } = useNotifications(user?.id ?? null);
   const [bubbleMsg, setBubbleMsg] = useState(() =>
     getRandomMessage(activityType),
   );
@@ -212,13 +218,21 @@ export default function Home() {
     const totalCalories = monthly.reduce((s, w) => s + w.calories, 0);
     const totalDuration = monthly.reduce((s, w) => s + w.duration, 0);
     const averageSpeed = totalDistance / Math.max(totalDuration / 3600, 1);
-    const uniqueDays = new Set(monthly.map((w) => new Date(w.created_at ?? w.date).toISOString().split("T")[0]));
-    let weekendCount = 0, weekdayCount = 0, morningCount = 0, nightCount = 0;
+    const uniqueDays = new Set(
+      monthly.map(
+        (w) => new Date(w.created_at ?? w.date).toISOString().split("T")[0],
+      ),
+    );
+    let weekendCount = 0,
+      weekdayCount = 0,
+      morningCount = 0,
+      nightCount = 0;
     monthly.forEach((w) => {
       const d = new Date(w.created_at ?? w.date);
       const day = d.getDay();
       const hour = d.getHours();
-      if (day === 5 || day === 6 || day === 0) weekendCount++; else weekdayCount++;
+      if (day === 5 || day === 6 || day === 0) weekendCount++;
+      else weekdayCount++;
       if (hour >= 6 && hour <= 10) morningCount++;
       if (hour >= 19 && hour <= 23) nightCount++;
     });
@@ -232,7 +246,8 @@ export default function Home() {
       morningWorkoutCount: morningCount,
       nightWorkoutCount: nightCount,
     });
-    const entry = WORKOUT_MBTI_DICTIONARY[code as keyof typeof WORKOUT_MBTI_DICTIONARY];
+    const entry =
+      WORKOUT_MBTI_DICTIONARY[code as keyof typeof WORKOUT_MBTI_DICTIONARY];
     return { code, badge: entry?.adult };
   }, [workoutRecords]);
 
@@ -288,7 +303,7 @@ export default function Home() {
             aria-label={`알림${unreadCount > 0 ? ` (${unreadCount}개)` : ""}`}
             className="relative w-7 h-7 rounded-full flex items-center justify-center bg-white/80 shadow-sm border border-gray-100"
           >
-            <HiBell size={13} className="text-gray-400" />
+            <HiBell size={14} className="text-gray-400" />
             {unreadCount > 0 && (
               <span className="absolute -top-0.5 -right-0.5 min-w-[14px] h-3.5 px-0.5 rounded-full bg-red-500 text-white text-[8px] font-bold flex items-center justify-center leading-none">
                 {unreadCount > 99 ? "99+" : unreadCount}
@@ -601,13 +616,21 @@ export default function Home() {
           aria-label="유산소 MBTI 통계 페이지로 이동"
         >
           <div className="flex flex-col flex-1 min-w-0">
-            <p className="text-indigo-200 text-[10px] font-bold mb-0.5">이번달 유산소 MBTI</p>
+            <p className="text-indigo-200 text-[10px] font-bold mb-0.5">
+              이번달 유산소 MBTI
+            </p>
             <div className="flex items-center gap-2">
-              <span className="text-white font-black text-base">{mbtiData.code}</span>
-              <span className="text-indigo-100 text-xs font-semibold truncate">{mbtiData.badge?.title} {mbtiData.badge?.emoji}</span>
+              <span className="text-white font-black text-base">
+                {mbtiData.code}
+              </span>
+              <span className="text-indigo-100 text-xs font-semibold truncate">
+                {mbtiData.badge?.title} {mbtiData.badge?.emoji}
+              </span>
             </div>
           </div>
-          <span className="text-white/50 text-xs font-bold flex-shrink-0">통계 보기 →</span>
+          <span className="text-white/50 text-xs font-bold flex-shrink-0">
+            통계 보기 →
+          </span>
         </button>
       )}
 

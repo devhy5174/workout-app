@@ -21,7 +21,6 @@ import { useUser } from "../context/UserContext";
 import { useSettings, type Language } from "../hooks/useSettings";
 import Modal from "../components/ui/Modal";
 import SettingsRow from "../components/ui/SettingsRow";
-import { NotificationSheet } from "../components/settings/NotificationSheet";
 import {
   NICKNAME_CHANGE_COOLDOWN_DAYS,
   NICKNAME_MAX_LENGTH,
@@ -389,13 +388,12 @@ type Sheet =
   | "privacy"
   | "terms"
   | "appinfo"
-  | "notification"
   | null;
 
 export default function Settings() {
   const { theme, setTheme } = useTheme();
   const { logout, userProfile, user } = useUser();
-  const { settings, toggleNotification, setLanguage } = useSettings();
+  const { settings, setLanguage } = useSettings();
   const navigate = useNavigate();
 
   const [sheet, setSheet] = useState<Sheet>(null);
@@ -456,7 +454,7 @@ export default function Settings() {
           icon={<HiBell size={20} />}
           label="알림 설정"
           description="운동·파티 알림 세부 설정"
-          onClick={() => setSheet("notification")}
+          onClick={() => navigate("/settings/notifications")}
         />
       </div>
 
@@ -580,15 +578,6 @@ export default function Settings() {
       </div>
 
       {/* 시트/모달 */}
-      {sheet === "notification" && (
-        <NotificationSheet
-          settings={settings}
-          toggleNotification={toggleNotification}
-          userId={user?.id ?? null}
-          onClose={() => setSheet(null)}
-        />
-      )}
-
       {sheet === "language" && (
         <LanguageSheet
           current={settings.language}

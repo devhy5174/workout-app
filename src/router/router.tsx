@@ -22,6 +22,7 @@ import PartyDetail from "../pages/PartyDetail";
 import MyPage from "../pages/MyPage";
 import Admin from "../pages/Admin";
 import ResetPassword from "../pages/ResetPassword";
+import NotificationSettings from "../pages/NotificationSettings";
 import { useUser } from "../context/UserContext";
 import { EventsProvider } from "../context/EventsContext";
 import { NoticesProvider } from "../context/NoticesContext";
@@ -95,6 +96,7 @@ export default function AppRouter() {
           <Route path="/steps" element={<Step />} />
           <Route path="/mypage" element={<MyPage />} />
           <Route path="/settings" element={<Settings />} />
+          <Route path="/settings/notifications" element={<NotificationSettings />} />
           <Route path="/admin" element={<Admin />} />
           <Route path="/workout" element={<Workout />} />
         </Route>
