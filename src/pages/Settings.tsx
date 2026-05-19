@@ -14,6 +14,8 @@ import {
   HiBadgeCheck,
   HiX,
 } from "react-icons/hi";
+import { RiKakaoTalkFill } from "react-icons/ri";
+import { FcGoogle } from "react-icons/fc";
 import { useTheme } from "../context/ThemeContext";
 import { useUser } from "../context/UserContext";
 import { useSettings, type Language } from "../hooks/useSettings";
@@ -481,11 +483,26 @@ export default function Settings() {
         <SettingsRow
           icon={<HiMail size={20} />}
           label="이메일"
-          right={
-            <span className="text-xs text-gray-400 font-semibold max-w-[150px] truncate">
-              {user?.email ?? "—"}
-            </span>
-          }
+          right={(() => {
+            const providers: string[] =
+              user?.app_metadata?.providers ??
+              (user?.app_metadata?.provider ? [user.app_metadata.provider] : []);
+            const isKakao = providers.includes("kakao");
+            const isGoogle = providers.includes("google");
+            return (
+              <span className="flex items-center gap-1.5 text-xs text-gray-400 font-semibold max-w-[160px]">
+                {isKakao && (
+                  <span className="w-4 h-4 rounded-full flex items-center justify-center shrink-0" style={{ backgroundColor: "#FEE500" }}>
+                    <RiKakaoTalkFill size={10} color="#3C1E1E" />
+                  </span>
+                )}
+                {isGoogle && (
+                  <FcGoogle className="shrink-0" size={14} />
+                )}
+                <span className="truncate">{user?.email ?? "—"}</span>
+              </span>
+            );
+          })()}
         />
       </div>
 
@@ -511,11 +528,28 @@ export default function Settings() {
         <SettingsRow
           icon={<HiChatAlt2 size={20} />}
           label="문의하기"
-          description="devhy5174@gmail.com"
-          right={null}
-          onClick={() => {
-            window.location.href = "mailto:devhy5174@gmail.com";
-          }}
+          description="카카오톡 또는 이메일로 문의해주세요"
+          right={
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                aria-label="카카오톡으로 문의하기"
+                onClick={() => window.open("http://pf.kakao.com/_EnhbX/chat", "_blank")}
+                className="w-8 h-8 rounded-full flex items-center justify-center"
+                style={{ backgroundColor: "#FEE500" }}
+              >
+                <RiKakaoTalkFill size={16} color="#3C1E1E" />
+              </button>
+              <button
+                type="button"
+                aria-label="이메일로 문의하기"
+                onClick={() => window.open("mailto:devhy5174@gmail.com")}
+                className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center"
+              >
+                <HiMail size={16} className="text-gray-500" />
+              </button>
+            </div>
+          }
         />
       </div>
 

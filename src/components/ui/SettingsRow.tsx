@@ -15,12 +15,12 @@ export default function SettingsRow({
   onClick,
   danger,
 }: Props) {
+  const Tag = onClick ? "button" : "div";
   return (
-    <button
+    <Tag
       onClick={onClick}
-      disabled={!onClick}
-      className={`w-full flex items-center gap-3 px-5 py-4 text-left transition disabled:cursor-default ${
-        onClick ? "hover:bg-gray-50 active:bg-gray-100" : ""
+      className={`w-full flex items-center gap-3 px-5 py-4 text-left transition ${
+        onClick ? "hover:bg-gray-50 active:bg-gray-100 cursor-pointer" : ""
       }`}
     >
       <span className="w-6 h-6 flex items-center justify-center flex-shrink-0 text-gray-400">
@@ -53,6 +53,6 @@ export default function SettingsRow({
           <polyline points="9 18 15 12 9 6" />
         </svg>
       ) : null}
-    </button>
+    </Tag>
   );
 }
