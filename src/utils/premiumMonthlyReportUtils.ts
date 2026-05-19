@@ -1,6 +1,5 @@
 import {
   DISTANCE_MESSAGES,
-  CALORIE_MESSAGES,
   DURATION_MESSAGES,
   STEP_MESSAGES,
 } from "../data/premiumReportData";
@@ -22,20 +21,19 @@ export function getDistanceMessage(totalDistance: number, style: DrillStyle) {
   return findMessage(DISTANCE_MESSAGES, totalDistance, style);
 }
 
-export function getCaloriesMessage(
-  totalCalories: number,
-
-  style: DrillStyle,
-) {
-  const chickenCount = Math.floor(totalCalories / 2200);
-
-  const tanghuluCount = Math.floor(totalCalories / 200);
-
+export function getCaloriesMessage(totalCalories: number, style: DrillStyle) {
   if (style === "mz") {
+    const tanghuluCount = Math.floor(totalCalories / 200);
+    if (tanghuluCount === 0) return "탕후루 한 입은 태웠어요 🍡";
     return `탕후루 ${tanghuluCount}개 삭제 🍡`;
   }
 
-  return `치킨 ${chickenCount}마리 삭제 🍗`;
+  const chickenCount = Math.floor(totalCalories / 2200);
+  if (chickenCount >= 1) return `치킨 ${chickenCount}마리 삭제 🍗`;
+
+  const snackCount = Math.floor(totalCalories / 200);
+  if (snackCount === 0) return "간식 한 입 정도 소모 완료 🍪";
+  return `초코파이 ${snackCount}개 삭제 🍫`;
 }
 
 export function getStepsMessage(totalSteps: number, style: DrillStyle) {
