@@ -11,6 +11,7 @@ import { useActiveBubble } from "../context/ActiveBubbleContext";
 import { FAKE_ACTIVE_USERS } from "../data/fakeActiveUsers";
 import { DIET_BY_CHARACTER } from "../data/characterWorkoutDiet";
 import { useTodayStats } from "../hooks/useTodayStats";
+import { notifyGoalReached } from "../utils/notificationTriggers";
 
 const DIET_BY_DURATION = {
   light: {
@@ -221,6 +222,15 @@ export default function Workout() {
     if (saveResult.error) {
       console.error("운동 저장 실패 — Supabase 에러:", saveResult.error);
       return;
+    }
+
+    // 목표 달성 알림 (fire-and-forget)
+    if (goalProgress >= 100 && user && userGoal) {
+      notifyGoalReached({
+        userId: user.id,
+        goalType: userGoal.goal_type,
+        goalValue: userGoal.goal_value,
+      }).catch(() => {});
     }
   };
 

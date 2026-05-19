@@ -13,6 +13,8 @@ import {
   type CreatePartyInput,
   type AchievedParty,
 } from "../lib/partyService";
+import { notifyPartyJoined } from "../utils/notificationTriggers";
+import { supabase } from "../lib/supabase";
 
 export function useParty(userId: string | null) {
   const [parties, setParties] = useState<Party[]>([]);
@@ -64,7 +66,24 @@ export function useParty(userId: string | null) {
   const handleJoin = async (partyId: string) => {
     if (!userId) return { error: "로그인이 필요합니다." };
     const { error } = await joinParty(partyId, userId);
-    if (!error) await refresh();
+    if (!error) {
+      await refresh();
+      // 파티 리더에게 알림 전송 (fire-and-forget)
+      const party = parties.find((p) => p.id === partyId);
+      if (party && party.created_by !== userId) {
+        const { data: profile } = await supabase
+          .from("public_profiles")
+          .select("nickname")
+          .eq("id", userId)
+          .single();
+        notifyPartyJoined({
+          leaderUserId: party.created_by,
+          joinerNickname: (profile as any)?.nickname ?? "누군가",
+          partyName: party.name,
+          partyId,
+        }).catch(() => {});
+      }
+    }
     return { error };
   };
 

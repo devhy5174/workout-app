@@ -8,8 +8,11 @@ import {
   HiLightningBolt,
   HiCake,
   HiSparkles,
+  HiDeviceMobile,
+  HiShieldCheck,
 } from "react-icons/hi";
 import { type NotificationKey, useSettings } from "../../hooks/useSettings";
+import { usePushSubscription } from "../../hooks/usePushSubscription";
 
 type Settings = ReturnType<typeof useSettings>["settings"];
 
@@ -120,14 +123,75 @@ function NotificationGroup({
   );
 }
 
+// ── 푸시 알림 권한 카드 ────────────────────────────────────
+function PushPermissionCard({ userId }: { userId: string | null }) {
+  const { permission, isSubscribed, isLoading, subscribe, unsubscribe } =
+    usePushSubscription(userId);
+
+  if (permission === "unsupported") return null;
+
+  const handleToggle = async () => {
+    if (isSubscribed) {
+      await unsubscribe();
+    } else {
+      const { error } = await subscribe();
+      if (error) alert(error);
+    }
+  };
+
+  const statusText = () => {
+    if (permission === "denied") return "브라우저에서 차단됨";
+    if (isSubscribed) return "푸시 알림 수신 중";
+    return "탭 닫혀도 알림 받기";
+  };
+
+  return (
+    <div className="bg-gray-50 rounded-2xl overflow-hidden">
+      <div className="flex items-center gap-3 px-4 py-4">
+        <span
+          className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0"
+          style={{
+            background:
+              "linear-gradient(135deg, var(--color-primary), var(--color-secondary))",
+          }}
+        >
+          <HiDeviceMobile size={16} className="text-white" />
+        </span>
+        <div className="flex-1">
+          <p className="text-sm font-extrabold text-gray-800">기기 푸시 알림</p>
+          <p className="text-xs text-gray-400 mt-0.5">{statusText()}</p>
+        </div>
+        {permission === "denied" ? (
+          <div className="flex items-center gap-1 text-xs text-red-400 font-semibold">
+            <HiShieldCheck size={13} />
+            차단됨
+          </div>
+        ) : (
+          <Toggle
+            on={isSubscribed}
+            onToggle={isLoading ? () => {} : handleToggle}
+          />
+        )}
+      </div>
+      {permission === "denied" && (
+        <p className="text-xs text-gray-400 px-4 pb-3 pl-[52px]">
+          브라우저 주소창 자물쇠 → 알림 허용으로 변경하세요
+        </p>
+      )}
+    </div>
+  );
+}
+
 // ── 알림 상세 설정 시트 ──────────────────────────────────
 export function NotificationSheet({
   settings,
   toggleNotification,
+  userId,
   onClose,
 }: {
   settings: Settings;
   toggleNotification: (key: NotificationKey) => void;
+  userId: string | null;
   onClose: () => void;
 }) {
   return (
@@ -153,6 +217,9 @@ export function NotificationSheet({
 
         {/* 스크롤 영역 */}
         <div className="flex flex-col gap-3 px-4 py-4 pb-12 overflow-y-auto flex-1 min-h-0">
+          {/* 기기 푸시 알림 */}
+          <PushPermissionCard userId={userId} />
+
           {/* 운동 알림 */}
           <NotificationGroup
             icon={<HiBell size={16} className="text-white" />}

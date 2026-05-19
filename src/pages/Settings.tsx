@@ -584,6 +584,7 @@ export default function Settings() {
         <NotificationSheet
           settings={settings}
           toggleNotification={toggleNotification}
+          userId={user?.id ?? null}
           onClose={() => setSheet(null)}
         />
       )}
