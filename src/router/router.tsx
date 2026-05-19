@@ -21,6 +21,7 @@ import Community from "../pages/Community";
 import PartyDetail from "../pages/PartyDetail";
 import MyPage from "../pages/MyPage";
 import Admin from "../pages/Admin";
+import ResetPassword from "../pages/ResetPassword";
 import { useUser } from "../context/UserContext";
 import { EventsProvider } from "../context/EventsContext";
 import { NoticesProvider } from "../context/NoticesContext";
@@ -74,6 +75,7 @@ export default function AppRouter() {
       <Routes>
         <Route path="/intro" element={<Intro />} />
         <Route path="/auth" element={<Auth />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
         <Route
           path="/onboarding"
           element={

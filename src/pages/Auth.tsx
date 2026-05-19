@@ -4,7 +4,7 @@ import { MdDirectionsRun } from "react-icons/md";
 import { useUser } from "../context/UserContext";
 import { supabase } from "../lib/supabase";
 
-type Mode = "login" | "signup";
+type Mode = "login" | "signup" | "forgot";
 
 const BG = "linear-gradient(150deg, #ffac60 0%, #ff7433 40%, #ff5733 75%, #e8401a 100%)";
 
@@ -18,6 +18,7 @@ export default function Auth() {
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [signupDone, setSignupDone] = useState(false);
+  const [forgotDone, setForgotDone] = useState(false);
 
   const toKorean = (msg: string): string => {
     if (msg.includes("Invalid login credentials"))
@@ -64,10 +65,25 @@ export default function Auth() {
     setSignupDone(true);
   };
 
+  const handleForgot = async () => {
+    setError(null);
+    setIsSubmitting(true);
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+    setIsSubmitting(false);
+    if (error) {
+      setError(toKorean(error.message));
+    } else {
+      setForgotDone(true);
+    }
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (mode === "login") handleLogin();
-    else handleSignup();
+    else if (mode === "signup") handleSignup();
+    else handleForgot();
   };
 
   if (signupDone) {
@@ -101,6 +117,35 @@ export default function Auth() {
     );
   }
 
+  if (forgotDone) {
+    return (
+      <div
+        className="min-h-screen flex items-center justify-center p-6"
+        style={{ background: BG }}
+      >
+        <div className="text-center max-w-sm w-full">
+          <div className="text-7xl mb-6">📬</div>
+          <h2 className="text-2xl font-black text-white mb-3">
+            메일을 확인해주세요
+          </h2>
+          <p className="text-white/70 text-sm leading-relaxed mb-8">
+            <span className="text-white font-semibold">{email}</span>로<br />
+            비밀번호 재설정 링크를 보냈어요.<br />
+            메일함을 확인해주세요.
+          </p>
+          <button
+            onClick={() => { setMode("login"); setForgotDone(false); setEmail(""); }}
+            aria-label="로그인으로 이동"
+            className="w-full py-4 rounded-2xl font-bold text-sm"
+            style={{ background: "white", color: "var(--color-primary)" }}
+          >
+            로그인으로 돌아가기
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div
       className="min-h-screen flex flex-col items-center justify-center p-6"
@@ -123,29 +168,45 @@ export default function Auth() {
           </p>
         </div>
 
-        {/* 탭 전환 */}
-        <div
-          className="flex w-full rounded-2xl p-1 mb-6"
-          style={{ background: "rgba(255,255,255,0.15)" }}
-        >
-          {(["login", "signup"] as Mode[]).map((m) => (
+        {/* 탭 전환 (forgot 모드일 땐 숨김) */}
+        {mode !== "forgot" && (
+          <div
+            className="flex w-full rounded-2xl p-1 mb-6"
+            style={{ background: "rgba(255,255,255,0.15)" }}
+          >
+            {(["login", "signup"] as Mode[]).map((m) => (
+              <button
+                key={m}
+                onClick={() => { setMode(m); setError(null); }}
+                className="flex-1 py-2.5 rounded-xl text-sm font-bold transition-all"
+                style={
+                  mode === m
+                    ? { background: "white", color: "var(--color-primary)" }
+                    : { color: "rgba(255,255,255,0.6)" }
+                }
+              >
+                {m === "login" ? "로그인" : "회원가입"}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* forgot 모드 헤더 */}
+        {mode === "forgot" && (
+          <div className="w-full mb-6">
             <button
-              key={m}
-              onClick={() => {
-                setMode(m);
-                setError(null);
-              }}
-              className="flex-1 py-2.5 rounded-xl text-sm font-bold transition-all"
-              style={
-                mode === m
-                  ? { background: "white", color: "var(--color-primary)" }
-                  : { color: "rgba(255,255,255,0.6)" }
-              }
+              onClick={() => { setMode("login"); setError(null); }}
+              className="text-white/60 text-sm font-semibold mb-4 flex items-center gap-1"
+              aria-label="뒤로가기"
             >
-              {m === "login" ? "로그인" : "회원가입"}
+              ← 로그인으로
             </button>
-          ))}
-        </div>
+            <p className="text-white font-extrabold text-lg">비밀번호 찾기</p>
+            <p className="text-white/60 text-xs mt-1">
+              가입한 이메일을 입력하면 재설정 링크를 보내드려요.
+            </p>
+          </div>
+        )}
 
         {/* 폼 */}
         <form onSubmit={handleSubmit} className="w-full space-y-3">
@@ -157,18 +218,20 @@ export default function Auth() {
             className="w-full px-5 py-4 rounded-2xl bg-white text-gray-800 text-sm placeholder-gray-400 focus:outline-none shadow-sm"
             required
           />
-          <input
-            type="password"
-            placeholder="비밀번호"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="w-full px-5 py-4 rounded-2xl bg-white text-gray-800 text-sm placeholder-gray-400 focus:outline-none shadow-sm"
-            required
-            minLength={6}
-          />
+          {mode !== "forgot" && (
+            <input
+              type="password"
+              placeholder="비밀번호"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="w-full px-5 py-4 rounded-2xl bg-white text-gray-800 text-sm placeholder-gray-400 focus:outline-none shadow-sm"
+              required
+              minLength={6}
+            />
+          )}
 
           {error && (
-            <p className="text-white/90 text-xs px-1 bg-white/20 py-2 px-3 rounded-xl">
+            <p className="text-white/90 text-xs bg-white/20 py-2 px-3 rounded-xl">
               {error}
             </p>
           )}
@@ -176,7 +239,7 @@ export default function Auth() {
           <button
             type="submit"
             disabled={isSubmitting}
-            aria-label={mode === "login" ? "로그인" : "회원가입"}
+            aria-label={mode === "login" ? "로그인" : mode === "signup" ? "회원가입" : "재설정 메일 보내기"}
             className="w-full py-4 rounded-2xl font-black text-sm mt-2 disabled:opacity-50 transition-opacity shadow-sm"
             style={{ background: "white", color: "var(--color-primary)" }}
           >
@@ -184,8 +247,21 @@ export default function Auth() {
               ? "처리 중..."
               : mode === "login"
                 ? "로그인"
-                : "회원가입"}
+                : mode === "signup"
+                  ? "회원가입"
+                  : "재설정 메일 보내기"}
           </button>
+
+          {/* 비밀번호 찾기 링크 (로그인 모드에서만) */}
+          {mode === "login" && (
+            <button
+              type="button"
+              onClick={() => { setMode("forgot"); setError(null); }}
+              className="w-full text-center text-white/50 text-xs py-1 hover:text-white/80 transition-colors"
+            >
+              비밀번호를 잊으셨나요?
+            </button>
+          )}
         </form>
       </div>
     </div>
