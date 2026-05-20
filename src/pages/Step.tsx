@@ -278,8 +278,9 @@ function EventCard({ event }: { event: AppEvent }) {
             {status.label}
           </span>
           {isNew && (
-            <span className="text-[11px] font-extrabold px-2 py-0.5 rounded-full bg-yellow-400 text-gray-800">
-              NEW
+            <span className="text-[8px] font-extrabold px-1 py-px rounded-full text-white"
+              style={{ background: "linear-gradient(135deg, #fcd34d, #f59e0b)" }}>
+              N
             </span>
           )}
         </div>
