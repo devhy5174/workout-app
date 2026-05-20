@@ -34,7 +34,7 @@ export function getConditionLabel(event: AppEvent): string {
 }
 
 export function useEvents() {
-  const { events, addEvent, updateEvent, deleteEvent, toggleEvent } =
+  const { events, isLoading, addEvent, updateEvent, deleteEvent, toggleEvent, refresh } =
     useEventsContext();
 
   const activeEvents = useMemo(
@@ -56,12 +56,14 @@ export function useEvents() {
 
   return {
     events,
+    isLoading,
     activeEvents,
     byCategory,
     addEvent,
     updateEvent,
     deleteEvent,
     toggleEvent,
+    refresh,
     // 메타 helpers
     CATEGORY_META,
     CONDITION_META,

@@ -22,6 +22,12 @@ import {
 } from "react-icons/hi";
 import { useAdminStats, type SubscriberStats } from "../hooks/useAdminStats";
 import { useEvents, getEventStatus } from "../hooks/useEvents";
+import { useUser } from "../context/UserContext";
+import {
+  fetchEventAchievers,
+  grantEventReward,
+  type Achiever,
+} from "../lib/eventService";
 import { useNotices } from "../context/NoticesContext";
 import {
   CATEGORY_META,
@@ -961,21 +967,288 @@ function NoticesTab() {
   );
 }
 
+// ── 달성자 시트 ───────────────────────────────────────────
+function AchieversSheet({
+  event,
+  adminUserId,
+  onClose,
+}: {
+  event: AppEvent;
+  adminUserId: string;
+  onClose: () => void;
+}) {
+  const [achievers, setAchievers] = useState<Achiever[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [grantingId, setGrantingId] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetchEventAchievers(event).then((data) => {
+      setAchievers(data);
+      setLoading(false);
+    });
+  }, [event]);
+
+  async function handleGrant(achiever: Achiever) {
+    setGrantingId(achiever.userId);
+    const ok = await grantEventReward(
+      event.id,
+      achiever.userId,
+      event.reward,
+      adminUserId,
+    );
+    if (ok) {
+      setAchievers((prev) =>
+        prev.map((a) =>
+          a.userId === achiever.userId ? { ...a, alreadyGranted: true } : a,
+        ),
+      );
+    }
+    setGrantingId(null);
+  }
+
+  async function handleGrantAll() {
+    const pending = achievers.filter((a) => !a.alreadyGranted);
+    for (const a of pending) {
+      await handleGrant(a);
+    }
+  }
+
+  const pendingCount = achievers.filter((a) => !a.alreadyGranted).length;
+  const conditionLabel = `${event.conditionValue.toLocaleString()}${CONDITION_META[event.conditionType].unit}`;
+  const catMeta = CATEGORY_META[event.category];
+
+  // 파티 이벤트는 partyName 기준으로 그룹화
+  const grouped =
+    event.category === "party"
+      ? achievers.reduce<Record<string, Achiever[]>>((acc, a) => {
+          const key = a.partyName ?? "기타";
+          if (!acc[key]) acc[key] = [];
+          acc[key].push(a);
+          return acc;
+        }, {})
+      : null;
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-end bg-black/40"
+      onClick={onClose}
+    >
+      <div
+        className="w-full max-w-md mx-auto bg-white rounded-t-3xl shadow-2xl max-h-[88vh] flex flex-col"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* 헤더 */}
+        <div className="flex items-center justify-between px-5 pt-5 pb-3 flex-shrink-0">
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 mb-0.5">
+              <span
+                className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${catMeta.bg} ${catMeta.color}`}
+              >
+                {catMeta.emoji} {catMeta.label}
+              </span>
+            </div>
+            <h3 className="text-base font-extrabold text-gray-800 truncate">
+              {event.title}
+            </h3>
+            <p className="text-[11px] text-gray-400 font-semibold mt-0.5">
+              달성 조건: {conditionLabel} · {event.startDate} ~ {event.endDate}
+            </p>
+          </div>
+          <button
+            onClick={onClose}
+            className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 font-bold ml-3 flex-shrink-0"
+            aria-label="닫기"
+          >
+            ✕
+          </button>
+        </div>
+
+        {/* 요약 배너 */}
+        {!loading && (
+          <div className="mx-5 mb-3 rounded-2xl px-4 py-3 flex items-center gap-3 flex-shrink-0"
+            style={{
+              background: "linear-gradient(135deg, var(--color-primary), var(--color-secondary))",
+            }}
+          >
+            <div className="flex-1">
+              <p className="text-white/70 text-[11px] font-semibold">달성자</p>
+              <p className="text-white text-xl font-extrabold">
+                {achievers.length}명
+              </p>
+            </div>
+            <div className="flex-1">
+              <p className="text-white/70 text-[11px] font-semibold">지급 대기</p>
+              <p className="text-white text-xl font-extrabold">{pendingCount}명</p>
+            </div>
+            {pendingCount > 0 && (
+              <button
+                onClick={handleGrantAll}
+                disabled={grantingId !== null}
+                className="flex-shrink-0 bg-white/20 text-white text-xs font-extrabold px-3 py-2 rounded-xl active:scale-95 transition disabled:opacity-50"
+                aria-label="전체 보상 지급"
+              >
+                전체 지급
+              </button>
+            )}
+          </div>
+        )}
+
+        {/* 달성자 목록 */}
+        <div className="flex-1 overflow-y-auto pb-10">
+          {loading ? (
+            <div className="flex flex-col gap-3 p-5">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-full bg-gray-100 animate-pulse flex-shrink-0" />
+                  <div className="flex-1 h-4 bg-gray-100 rounded-lg animate-pulse" />
+                  <div className="w-16 h-7 bg-gray-100 rounded-xl animate-pulse" />
+                </div>
+              ))}
+            </div>
+          ) : achievers.length === 0 ? (
+            <div className="flex flex-col items-center py-14 gap-3 text-gray-300">
+              <HiUsers size={40} />
+              <p className="text-sm font-bold">달성자가 없어요</p>
+              <p className="text-xs text-gray-400 text-center px-8">
+                이벤트 조건({conditionLabel})을 충족한 유저가 없습니다
+              </p>
+            </div>
+          ) : grouped ? (
+            // 파티 이벤트: 파티별 그룹
+            Object.entries(grouped).map(([partyName, members]) => (
+              <div key={partyName}>
+                <div className="px-5 py-2 bg-blue-50 flex items-center gap-2">
+                  <span className="text-xs font-extrabold text-blue-600">
+                    🤝 {partyName}
+                  </span>
+                  <span className="text-[11px] text-blue-400 font-semibold">
+                    합산 {members[0].progress.toLocaleString()}보
+                  </span>
+                </div>
+                {members.map((a) => (
+                  <AchieverRow
+                    key={a.userId}
+                    achiever={a}
+                    onGrant={() => handleGrant(a)}
+                    isGranting={grantingId === a.userId}
+                    event={event}
+                  />
+                ))}
+              </div>
+            ))
+          ) : (
+            // 개인/streak 이벤트: 플랫 리스트
+            achievers.map((a, i) => (
+              <AchieverRow
+                key={a.userId}
+                achiever={a}
+                rank={i + 1}
+                onGrant={() => handleGrant(a)}
+                isGranting={grantingId === a.userId}
+                event={event}
+              />
+            ))
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function AchieverRow({
+  achiever,
+  rank,
+  onGrant,
+  isGranting,
+  event,
+}: {
+  achiever: Achiever;
+  rank?: number;
+  onGrant: () => void;
+  isGranting: boolean;
+  event: AppEvent;
+}) {
+  const progressLabel =
+    event.category === "streak"
+      ? `${achiever.progress}일 연속`
+      : event.conditionType === "avg_steps"
+        ? `평균 ${achiever.progress.toLocaleString()}보/일`
+        : `${achiever.progress.toLocaleString()}보`;
+
+  return (
+    <div className="flex items-center gap-3 px-5 py-3.5 border-b border-gray-50 last:border-0">
+      {rank !== undefined && (
+        <span className="text-sm font-extrabold text-gray-300 w-5 text-center flex-shrink-0">
+          {rank}
+        </span>
+      )}
+      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[var(--color-primary)]/20 to-[var(--color-secondary)]/20 flex items-center justify-center flex-shrink-0">
+        <span className="text-xs font-extrabold text-[var(--color-primary)]">
+          {achiever.nickname.charAt(0)}
+        </span>
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-bold text-gray-800 truncate">
+          {achiever.nickname}
+        </p>
+        <p className="text-[11px] text-gray-400 font-semibold">
+          {progressLabel}
+        </p>
+      </div>
+      {achiever.alreadyGranted ? (
+        <span className="text-[11px] font-extrabold text-emerald-500 bg-emerald-50 px-2.5 py-1 rounded-full flex-shrink-0">
+          지급됨
+        </span>
+      ) : (
+        <button
+          onClick={onGrant}
+          disabled={isGranting}
+          className="text-[11px] font-extrabold text-white px-3 py-1.5 rounded-xl active:scale-95 transition disabled:opacity-50 flex-shrink-0"
+          style={{
+            background: "linear-gradient(135deg, var(--color-primary), var(--color-secondary))",
+          }}
+          aria-label="보상 지급"
+        >
+          {isGranting ? "처리 중…" : "보상 지급"}
+        </button>
+      )}
+    </div>
+  );
+}
+
 // ── 탭: 이벤트 관리 ───────────────────────────────────────
 function EventsTab() {
-  const { events, activeEvents, addEvent, updateEvent, deleteEvent, toggleEvent } =
+  const { user } = useUser();
+  const { events, activeEvents, isLoading, addEvent, updateEvent, deleteEvent, toggleEvent } =
     useEvents();
   const [showForm, setShowForm] = useState(false);
   const [editingEvent, setEditingEvent] = useState<AppEvent | undefined>();
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [achieversEvent, setAchieversEvent] = useState<AppEvent | null>(null);
 
-  function handleSave(data: Omit<AppEvent, "id" | "createdAt">) {
+  const today = new Date().toISOString().slice(0, 10);
+
+  async function handleSave(data: Omit<AppEvent, "id" | "createdAt">) {
     if (editingEvent) {
-      updateEvent(editingEvent.id, data);
+      await updateEvent(editingEvent.id, data);
     } else {
-      addEvent(data);
+      await addEvent(data);
     }
     setEditingEvent(undefined);
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex flex-col gap-3 p-4 pb-28">
+        {Array.from({ length: 3 }).map((_, i) => (
+          <div key={i} className="bg-white rounded-2xl shadow-sm p-4">
+            <div className="h-4 bg-gray-100 rounded-lg animate-pulse w-24 mb-3" />
+            <div className="h-5 bg-gray-100 rounded-lg animate-pulse w-40 mb-2" />
+            <div className="h-3 bg-gray-100 rounded-lg animate-pulse w-full" />
+          </div>
+        ))}
+      </div>
+    );
   }
 
   return (
@@ -1012,13 +1285,13 @@ function EventsTab() {
         events.map((event) => {
           const catMeta = CATEGORY_META[event.category];
           const status = getEventStatus(event);
-          const isExpired = event.endDate < new Date().toISOString().slice(0, 10);
+          const isExpired = event.endDate < today;
 
           return (
             <div
               key={event.id}
               className={`bg-white rounded-2xl shadow-sm p-4 transition-all ${
-                !event.isActive || isExpired ? "opacity-60" : ""
+                !event.isActive || isExpired ? "opacity-70" : ""
               }`}
             >
               {/* 배지 행 */}
@@ -1036,7 +1309,17 @@ function EventsTab() {
                   </span>
                 </div>
                 <div className="flex items-center gap-1 flex-shrink-0">
-                  {!isExpired && (
+                  {isExpired ? (
+                    // 종료 이벤트: 달성자 확인 버튼
+                    <button
+                      onClick={() => setAchieversEvent(event)}
+                      className="flex items-center gap-1 text-[11px] font-extrabold text-[var(--color-primary)] bg-[var(--color-primary)]/10 px-2.5 py-1 rounded-lg active:scale-95 transition"
+                      aria-label="달성자 확인"
+                    >
+                      <HiUsers size={12} />
+                      달성자 확인
+                    </button>
+                  ) : (
                     <button
                       onClick={() => toggleEvent(event.id)}
                       className={`text-[11px] font-bold px-2 py-1 rounded-lg transition-colors ${
@@ -1125,6 +1408,14 @@ function EventsTab() {
           initial={editingEvent}
           onSave={handleSave}
           onClose={() => { setShowForm(false); setEditingEvent(undefined); }}
+        />
+      )}
+
+      {achieversEvent && user && (
+        <AchieversSheet
+          event={achieversEvent}
+          adminUserId={user.id}
+          onClose={() => setAchieversEvent(null)}
         />
       )}
     </div>
