@@ -7,11 +7,12 @@ import { BUBBLE_PREVIEWS } from '../data/bubblePreviews';
 const today = new Date().toISOString().slice(0, 10);
 
 export function getEventStatus(event: AppEvent) {
+  if (!event.isActive) return { label: '비활성', color: 'text-gray-400 bg-gray-100' };
+  if (event.isFixed) return { label: '고정', color: 'text-violet-600 bg-violet-50' };
   const isExpired = event.endDate < today;
   const isPending = event.startDate > today;
   if (isExpired) return { label: '종료', color: 'text-gray-400 bg-gray-100' };
   if (isPending) return { label: '예정', color: 'text-blue-500 bg-blue-50' };
-  if (!event.isActive) return { label: '비활성', color: 'text-gray-400 bg-gray-100' };
   return { label: '진행 중', color: 'text-emerald-600 bg-emerald-50' };
 }
 
@@ -40,7 +41,9 @@ export function useEvents() {
   const activeEvents = useMemo(
     () =>
       events.filter(
-        (e) => e.isActive && e.startDate <= today && e.endDate >= today,
+        (e) =>
+          e.isActive &&
+          (e.isFixed || (e.startDate <= today && e.endDate >= today)),
       ),
     [events],
   );

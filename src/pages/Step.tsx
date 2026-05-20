@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import type { IconType } from "react-icons";
 import { HiLockClosed } from "react-icons/hi";
@@ -34,6 +34,7 @@ import {
 } from "../hooks/useEvents";
 import { CATEGORY_META } from "../data/events";
 import type { AppEvent } from "../data/events";
+import { autoGrantFixedEvent } from "../lib/eventService";
 
 type Tab = "step" | "premium" | "events";
 type PlanType = "monthly" | "annual";
@@ -214,19 +215,29 @@ function StreakChallengeCard({
               isCompleted ? "text-amber-700" : "text-gray-600"
             }`}
           >
-            {isCompleted ? "달성 완료! 보상 지급 대기 중 🎉" : "달성 시 보상 지급"}
+            {isCompleted
+              ? event.isFixed
+                ? "해금됨! 🎉"
+                : "달성 완료! 보상 지급 대기 중 🎉"
+              : "달성 시 보상 지급"}
           </p>
           <p className="text-[10px] text-gray-400 mt-0.5">
             {isCompleted
-              ? "이벤트 종료 후 관리자가 보상을 지급합니다"
+              ? event.isFixed
+                ? "아래 목록에서 보상을 선택하세요"
+                : "이벤트 종료 후 관리자가 보상을 지급합니다"
               : streak > 0
                 ? `${target - streak}일 더 연속 운동하면 달성!`
                 : "오늘부터 시작해보세요 💪"}
           </p>
         </div>
         {isCompleted && (
-          <span className="flex-shrink-0 bg-amber-400 text-white text-[10px] font-extrabold px-2.5 py-1 rounded-full">
-            달성 ✓
+          <span
+            className={`flex-shrink-0 text-white text-[10px] font-extrabold px-2.5 py-1 rounded-full ${
+              event.isFixed ? "bg-emerald-400" : "bg-amber-400"
+            }`}
+          >
+            {event.isFixed ? "해금 ✓" : "달성 ✓"}
           </span>
         )}
       </div>
@@ -319,7 +330,7 @@ export default function Step() {
   const [activePremiumItems, setActivePremiumItems] = useState<
     Record<string, string>
   >({});
-  const { workoutRecords, userProfile, updateProfile } = useUser();
+  const { user, workoutRecords, userProfile, updateProfile } = useUser();
   const {
     itemsWithStatus,
     totalSteps,
@@ -327,6 +338,19 @@ export default function Step() {
     consecutiveStreak,
   } = useUnlockItems(workoutRecords);
   const { byCategory, activeEvents } = useEvents();
+
+  // 고정 streak 이벤트 조건 달성 시 자동 지급
+  const autoGrantedRef = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    if (!user) return;
+    byCategory.streak.forEach((event) => {
+      if (!event.isFixed) return;
+      if (consecutiveStreak < event.conditionValue) return;
+      if (autoGrantedRef.current.has(event.id)) return;
+      autoGrantedRef.current.add(event.id);
+      autoGrantFixedEvent(event.id, user.id, event.reward);
+    });
+  }, [byCategory.streak, consecutiveStreak, user]);
 
   const { isPremium, togglePremium } = usePremium();
   const { selectedBubbleId, setSelectedBubbleId } = useActiveBubble();

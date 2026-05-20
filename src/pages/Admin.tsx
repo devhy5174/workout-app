@@ -124,6 +124,7 @@ function EventFormSheet({
   const [description, setDescription] = useState(initial?.description ?? "");
   const [startDate, setStartDate] = useState(initial?.startDate ?? todayStr);
   const [endDate, setEndDate] = useState(initial?.endDate ?? todayStr);
+  const [isFixed, setIsFixed] = useState(initial?.isFixed ?? false);
   const [category, setCategory] = useState<EventCategory>(
     initial?.category ?? "personal",
   );
@@ -149,7 +150,8 @@ function EventFormSheet({
 
   function handleSave() {
     if (!title.trim()) return setError("이벤트 제목을 입력해주세요.");
-    if (endDate < startDate) return setError("종료일이 시작일보다 빠를 수 없어요.");
+    if (!isFixed && endDate < startDate)
+      return setError("종료일이 시작일보다 빠를 수 없어요.");
     const val = parseInt(conditionValue, 10);
     if (!conditionValue || isNaN(val) || val <= 0)
       return setError("목표 값을 올바르게 입력해주세요.");
@@ -172,6 +174,7 @@ function EventFormSheet({
         titleText: rewardType !== "bubble" ? titleText.trim() : undefined,
       },
       isActive: initial?.isActive ?? true,
+      isFixed,
     });
     onClose();
   }
@@ -333,26 +336,65 @@ function EventFormSheet({
 
         {/* 기간 */}
         <p className="text-xs font-bold text-gray-400 mb-2">이벤트 기간</p>
-        <div className="flex gap-2 mb-5">
-          <div className="flex-1">
-            <p className="text-[11px] text-gray-400 mb-1 px-1">시작일</p>
-            <input
-              type="date"
-              value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
-              className="w-full bg-gray-50 rounded-2xl px-3 py-2.5 text-sm font-semibold text-gray-800 outline-none focus:ring-2 focus:ring-[var(--color-primary)]/30"
+
+        {/* 고정 이벤트 토글 */}
+        <button
+          type="button"
+          onClick={() => setIsFixed((v) => !v)}
+          className={`w-full flex items-center justify-between px-4 py-3 rounded-2xl mb-3 border-2 transition-all ${
+            isFixed
+              ? "bg-violet-50 border-violet-200"
+              : "bg-gray-50 border-transparent"
+          }`}
+        >
+          <div className="text-left">
+            <p
+              className={`text-sm font-extrabold ${isFixed ? "text-violet-700" : "text-gray-600"}`}
+            >
+              ♾️ 고정 이벤트
+            </p>
+            <p className="text-[11px] text-gray-400 mt-0.5">
+              {isFixed
+                ? "기간 제한 없이 내가 중지하기 전까지 유지돼요"
+                : "체크하면 종료일 없이 항상 진행됩니다"}
+            </p>
+          </div>
+          <div
+            className={`w-11 h-6 rounded-full flex items-center transition-all flex-shrink-0 ml-3 ${
+              isFixed ? "bg-violet-500" : "bg-gray-200"
+            }`}
+          >
+            <div
+              className={`w-5 h-5 bg-white rounded-full shadow-sm transition-all mx-0.5 ${
+                isFixed ? "translate-x-5" : "translate-x-0"
+              }`}
             />
           </div>
-          <div className="flex-1">
-            <p className="text-[11px] text-gray-400 mb-1 px-1">종료일</p>
-            <input
-              type="date"
-              value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
-              className="w-full bg-gray-50 rounded-2xl px-3 py-2.5 text-sm font-semibold text-gray-800 outline-none focus:ring-2 focus:ring-[var(--color-primary)]/30"
-            />
+        </button>
+
+        {!isFixed && (
+          <div className="flex gap-2 mb-5">
+            <div className="flex-1">
+              <p className="text-[11px] text-gray-400 mb-1 px-1">시작일</p>
+              <input
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                className="w-full bg-gray-50 rounded-2xl px-3 py-2.5 text-sm font-semibold text-gray-800 outline-none focus:ring-2 focus:ring-[var(--color-primary)]/30"
+              />
+            </div>
+            <div className="flex-1">
+              <p className="text-[11px] text-gray-400 mb-1 px-1">종료일</p>
+              <input
+                type="date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                className="w-full bg-gray-50 rounded-2xl px-3 py-2.5 text-sm font-semibold text-gray-800 outline-none focus:ring-2 focus:ring-[var(--color-primary)]/30"
+              />
+            </div>
           </div>
-        </div>
+        )}
+        {isFixed && <div className="mb-5" />}
 
         {error && <p className="text-xs text-red-500 mb-3 px-1">{error}</p>}
 

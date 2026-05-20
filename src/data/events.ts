@@ -28,6 +28,7 @@ export interface AppEvent {
   conditionValue: number;
   reward: EventReward;
   isActive: boolean;
+  isFixed: boolean;
   createdAt: string;
 }
 

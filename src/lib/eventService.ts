@@ -21,8 +21,12 @@ type EventRow = {
   bubble_id: string | null;
   title_text: string | null;
   is_active: boolean;
+  is_fixed: boolean;
   created_at: string;
 };
+
+// 고정 이벤트의 더미 종료일 (사실상 무기한)
+const FIXED_END_DATE = "9999-12-31";
 
 function rowToEvent(row: EventRow): AppEvent {
   return {
@@ -40,16 +44,18 @@ function rowToEvent(row: EventRow): AppEvent {
       titleText: row.title_text ?? undefined,
     },
     isActive: row.is_active,
+    isFixed: row.is_fixed ?? false,
     createdAt: row.created_at,
   };
 }
 
 function eventToRow(event: Omit<AppEvent, "id" | "createdAt">) {
+  const today = new Date().toISOString().slice(0, 10);
   return {
     title: event.title,
     description: event.description,
-    start_date: event.startDate,
-    end_date: event.endDate,
+    start_date: event.isFixed ? today : event.startDate,
+    end_date: event.isFixed ? FIXED_END_DATE : event.endDate,
     category: event.category,
     condition_type: event.conditionType,
     condition_value: event.conditionValue,
@@ -57,6 +63,7 @@ function eventToRow(event: Omit<AppEvent, "id" | "createdAt">) {
     bubble_id: event.reward.bubbleId ?? null,
     title_text: event.reward.titleText ?? null,
     is_active: event.isActive,
+    is_fixed: event.isFixed,
   };
 }
 
@@ -273,6 +280,31 @@ export async function fetchEventAchievers(
 }
 
 // ── 보상 지급 ─────────────────────────────────────────────
+
+// 고정 이벤트 자동 지급 (조건 달성 시 유저가 직접 self-grant)
+export async function autoGrantFixedEvent(
+  eventId: string,
+  userId: string,
+  reward: { type: string; bubbleId?: string; titleText?: string },
+): Promise<void> {
+  const { data: existing } = await supabase
+    .from("event_grants")
+    .select("id")
+    .eq("event_id", eventId)
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  if (!existing) {
+    await supabase.from("event_grants").insert({
+      event_id: eventId,
+      user_id: userId,
+      reward_type: reward.type,
+      bubble_id: reward.bubbleId ?? null,
+      title_text: reward.titleText ?? null,
+      granted_by: userId,
+    });
+  }
+}
 
 export async function grantEventReward(
   eventId: string,
