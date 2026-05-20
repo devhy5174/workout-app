@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   HiArrowLeft,
@@ -218,7 +218,8 @@ function EventFormSheet({
                     : "bg-gray-50 text-gray-400 border-transparent"
                 }`}
               >
-                {meta.emoji} {meta.label.replace(" 이벤트", "").replace(" 챌린지", "")}
+                {meta.emoji}{" "}
+                {meta.label.replace(" 이벤트", "").replace(" 챌린지", "")}
               </button>
             );
           })}
@@ -229,7 +230,10 @@ function EventFormSheet({
         <input
           type="text"
           value={title}
-          onChange={(e) => { setTitle(e.target.value); setError(null); }}
+          onChange={(e) => {
+            setTitle(e.target.value);
+            setError(null);
+          }}
           placeholder="이벤트 제목"
           maxLength={40}
           className="w-full bg-gray-50 rounded-2xl px-4 py-3 text-sm font-semibold text-gray-800 outline-none mb-4 placeholder:text-gray-300 focus:ring-2 focus:ring-[var(--color-primary)]/30"
@@ -269,7 +273,10 @@ function EventFormSheet({
           <input
             type="number"
             value={conditionValue}
-            onChange={(e) => { setConditionValue(e.target.value); setError(null); }}
+            onChange={(e) => {
+              setConditionValue(e.target.value);
+              setError(null);
+            }}
             placeholder={CONDITION_META[conditionType].placeholder}
             min={1}
             className="flex-1 bg-gray-50 rounded-2xl px-4 py-3 text-sm font-semibold text-gray-800 outline-none placeholder:text-gray-300 focus:ring-2 focus:ring-[var(--color-primary)]/30"
@@ -306,7 +313,10 @@ function EventFormSheet({
             <p className="text-xs font-bold text-gray-400 mb-2">말풍선 선택</p>
             <select
               value={bubbleId}
-              onChange={(e) => { setBubbleId(e.target.value); setError(null); }}
+              onChange={(e) => {
+                setBubbleId(e.target.value);
+                setError(null);
+              }}
               className="w-full bg-gray-50 rounded-2xl px-4 py-3 text-sm font-semibold text-gray-800 outline-none mb-4 focus:ring-2 focus:ring-[var(--color-primary)]/30"
             >
               <option value="">말풍선을 선택하세요</option>
@@ -326,7 +336,10 @@ function EventFormSheet({
             <input
               type="text"
               value={titleText}
-              onChange={(e) => { setTitleText(e.target.value); setError(null); }}
+              onChange={(e) => {
+                setTitleText(e.target.value);
+                setError(null);
+              }}
               placeholder="예: 🔥 30일 완주자"
               maxLength={20}
               className="w-full bg-gray-50 rounded-2xl px-4 py-3 text-sm font-semibold text-gray-800 outline-none mb-4 placeholder:text-gray-300 focus:ring-2 focus:ring-[var(--color-primary)]/30"
@@ -552,7 +565,10 @@ function WorkoutHourlyChart({
             {/* x축 레이블 */}
             <div className="flex justify-between px-px mb-4">
               {["00", "06", "12", "18", "23"].map((t) => (
-                <span key={t} className="text-[9px] text-gray-300 font-semibold">
+                <span
+                  key={t}
+                  className="text-[9px] text-gray-300 font-semibold"
+                >
                   {t}
                 </span>
               ))}
@@ -836,8 +852,14 @@ function PremiumTab({
 
 // ── 탭: 공지사항 관리 ─────────────────────────────────────
 function NoticesTab() {
-  const { notices, activeNotice, addNotice, updateNotice, deleteNotice, toggleNotice } =
-    useNotices();
+  const {
+    notices,
+    activeNotice,
+    addNotice,
+    updateNotice,
+    deleteNotice,
+    toggleNotice,
+  } = useNotices();
   const [draft, setDraft] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editDraft, setEditDraft] = useState("");
@@ -867,7 +889,9 @@ function NoticesTab() {
           <div className="px-4 py-2 bg-amber-50 border border-amber-100 flex items-start gap-2.5">
             <span className="text-base flex-shrink-0 mt-0.5">📢</span>
             <div className="flex-1 min-w-0">
-              <p className="text-[10px] font-bold text-amber-600 mb-0.5">현재 홈에 표시 중</p>
+              <p className="text-[10px] font-bold text-amber-600 mb-0.5">
+                현재 홈에 표시 중
+              </p>
               <p className="text-xs font-semibold text-gray-800 leading-relaxed">
                 {activeNotice.content}
               </p>
@@ -877,7 +901,9 @@ function NoticesTab() {
       ) : (
         <div className="rounded-2xl border border-dashed border-gray-200 px-4 py-3 flex items-center gap-2.5">
           <span className="text-base opacity-30">📢</span>
-          <p className="text-xs text-gray-300 font-semibold">현재 표시 중인 공지가 없어요</p>
+          <p className="text-xs text-gray-300 font-semibold">
+            현재 표시 중인 공지가 없어요
+          </p>
         </div>
       )}
 
@@ -920,7 +946,9 @@ function NoticesTab() {
       <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
         <div className="px-5 py-3.5 border-b border-gray-50 flex items-center justify-between">
           <p className="text-sm font-extrabold text-gray-800">공지 이력</p>
-          <span className="text-xs font-bold text-gray-400">{notices.length}개</span>
+          <span className="text-xs font-bold text-gray-400">
+            {notices.length}개
+          </span>
         </div>
 
         {notices.length === 0 ? (
@@ -1107,9 +1135,11 @@ function AchieversSheet({
 
         {/* 요약 배너 */}
         {!loading && (
-          <div className="mx-5 mb-3 rounded-2xl px-4 py-3 flex items-center gap-3 flex-shrink-0"
+          <div
+            className="mx-5 mb-3 rounded-2xl px-4 py-3 flex items-center gap-3 flex-shrink-0"
             style={{
-              background: "linear-gradient(135deg, var(--color-primary), var(--color-secondary))",
+              background:
+                "linear-gradient(135deg, var(--color-primary), var(--color-secondary))",
             }}
           >
             <div className="flex-1">
@@ -1119,8 +1149,12 @@ function AchieversSheet({
               </p>
             </div>
             <div className="flex-1">
-              <p className="text-white/70 text-[11px] font-semibold">지급 대기</p>
-              <p className="text-white text-xl font-extrabold">{pendingCount}명</p>
+              <p className="text-white/70 text-[11px] font-semibold">
+                지급 대기
+              </p>
+              <p className="text-white text-xl font-extrabold">
+                {pendingCount}명
+              </p>
             </div>
             {pendingCount > 0 && (
               <button
@@ -1247,7 +1281,8 @@ function AchieverRow({
           disabled={isGranting}
           className="text-[11px] font-extrabold text-white px-3 py-1.5 rounded-xl active:scale-95 transition disabled:opacity-50 flex-shrink-0"
           style={{
-            background: "linear-gradient(135deg, var(--color-primary), var(--color-secondary))",
+            background:
+              "linear-gradient(135deg, var(--color-primary), var(--color-secondary))",
           }}
           aria-label="보상 지급"
         >
@@ -1261,8 +1296,15 @@ function AchieverRow({
 // ── 탭: 이벤트 관리 ───────────────────────────────────────
 function EventsTab() {
   const { user } = useUser();
-  const { events, activeEvents, isLoading, addEvent, updateEvent, deleteEvent, toggleEvent } =
-    useEvents();
+  const {
+    events,
+    activeEvents,
+    isLoading,
+    addEvent,
+    updateEvent,
+    deleteEvent,
+    toggleEvent,
+  } = useEvents();
   const [showForm, setShowForm] = useState(false);
   const [editingEvent, setEditingEvent] = useState<AppEvent | undefined>();
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -1304,7 +1346,10 @@ function EventsTab() {
           </span>
         </p>
         <button
-          onClick={() => { setEditingEvent(undefined); setShowForm(true); }}
+          onClick={() => {
+            setEditingEvent(undefined);
+            setShowForm(true);
+          }}
           className="flex items-center gap-1 text-xs font-bold text-[var(--color-primary)] bg-[var(--color-primary)]/10 px-3 py-1.5 rounded-full active:scale-95 transition"
         >
           <HiPlus size={14} />
@@ -1315,7 +1360,9 @@ function EventsTab() {
       {events.length === 0 ? (
         <div className="bg-white rounded-2xl shadow-sm flex flex-col items-center justify-center py-16 gap-3">
           <HiSpeakerphone size={40} className="text-gray-200" />
-          <p className="text-sm font-bold text-gray-400">등록된 이벤트가 없어요</p>
+          <p className="text-sm font-bold text-gray-400">
+            등록된 이벤트가 없어요
+          </p>
           <button
             onClick={() => setShowForm(true)}
             className="text-xs font-bold text-[var(--color-primary)] bg-[var(--color-primary)]/10 px-4 py-2 rounded-full"
@@ -1375,7 +1422,10 @@ function EventsTab() {
                     </button>
                   )}
                   <button
-                    onClick={() => { setEditingEvent(event); setShowForm(true); }}
+                    onClick={() => {
+                      setEditingEvent(event);
+                      setShowForm(true);
+                    }}
                     className="w-7 h-7 rounded-lg bg-gray-100 flex items-center justify-center text-gray-400 hover:bg-blue-50 hover:text-blue-400 transition-colors"
                     aria-label="이벤트 수정"
                   >
@@ -1384,7 +1434,10 @@ function EventsTab() {
                   {deletingId === event.id ? (
                     <div className="flex items-center gap-1">
                       <button
-                        onClick={() => { deleteEvent(event.id); setDeletingId(null); }}
+                        onClick={() => {
+                          deleteEvent(event.id);
+                          setDeletingId(null);
+                        }}
                         className="text-[11px] font-bold text-red-500 px-2 py-1"
                         aria-label="삭제 확인"
                       >
@@ -1415,7 +1468,9 @@ function EventsTab() {
                 {event.title}
               </p>
               {event.description && (
-                <p className="text-xs text-gray-500 mb-2">{event.description}</p>
+                <p className="text-xs text-gray-500 mb-2">
+                  {event.description}
+                </p>
               )}
 
               {/* 조건 + 보상 */}
@@ -1449,7 +1504,10 @@ function EventsTab() {
         <EventFormSheet
           initial={editingEvent}
           onSave={handleSave}
-          onClose={() => { setShowForm(false); setEditingEvent(undefined); }}
+          onClose={() => {
+            setShowForm(false);
+            setEditingEvent(undefined);
+          }}
         />
       )}
 
@@ -1500,10 +1558,7 @@ export default function Admin() {
             className="w-9 h-9 rounded-xl bg-gray-100 flex items-center justify-center text-gray-400 active:scale-95 transition disabled:opacity-40"
             aria-label="새로고침"
           >
-            <HiRefresh
-              size={18}
-              className={isLoading ? "animate-spin" : ""}
-            />
+            <HiRefresh size={18} className={isLoading ? "animate-spin" : ""} />
           </button>
         </div>
 
