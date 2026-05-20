@@ -259,6 +259,9 @@ function EventCard({ event }: { event: AppEvent }) {
   const todayMs = new Date(today).getTime();
   const daysLeft = Math.ceil((endMs - todayMs) / (1000 * 60 * 60 * 24));
 
+  const isNew =
+    Date.now() - new Date(event.createdAt).getTime() < 7 * 24 * 60 * 60 * 1000;
+
   return (
     <div className="bg-white rounded-2xl shadow-sm p-4 border border-gray-50">
       {/* 상단: 배지 + 남은 일수 */}
@@ -274,6 +277,11 @@ function EventCard({ event }: { event: AppEvent }) {
           >
             {status.label}
           </span>
+          {isNew && (
+            <span className="text-[11px] font-extrabold px-2 py-0.5 rounded-full bg-yellow-400 text-gray-800">
+              NEW
+            </span>
+          )}
         </div>
         {daysLeft > 0 && (
           <span className="text-[11px] font-bold text-gray-400">
