@@ -190,7 +190,7 @@ npm run dev
 | `start_date` | date | 시작일 (고정 이벤트는 생성일로 자동 설정) |
 | `end_date` | date | 종료일 (고정 이벤트는 `9999-12-31`) |
 | `category` | text | `personal` · `party` · `streak` |
-| `condition_type` | text | `total_steps` · `avg_steps` · `consecutive_days` |
+| `condition_type` | text | `period_goal` · `avg_steps` · `total_steps` · `consecutive_days` |
 | `condition_value` | integer | 조건 기준값 |
 | `reward_type` | text | `bubble` · `title` |
 | `bubble_id` | text? | 보상 말풍선 ID |
@@ -214,11 +214,23 @@ npm run dev
 
 ### 🗂️ 이벤트 카테고리 3종
 
-| 카테고리 | 조건 기준 | 달성자 집계 방식 |
-|----------|-----------|----------------|
-| `personal` (개인) | 기간 내 총 걸음수 또는 일평균 걸음수 | `workout_history` 기간 필터 → 유저별 합산 |
-| `party` (파티) | 기간 내 파티 합산 걸음수 | 파티원 전원 걸음수 합산 → 목표 초과 파티 선별 |
-| `streak` (연속) | 연속 운동 일수 | `public_profiles.streak` 컬럼 직접 조회 |
+| 카테고리 | 사용 가능한 조건 타입 | 달성자 집계 방식 |
+|----------|--------------------|----------------|
+| `personal` (개인) | `period_goal` · `avg_steps` | `workout_history` 기간 필터 → 유저별 합산 |
+| `party` (파티) | `total_steps` · `avg_steps` | 파티원 전원 걸음수 합산 → 목표 초과 파티 선별 |
+| `streak` (연속) | `consecutive_days` | `public_profiles.streak` 컬럼 직접 조회 |
+
+#### 조건 타입 상세
+
+| 조건 타입 | 사용 카테고리 | 계산식 |
+|-----------|--------------|--------|
+| `period_goal` | personal | 기간 내 유저 총 걸음수 합계 |
+| `avg_steps` | personal | 유저 총 걸음수 ÷ 운동한 날 수 |
+| `avg_steps` | party | 파티원 합산 걸음수 ÷ **이벤트 기간 일수** |
+| `total_steps` | party | 파티원 합산 걸음수 합계 |
+| `consecutive_days` | streak | `public_profiles.streak` 값 직접 비교 |
+
+> **파티 `avg_steps` 예시**: 5월(31일) 이벤트에서 파티 합산 310만보 → 하루 평균 **10만보**로 집계
 
 ---
 
