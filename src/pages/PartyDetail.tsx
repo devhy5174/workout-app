@@ -5,6 +5,7 @@ import {
   HiUserAdd,
   HiUserRemove,
   HiLogout,
+  HiBell,
 } from "react-icons/hi";
 import AlertModal from "../components/ui/AlertModal";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
@@ -31,6 +32,7 @@ import type {
   PartyNotice,
 } from "../lib/partyService";
 import { supabase } from "../lib/supabase";
+import { notifyPartyStarted, resolveActivityLabel } from "../utils/notificationTriggers";
 
 const timeSlotEmoji: Record<string, string> = {
   새벽: "🌅",
@@ -471,6 +473,10 @@ export default function PartyDetail() {
   const [cheerMessages, setCheerMessages] = useState<CheerMessage[]>([]);
   const [cheerInput, setCheerInput] = useState("");
   const [notices, setNotices] = useState<PartyNotice[]>([]);
+  const [alertSending, setAlertSending] = useState(false);
+  const [showAlertConfirmModal, setShowAlertConfirmModal] = useState(false);
+  const [showAlertSentModal, setShowAlertSentModal] = useState(false);
+  const [showAlertAlreadySentModal, setShowAlertAlreadySentModal] = useState(false);
 
   const sendCheer = async () => {
     const text = cheerInput.trim();
@@ -580,6 +586,40 @@ export default function PartyDetail() {
   const handleDeleteNotice = async (noticeId: string) => {
     await deletePartyNotice(noticeId);
     setNotices((prev) => prev.filter((n) => n.id !== noticeId));
+  };
+
+  const alertStorageKey = `party_alert_sent_${id}`;
+  const todayStr = new Date().toLocaleDateString("ko-KR");
+
+  const handleAlertButtonClick = () => {
+    if (localStorage.getItem(alertStorageKey) === todayStr) {
+      setShowAlertAlreadySentModal(true);
+    } else {
+      setShowAlertConfirmModal(true);
+    }
+  };
+
+  const handleSendStartAlert = async () => {
+    if (!party || !user || alertSending) return;
+    setShowAlertConfirmModal(false);
+    const memberIds = members
+      .filter((m) => m.user_id !== user.id)
+      .map((m) => m.user_id);
+    if (memberIds.length === 0) {
+      setShowAlertSentModal(true);
+      return;
+    }
+    setAlertSending(true);
+    await notifyPartyStarted({
+      memberUserIds: memberIds,
+      leaderNickname: userProfile?.nickname ?? "방장",
+      partyName: party.name,
+      partyId: party.id,
+      tags: party.tags,
+    });
+    localStorage.setItem(alertStorageKey, todayStr);
+    setAlertSending(false);
+    setShowAlertSentModal(true);
   };
 
 
@@ -941,9 +981,18 @@ export default function PartyDetail() {
         {joined ? (
           leader ? (
             <>
-              <div className="flex-1 py-3 rounded-2xl bg-yellow-50 text-sm font-extrabold text-yellow-600 flex items-center justify-center gap-1">
-                👑 파티장
-              </div>
+              <button
+                onClick={handleAlertButtonClick}
+                disabled={alertSending}
+                aria-label="시작 알림 보내기"
+                className={`flex-1 py-3 rounded-2xl text-sm font-extrabold transition active:scale-95 ${
+                  alertSending
+                    ? "bg-yellow-100 text-yellow-300"
+                    : "bg-yellow-400 text-white"
+                }`}
+              >
+                {alertSending ? "보내는 중..." : "⚡ 시작 알림 보내기"}
+              </button>
               <button
                 onClick={() => setShowLeaderLeaveModal(true)}
                 className="px-4 py-3 rounded-2xl bg-gray-100 text-sm font-bold text-gray-500 active:scale-95 transition"
@@ -1062,6 +1111,66 @@ export default function PartyDetail() {
           />
         );
       })()}
+      {showAlertConfirmModal && party && (() => {
+        const { verb, emoji } = resolveActivityLabel(party.tags);
+        const previewBody = `${userProfile?.nickname ?? "방장"}님이 "${party.name}" 운동을 시작했습니다. 같이 ${verb} ${emoji}`;
+        return (
+          <AlertModal
+            icon={HiBell}
+            iconClass="text-yellow-400"
+            title="시작 알림을 보낼까요?"
+            message={
+              <>
+                <span className="text-gray-500">멤버들에게 이런 알림이 전송돼요</span>
+                <div className="mt-3 w-full bg-gray-50 rounded-2xl px-4 py-3 flex items-start gap-3 text-left">
+                  <span className="text-xl shrink-0">🔔</span>
+                  <div className="flex flex-col gap-0.5">
+                    <p className="text-xs font-extrabold text-gray-700">파티 운동이 시작됐어요!</p>
+                    <p className="text-[11px] text-gray-400 leading-relaxed">{previewBody}</p>
+                  </div>
+                </div>
+                <span className="text-xs text-gray-300 mt-2 block">오늘 하루 1번만 보낼 수 있어요</span>
+              </>
+            }
+            confirmLabel="보내기"
+            onConfirm={handleSendStartAlert}
+            onCancel={() => setShowAlertConfirmModal(false)}
+            zClass="z-[60]"
+          />
+        );
+      })()}
+      {showAlertSentModal && (
+        <AlertModal
+          icon={HiBell}
+          iconClass="text-yellow-400"
+          title="알림을 보냈어요! ⚡"
+          message={
+            <>
+              멤버들에게 시작 알림이 전송됐어요.<br />
+              <span className="text-xs text-gray-300 mt-1 block">내일 다시 보낼 수 있어요</span>
+            </>
+          }
+          confirmLabel="확인"
+          onConfirm={() => setShowAlertSentModal(false)}
+          zClass="z-[60]"
+        />
+      )}
+      {showAlertAlreadySentModal && (
+        <AlertModal
+          icon={HiBell}
+          iconClass="text-gray-300"
+          title="오늘 이미 보냈어요"
+          message={
+            <>
+              시작 알림은 하루에 한 번만 보낼 수 있어요.<br />
+              <span className="text-xs text-gray-300 mt-1 block">내일 다시 보낼 수 있어요</span>
+            </>
+          }
+          confirmLabel="확인"
+          onConfirm={() => setShowAlertAlreadySentModal(false)}
+          zClass="z-[60]"
+        />
+      )}
       {toast && <Toast message={toast.message} icon={toast.icon} />}
     </div>
   );

@@ -1,19 +1,37 @@
 import { createNotification } from "../lib/notificationService";
+import { supabase } from "../lib/supabase";
 
 export async function notifyPartyJoined(params: {
   leaderUserId: string;
   joinerNickname: string;
   partyName: string;
   partyId: string;
-}) {
-  await createNotification({
-    user_id: params.leaderUserId,
-    type: "party_joined",
-    title: "새 파티원이 합류했어요!",
-    body: `${params.joinerNickname}님이 "${params.partyName}" 파티에 참가했어요 🎉`,
-    data: { party_id: params.partyId },
-    is_read: false,
+}): Promise<void> {
+  await supabase.functions.invoke("notify-party-joined", {
+    body: {
+      party_id: params.partyId,
+      party_name: params.partyName,
+      leader_user_id: params.leaderUserId,
+      joiner_nickname: params.joinerNickname,
+    },
   });
+}
+
+const ACTIVITY_LABEL: Record<string, { verb: string; emoji: string }> = {
+  러닝: { verb: "달려요", emoji: "🏃" },
+  달리기: { verb: "달려요", emoji: "🏃" },
+  파워워킹: { verb: "파워워킹해요", emoji: "💪" },
+  "파워 워킹": { verb: "파워워킹해요", emoji: "💪" },
+  등산: { verb: "등산해요", emoji: "⛰️" },
+  산책: { verb: "산책해요", emoji: "🌿" },
+};
+
+export function resolveActivityLabel(tags: string[]): { verb: string; emoji: string } {
+  for (const tag of tags) {
+    const match = ACTIVITY_LABEL[tag];
+    if (match) return match;
+  }
+  return { verb: "운동해요", emoji: "💪" };
 }
 
 export async function notifyPartyStarted(params: {
@@ -21,19 +39,22 @@ export async function notifyPartyStarted(params: {
   leaderNickname: string;
   partyName: string;
   partyId: string;
-}) {
-  await Promise.all(
-    params.memberUserIds.map((userId) =>
-      createNotification({
-        user_id: userId,
-        type: "party_started",
-        title: "파티 운동이 시작됐어요!",
-        body: `${params.leaderNickname}님이 "${params.partyName}" 운동을 시작했습니다. 같이 달려요! 🏃`,
-        data: { party_id: params.partyId },
-        is_read: false,
-      }),
-    ),
-  );
+  tags: string[];
+}): Promise<{ error: string | null }> {
+  const { data, error } = await supabase.functions.invoke("notify-party-start", {
+    body: {
+      party_id: params.partyId,
+      party_name: params.partyName,
+      leader_nickname: params.leaderNickname,
+      member_ids: params.memberUserIds,
+      tags: params.tags,
+    },
+  });
+  if (error) {
+    console.error("notify-party-start error:", error);
+    return { error: error.message };
+  }
+  return { error: null };
 }
 
 export async function notifyGoalReached(params: {
