@@ -26,6 +26,7 @@ import { HiBell } from "react-icons/hi";
 import { useNotifications } from "../hooks/useNotifications";
 import { NotificationDrawer } from "../components/notifications/NotificationDrawer";
 import { useEvents } from "../hooks/useEvents";
+import { createNotification } from "../lib/notificationService";
 
 type DisplayUser = {
   nickname: string;
@@ -135,7 +136,44 @@ export default function Home() {
     markAllAsRead,
     deleteNotification,
   } = useNotifications(user?.id ?? null);
-  const { hasNewEvents } = useEvents();
+  const { events } = useEvents();
+
+  // 새 이벤트 → 알림 자동 생성 (유저당 1회, 이벤트 ID 기준)
+  useEffect(() => {
+    if (!user) return;
+    const raw = localStorage.getItem("events_notified_ids");
+    const notifiedIds: string[] = raw ? JSON.parse(raw) : [];
+    const lastSeen = localStorage.getItem("events_last_seen");
+    const threshold = lastSeen
+      ? new Date(lastSeen)
+      : new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+
+    const newEvents = events.filter(
+      (e) => e.isActive && new Date(e.createdAt) > threshold && !notifiedIds.includes(e.id),
+    );
+    if (newEvents.length === 0) return;
+
+    const title = newEvents.length === 1
+      ? `🎉 새 이벤트: ${newEvents[0].title}`
+      : `🎉 새 이벤트 ${newEvents.length}개가 추가됐어요!`;
+    const body = newEvents.length === 1
+      ? (newEvents[0].description || "이벤트 탭에서 확인해보세요!")
+      : "이벤트 탭에서 확인해보세요!";
+
+    createNotification({
+      user_id: user.id,
+      type: "event",
+      title,
+      body,
+      data: { path: "/steps?tab=events" },
+      is_read: false,
+    });
+
+    localStorage.setItem(
+      "events_notified_ids",
+      JSON.stringify([...notifiedIds, ...newEvents.map((e) => e.id)]),
+    );
+  }, [events, user]);
   const [bubbleMsg, setBubbleMsg] = useState(() =>
     getRandomMessage(activityType),
   );
@@ -300,9 +338,6 @@ const [activeUsers, setActiveUsers] = useState<DisplayUser[]>([]);
                 {unreadCount > 99 ? "99+" : unreadCount}
               </span>
             )}
-            {hasNewEvents && unreadCount === 0 && (
-              <span className="absolute -top-0.5 -right-0.5 w-3 h-3 rounded-full bg-orange-400 border-2 border-white" />
-            )}
           </button>
         </div>
       </div>
@@ -316,6 +351,7 @@ const [activeUsers, setActiveUsers] = useState<DisplayUser[]>([]);
           onMarkAllRead={markAllAsRead}
           onDelete={deleteNotification}
           onClose={() => setNotifOpen(false)}
+          onNavigate={(path) => { setNotifOpen(false); navigate(path); }}
         />
       )}
 

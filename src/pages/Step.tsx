@@ -430,8 +430,11 @@ export default function Step() {
           >
             {label}
             {key === "events" && hasNewEvents && tab !== "events" && (
-              <span className="absolute top-1 right-3 min-w-[16px] h-4 px-1 rounded-full bg-red-500 text-white text-[9px] font-extrabold flex items-center justify-center leading-none">
-                N
+              <span className="absolute top-1 right-3 flex items-center justify-center">
+                <span className="animate-ping absolute inline-flex h-4 w-4 rounded-full bg-yellow-400 opacity-70" />
+                <span className="relative min-w-[16px] h-4 px-1 rounded-full bg-yellow-400 text-gray-800 text-[9px] font-extrabold flex items-center justify-center leading-none shadow-sm">
+                  N
+                </span>
               </span>
             )}
           </button>

@@ -6,7 +6,8 @@ export type NotificationType =
   | "goal_reached"
   | "streak_warning"
   | "diet_reminder"
-  | "system";
+  | "system"
+  | "event";
 
 export type Notification = {
   id: string;

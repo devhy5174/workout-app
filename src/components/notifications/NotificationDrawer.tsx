@@ -5,7 +5,8 @@ import {
   HiFlag,
   HiCake,
   HiSpeakerphone,
-} from "react-icons/hi";
+  HiSparkles,
+} from "react-icons/hi2";
 import type { Notification, NotificationType } from "../../lib/notificationService";
 
 const TYPE_META: Record<
@@ -36,6 +37,10 @@ const TYPE_META: Record<
     icon: <HiBell size={16} className="text-white" />,
     color: "from-gray-400 to-gray-600",
   },
+  event: {
+    icon: <HiSparkles size={16} className="text-white" />,
+    color: "from-yellow-400 to-orange-400",
+  },
 };
 
 function timeAgo(dateStr: string): string {
@@ -53,19 +58,27 @@ function NotificationItem({
   notification,
   onRead,
   onDelete,
+  onNavigate,
 }: {
   notification: Notification;
   onRead: (id: string) => void;
   onDelete: (id: string) => void;
+  onNavigate?: (path: string) => void;
 }) {
   const meta = TYPE_META[notification.type] ?? TYPE_META.system;
+  const path = notification.data?.path as string | undefined;
+
+  const handleClick = () => {
+    if (!notification.is_read) onRead(notification.id);
+    if (path && onNavigate) onNavigate(path);
+  };
 
   return (
     <div
       className={`flex items-start gap-3 px-4 py-3.5 transition-colors ${
         notification.is_read ? "bg-white" : "bg-blue-50/60"
-      }`}
-      onClick={() => !notification.is_read && onRead(notification.id)}
+      } ${path ? "cursor-pointer active:bg-gray-50" : ""}`}
+      onClick={handleClick}
     >
       <div
         className={`w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 bg-gradient-to-br ${meta.color}`}
@@ -116,6 +129,7 @@ export function NotificationDrawer({
   onMarkAllRead,
   onDelete,
   onClose,
+  onNavigate,
 }: {
   notifications: Notification[];
   unreadCount: number;
@@ -124,6 +138,7 @@ export function NotificationDrawer({
   onMarkAllRead: () => void;
   onDelete: (id: string) => void;
   onClose: () => void;
+  onNavigate?: (path: string) => void;
 }) {
   return (
     <div
@@ -187,6 +202,7 @@ export function NotificationDrawer({
                 notification={n}
                 onRead={onRead}
                 onDelete={onDelete}
+                onNavigate={(path) => { onNavigate?.(path); onClose(); }}
               />
             ))}
         </div>
