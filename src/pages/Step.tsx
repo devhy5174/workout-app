@@ -379,7 +379,7 @@ export default function Step() {
     });
   }, [byCategory.streak, consecutiveStreak, user]);
 
-  const { isPremium, togglePremium } = usePremium();
+  const { isPremium, trialDaysLeft, startTrial } = usePremium();
   const { selectedBubbleId, setSelectedBubbleId } = useActiveBubble();
   const { selectedFrameId, setSelectedFrameId } = useActiveFrame();
 
@@ -674,30 +674,34 @@ export default function Step() {
         {/* ── 프리미엄 ── */}
         {tab === "premium" && (
           <>
-            {/* QA: DEV_IS_PREMIUM(useDiet.ts) 또는 아래 토글로 프리미엄·대체 식단 동작 테스트 */}
-            <button
-              type="button"
-              onClick={togglePremium}
-              className="rounded-2xl border border-primary/25 bg-white shadow-sm px-4 py-3 flex items-center justify-between gap-3 min-h-[44px]"
-              aria-pressed={isPremium}
-              aria-label="프리미엄 구독 테스트 모드 전환"
-            >
-              <span className="text-xs font-bold text-gray-600 text-left leading-snug">
-                프리미엄 구독
-                <span className="block text-[10px] font-semibold text-gray-400 mt-0.5">
-                  테스트 토글 (Supabase 연동 전)
-                </span>
-              </span>
-              <span
-                className={`text-xs font-extrabold px-2.5 py-1 rounded-full flex-shrink-0 ${
-                  isPremium
-                    ? "text-primary bg-primary/10"
-                    : "text-gray-400 bg-gray-100"
-                }`}
+            {!isPremium ? (
+              <button
+                type="button"
+                onClick={startTrial}
+                className="w-full rounded-2xl bg-gradient-to-r from-primary to-secondary px-5 py-4 flex items-center justify-between shadow-md active:scale-95 transition min-h-[44px]"
+                aria-label="프리미엄 7일 무료 체험하기"
               >
-                {isPremium ? "ON" : "OFF"}
-              </span>
-            </button>
+                <div className="flex flex-col items-start gap-0.5">
+                  <span className="text-white font-extrabold text-sm">✨ 7일 무료 체험하기</span>
+                  <span className="text-white/70 text-[10px] font-semibold">모든 프리미엄 기능을 7일간 무료로!</span>
+                </div>
+                <span className="text-white font-extrabold text-xs bg-white/20 px-2.5 py-1 rounded-full shrink-0">
+                  무료
+                </span>
+              </button>
+            ) : (
+              <div className="w-full rounded-2xl border border-primary/20 bg-primary/5 px-5 py-4 flex items-center justify-between min-h-[44px]">
+                <div className="flex flex-col items-start gap-0.5">
+                  <span className="text-sm font-extrabold text-primary">✨ 프리미엄 체험 중</span>
+                  <span className="text-[10px] font-semibold text-gray-400">
+                    {trialDaysLeft}일 후 체험이 종료돼요
+                  </span>
+                </div>
+                <span className="text-xs font-extrabold text-primary bg-primary/10 px-2.5 py-1 rounded-full shrink-0">
+                  D-{trialDaysLeft}
+                </span>
+              </div>
+            )}
             {/* 히어로 카드 */}
             <div className="rounded-3xl bg-gradient-to-br from-primary to-secondary p-5 shadow-lg">
               <div className="flex items-center gap-2 mb-3">

@@ -13,8 +13,6 @@ const languages: {
 ];
 
 export function LanguageSheet({
-  current,
-  onSelect,
   onClose,
 }: {
   current: Language;
@@ -40,44 +38,26 @@ export function LanguageSheet({
             ✕
           </button>
         </div>
-        <div className="flex flex-col gap-2">
-          {languages.map((lang) => {
-            const isSelected = current === lang.value;
-            return (
-              <button
+        <div className="flex flex-col items-center gap-4 py-6">
+          <span className="text-5xl">🌍</span>
+          <p className="font-extrabold text-gray-700 text-base">
+            다국어 지원 준비 중이에요
+          </p>
+          <p className="text-xs text-gray-400 text-center leading-relaxed">
+            영어 등 다양한 언어를 곧 지원할 예정이에요.
+            <br />
+            조금만 기다려 주세요!
+          </p>
+          <div className="flex gap-2 mt-1">
+            {languages.map((lang) => (
+              <span
                 key={lang.value}
-                onClick={() => {
-                  onSelect(lang.value);
-                  onClose();
-                }}
-                className={`flex items-center justify-between px-4 py-4 rounded-2xl border-2 transition-all ${
-                  isSelected
-                    ? "border-[var(--color-primary)] bg-[var(--color-primary)]/5"
-                    : "border-gray-100 bg-gray-50"
-                }`}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gray-100 text-xs font-bold text-gray-400"
               >
-                <div className="flex items-center gap-3">
-                  <span className="text-2xl">{lang.flag}</span>
-                  <div>
-                    <p
-                      className={`font-bold text-sm ${isSelected ? "text-[var(--color-primary)]" : "text-gray-700"}`}
-                    >
-                      {lang.label}
-                    </p>
-                    <p className="text-xs text-gray-400">{lang.native}</p>
-                  </div>
-                </div>
-                {isSelected && (
-                  <div
-                    className="w-5 h-5 rounded-full flex items-center justify-center"
-                    style={{ background: "var(--color-primary)" }}
-                  >
-                    <span className="text-white text-[10px] font-bold">✓</span>
-                  </div>
-                )}
-              </button>
-            );
-          })}
+                {lang.flag} {lang.label}
+              </span>
+            ))}
+          </div>
         </div>
       </div>
     </div>

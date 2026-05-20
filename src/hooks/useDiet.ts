@@ -47,7 +47,7 @@ function loadMealIndices(
 export function useDiet() {
   const { selectedActivityType } = useActivityType();
   const { userProfile } = useUser();
-  const { isPremium, togglePremium } = usePremium();
+  const { isPremium } = usePremium();
   const location = useLocation();
 
   const activityType = selectedActivityType?.type ?? null;
@@ -145,7 +145,6 @@ export function useDiet() {
     setDietGoal,
     userProfile,
     isPremium,
-    togglePremium,
     rotateMealMenu,
   };
 }
