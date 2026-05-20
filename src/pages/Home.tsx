@@ -27,6 +27,7 @@ import { useNotifications } from "../hooks/useNotifications";
 import { NotificationDrawer } from "../components/notifications/NotificationDrawer";
 import { useEvents } from "../hooks/useEvents";
 import { createNotification } from "../lib/notificationService";
+import { useSettings } from "../hooks/useSettings";
 
 type DisplayUser = {
   nickname: string;
@@ -137,10 +138,12 @@ export default function Home() {
     deleteNotification,
   } = useNotifications(user?.id ?? null);
   const { events } = useEvents();
+  const { settings } = useSettings();
 
   // 새 이벤트 → 알림 자동 생성 (유저당 1회, 이벤트 ID 기준)
   useEffect(() => {
     if (!user) return;
+    if (!settings.eventNotification) return;
     const raw = localStorage.getItem("events_notified_ids");
     const notifiedIds: string[] = raw ? JSON.parse(raw) : [];
     const lastSeen = localStorage.getItem("events_last_seen");

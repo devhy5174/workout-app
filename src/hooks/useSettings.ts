@@ -10,7 +10,8 @@ export type NotificationKey =
   | "partyActivityNotification"
   | "dietNotification"
   | "dietBurnNotification"
-  | "dietRewardNotification";
+  | "dietRewardNotification"
+  | "eventNotification";
 
 type SettingsState = {
   workoutNotification: boolean;
@@ -21,6 +22,7 @@ type SettingsState = {
   dietNotification: boolean;
   dietBurnNotification: boolean;
   dietRewardNotification: boolean;
+  eventNotification: boolean;
   language: Language;
 };
 
@@ -35,6 +37,7 @@ const defaults: SettingsState = {
   dietNotification: true,
   dietBurnNotification: true,
   dietRewardNotification: true,
+  eventNotification: true,
   language: "ko",
 };
 

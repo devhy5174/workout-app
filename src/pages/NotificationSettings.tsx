@@ -209,6 +209,16 @@ export default function NotificationSettings() {
           />
         </NotificationGroup>
 
+        {/* 이벤트 알림 */}
+        <NotificationGroup
+          icon={<HiSparkles size={16} className="text-white" />}
+          title="이벤트 알림"
+          description="새 이벤트 추가 시 앱 내 알림 전체"
+          masterKey="eventNotification"
+          settings={settings}
+          toggleNotification={toggleNotification}
+        />
+
         {/* 식단 알림 */}
         <NotificationGroup
           icon={<HiCake size={16} className="text-white" />}
