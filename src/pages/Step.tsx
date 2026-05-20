@@ -278,9 +278,13 @@ function EventCard({ event }: { event: AppEvent }) {
             {status.label}
           </span>
           {isNew && (
-            <span className="text-[8px] font-extrabold px-1 py-px rounded-full text-white"
-              style={{ background: "linear-gradient(135deg, #fcd34d, #f59e0b)" }}>
-              N
+            <span
+              className="text-[8px] font-extrabold px-1 py-px rounded-full text-white"
+              style={{
+                background: "linear-gradient(135deg, #fcd34d, #f59e0b)",
+              }}
+            >
+              New
             </span>
           )}
         </div>
@@ -348,13 +352,14 @@ export default function Step() {
     monthlyAverageSteps,
     consecutiveStreak,
   } = useUnlockItems(workoutRecords, grantedBubbleIds);
-  const { events, byCategory, activeEvents, hasNewEvents, markEventsSeen } = useEvents();
+  const { events, byCategory, activeEvents, hasNewEvents, markEventsSeen } =
+    useEvents();
   const [eventSubTab, setEventSubTab] = useState<"active" | "past">("active");
 
   const today = new Date().toISOString().slice(0, 10);
-  const pastEvents = events.filter(
-    (e) => e.isActive && !e.isFixed && e.endDate < today,
-  ).sort((a, b) => b.endDate.localeCompare(a.endDate));
+  const pastEvents = events
+    .filter((e) => e.isActive && !e.isFixed && e.endDate < today)
+    .sort((a, b) => b.endDate.localeCompare(a.endDate));
   const pastByCategory = {
     personal: pastEvents.filter((e) => e.category === "personal"),
     party: pastEvents.filter((e) => e.category === "party"),
@@ -1001,7 +1006,9 @@ export default function Step() {
                       : "text-gray-400"
                   }`}
                 >
-                  {st === "active" ? `진행 중 ${activeEvents.length > 0 ? `(${activeEvents.length})` : ""}` : `지난 이벤트 ${pastEvents.length > 0 ? `(${pastEvents.length})` : ""}`}
+                  {st === "active"
+                    ? `진행 중 ${activeEvents.length > 0 ? `(${activeEvents.length})` : ""}`
+                    : `지난 이벤트 ${pastEvents.length > 0 ? `(${pastEvents.length})` : ""}`}
                 </button>
               ))}
             </div>
@@ -1018,16 +1025,24 @@ export default function Step() {
                       현재 진행 중인 이벤트가 없어요
                     </p>
                     <p className="text-xs text-gray-300 flex items-center gap-1">
-                      이벤트를 기대해주세요 <HiSparkles className="text-gray-300" />
+                      이벤트를 기대해주세요{" "}
+                      <HiSparkles className="text-gray-300" />
                     </p>
                     <div className="bg-white rounded-3xl shadow-sm px-6 py-5 w-full flex flex-col gap-3 mt-2">
                       {SEASON_PREVIEWS.map((item) => (
-                        <div key={item.name} className="flex items-center gap-3 opacity-50">
-                          <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 ${item.bg}`}>
+                        <div
+                          key={item.name}
+                          className="flex items-center gap-3 opacity-50"
+                        >
+                          <div
+                            className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 ${item.bg}`}
+                          >
                             <item.Icon className={`text-lg ${item.color}`} />
                           </div>
                           <div>
-                            <p className="text-sm font-bold text-gray-600">{item.name}</p>
+                            <p className="text-sm font-bold text-gray-600">
+                              {item.name}
+                            </p>
                             <p className="text-xs text-gray-400">{item.desc}</p>
                           </div>
                         </div>
@@ -1054,8 +1069,12 @@ export default function Step() {
               <>
                 {pastEvents.length === 0 && (
                   <div className="flex flex-col items-center py-12 gap-2">
-                    <p className="text-sm font-bold text-gray-400">지난 이벤트가 없어요</p>
-                    <p className="text-xs text-gray-300">종료된 이벤트가 여기에 표시돼요</p>
+                    <p className="text-sm font-bold text-gray-400">
+                      지난 이벤트가 없어요
+                    </p>
+                    <p className="text-xs text-gray-300">
+                      종료된 이벤트가 여기에 표시돼요
+                    </p>
                   </div>
                 )}
                 {(["personal", "party", "streak"] as const).map((cat) => {

@@ -2,11 +2,18 @@ import React, { useState } from "react";
 import { HiLockClosed, HiMap, HiInformationCircle, HiX } from "react-icons/hi";
 import { HiMapPin, HiFire, HiArrowTrendingUp, HiClock } from "react-icons/hi2";
 
-const CARD_ICONS: Record<string, { icon: React.ElementType; color: string; bg: string }> = {
-  distance: { icon: HiMapPin,          color: "text-blue-500",   bg: "bg-blue-50" },
-  calories: { icon: HiFire,            color: "text-orange-500", bg: "bg-orange-50" },
-  steps:    { icon: HiArrowTrendingUp, color: "text-green-500",  bg: "bg-green-50" },
-  duration: { icon: HiClock,           color: "text-purple-500", bg: "bg-purple-50" },
+const CARD_ICONS: Record<
+  string,
+  { icon: React.ElementType; color: string; bg: string }
+> = {
+  distance: { icon: HiMapPin, color: "text-blue-500", bg: "bg-blue-50" },
+  calories: { icon: HiFire, color: "text-orange-500", bg: "bg-orange-50" },
+  steps: {
+    icon: HiArrowTrendingUp,
+    color: "text-green-500",
+    bg: "bg-green-50",
+  },
+  duration: { icon: HiClock, color: "text-purple-500", bg: "bg-purple-50" },
 };
 
 import {
@@ -94,7 +101,7 @@ const PremiumReportSection: React.FC<PremiumSectionProps> = ({
           <div className="flex items-center gap-2">
             <span className="text-xl">👑</span>
             <h2 className="text-lg font-extrabold text-gray-800">
-              프리미엄 월간 리포트 & 분석
+              월간 리포트 & 유산소 MBTI
             </h2>
           </div>
         </div>
@@ -182,10 +189,15 @@ const PremiumReportSection: React.FC<PremiumSectionProps> = ({
                     key={card.type}
                     className="bg-gray-50 rounded-2xl px-4 py-3 flex items-center gap-4"
                   >
-                    <div className={`w-10 h-10 rounded-2xl flex items-center justify-center flex-shrink-0 ${CARD_ICONS[card.type]?.bg ?? "bg-gray-50"}`}>
-                      {React.createElement(CARD_ICONS[card.type]?.icon ?? HiMap, {
-                        className: `text-xl ${CARD_ICONS[card.type]?.color ?? "text-gray-400"}`,
-                      })}
+                    <div
+                      className={`w-10 h-10 rounded-2xl flex items-center justify-center flex-shrink-0 ${CARD_ICONS[card.type]?.bg ?? "bg-gray-50"}`}
+                    >
+                      {React.createElement(
+                        CARD_ICONS[card.type]?.icon ?? HiMap,
+                        {
+                          className: `text-xl ${CARD_ICONS[card.type]?.color ?? "text-gray-400"}`,
+                        },
+                      )}
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-xs text-gray-500 font-medium mb-0.5">
