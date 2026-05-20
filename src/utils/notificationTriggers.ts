@@ -26,7 +26,10 @@ const ACTIVITY_LABEL: Record<string, { verb: string; emoji: string }> = {
   산책: { verb: "산책해요", emoji: "🌿" },
 };
 
-export function resolveActivityLabel(tags: string[]): { verb: string; emoji: string } {
+export function resolveActivityLabel(tags: string[]): {
+  verb: string;
+  emoji: string;
+} {
   for (const tag of tags) {
     const match = ACTIVITY_LABEL[tag];
     if (match) return match;
@@ -41,7 +44,7 @@ export async function notifyPartyStarted(params: {
   partyId: string;
   tags: string[];
 }): Promise<{ error: string | null }> {
-  const { data, error } = await supabase.functions.invoke("notify-party-start", {
+  const { error } = await supabase.functions.invoke("notify-party-start", {
     body: {
       party_id: params.partyId,
       party_name: params.partyName,
@@ -99,7 +102,9 @@ export async function notifyDietReminder(params: {
   mealType: "lunch" | "dinner";
 }) {
   const title =
-    params.mealType === "lunch" ? "점심 식사 후 가볍게 걸어요 🌿" : "저녁 식단 가이드 🌙";
+    params.mealType === "lunch"
+      ? "점심 식사 후 가볍게 걸어요 🌿"
+      : "저녁 식단 가이드 🌙";
   const body =
     params.mealType === "lunch"
       ? "점심 먹고 10분만 걸으면 칼로리 소모에 큰 도움이 돼요!"
