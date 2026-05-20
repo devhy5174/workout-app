@@ -5,8 +5,8 @@ import {
   HiFlag,
   HiCake,
   HiSpeakerphone,
-  HiSparkles,
-} from "react-icons/hi2";
+} from "react-icons/hi";
+import { HiSparkles } from "react-icons/hi2";
 import type { Notification, NotificationType } from "../../lib/notificationService";
 
 const TYPE_META: Record<
