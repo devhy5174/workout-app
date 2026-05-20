@@ -382,13 +382,7 @@ function SectionLabel({ label }: { label: string }) {
 }
 
 // ── Settings 메인 ────────────────────────────────────────
-type Sheet =
-  | "language"
-  | "nickname"
-  | "privacy"
-  | "terms"
-  | "appinfo"
-  | null;
+type Sheet = "language" | "nickname" | "privacy" | "terms" | "appinfo" | null;
 
 export default function Settings() {
   const { theme, setTheme } = useTheme();
@@ -480,23 +474,26 @@ export default function Settings() {
         />
         <SettingsRow
           icon={<HiMail size={20} />}
-          label="이메일"
+          label="로그인 계정"
           right={(() => {
             const providers: string[] =
               user?.app_metadata?.providers ??
-              (user?.app_metadata?.provider ? [user.app_metadata.provider] : []);
+              (user?.app_metadata?.provider
+                ? [user.app_metadata.provider]
+                : []);
             const isKakao = providers.includes("kakao");
             const isGoogle = providers.includes("google");
             return (
               <span className="flex items-center gap-1.5 text-xs text-gray-400 font-semibold max-w-[160px]">
                 {isKakao && (
-                  <span className="w-4 h-4 rounded-full flex items-center justify-center shrink-0" style={{ backgroundColor: "#FEE500" }}>
+                  <span
+                    className="w-4 h-4 rounded-full flex items-center justify-center shrink-0"
+                    style={{ backgroundColor: "#FEE500" }}
+                  >
                     <RiKakaoTalkFill size={10} color="#3C1E1E" />
                   </span>
                 )}
-                {isGoogle && (
-                  <FcGoogle className="shrink-0" size={14} />
-                )}
+                {isGoogle && <FcGoogle className="shrink-0" size={14} />}
                 <span className="truncate">{user?.email ?? "—"}</span>
               </span>
             );
@@ -532,7 +529,9 @@ export default function Settings() {
               <button
                 type="button"
                 aria-label="카카오톡으로 문의하기"
-                onClick={() => window.open("http://pf.kakao.com/_EnhbX/chat", "_blank")}
+                onClick={() =>
+                  window.open("http://pf.kakao.com/_EnhbX/chat", "_blank")
+                }
                 className="w-8 h-8 rounded-full flex items-center justify-center"
                 style={{ backgroundColor: "#FEE500" }}
               >
