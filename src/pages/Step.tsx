@@ -21,6 +21,7 @@ import {
   PREMIUM_BUBBLE_IDS,
 } from "../context/ActiveBubbleContext";
 import { useUnlockItems } from "../hooks/useUnlockItems";
+import { useEventGrants } from "../hooks/useEventGrants";
 import { unlockItems } from "../data/unlockItems";
 import type { UnlockItemType } from "../data/unlockItems";
 import { BUBBLE_PREVIEWS } from "../data/bubblePreviews";
@@ -331,12 +332,13 @@ export default function Step() {
     Record<string, string>
   >({});
   const { user, workoutRecords, userProfile, updateProfile } = useUser();
+  const { grantedBubbleIds, grantedTitles } = useEventGrants(user?.id);
   const {
     itemsWithStatus,
     totalSteps,
     monthlyAverageSteps,
     consecutiveStreak,
-  } = useUnlockItems(workoutRecords);
+  } = useUnlockItems(workoutRecords, grantedBubbleIds);
   const { byCategory, activeEvents } = useEvents();
 
   // 고정 streak 이벤트 조건 달성 시 자동 지급
@@ -589,6 +591,51 @@ export default function Step() {
               </div>
             );
           })}
+
+        {/* ── 이벤트 보상 칭호 ── */}
+        {tab === "step" && grantedTitles.length > 0 && (
+          <div>
+            <p className="text-xs font-bold text-gray-500 px-1 mb-2 flex items-center gap-1.5">
+              <HiSparkles className="text-sm text-amber-400" />
+              이벤트 보상 칭호
+            </p>
+            <div className="flex flex-col gap-2">
+              {grantedTitles.map((title) => {
+                const isSelected = userProfile?.title === title;
+                return (
+                  <div
+                    key={title}
+                    onClick={() => handleTitleSelect(title)}
+                    className={`rounded-2xl shadow-sm px-5 py-4 flex items-center gap-4 cursor-pointer active:scale-[0.98] transition-all border-2 ${
+                      isSelected
+                        ? "bg-white border-primary/30"
+                        : "bg-white border-transparent"
+                    }`}
+                  >
+                    <div className="w-11 h-11 rounded-2xl flex items-center justify-center flex-shrink-0 bg-amber-50">
+                      <HiStar className="text-xl text-amber-400" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-bold text-sm text-gray-800">{title}</p>
+                      <p className="text-xs text-amber-500 mt-0.5 font-semibold">
+                        이벤트 보상 칭호
+                      </p>
+                    </div>
+                    {isSelected ? (
+                      <span className="flex-shrink-0 bg-primary/10 text-primary text-xs font-bold px-3 py-1.5 rounded-full">
+                        적용됨 ✓
+                      </span>
+                    ) : (
+                      <span className="flex-shrink-0 bg-green-100 text-green-600 text-xs font-bold px-3 py-1.5 rounded-full">
+                        선택하기
+                      </span>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         {/* ── 프리미엄 ── */}
         {tab === "premium" && (

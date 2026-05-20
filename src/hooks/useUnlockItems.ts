@@ -11,7 +11,10 @@ function calcMonthlyAverageSteps(records: WorkoutRecord[]): number {
   return Math.round(totalSteps / records.length);
 }
 
-export function useUnlockItems(workoutRecords: WorkoutRecord[]) {
+export function useUnlockItems(
+  workoutRecords: WorkoutRecord[],
+  grantedBubbleIds: string[] = [],
+) {
   const totalSteps = useMemo(
     () => workoutRecords.reduce((acc, r) => acc + r.steps, 0),
     [workoutRecords]
@@ -27,9 +30,17 @@ export function useUnlockItems(workoutRecords: WorkoutRecord[]) {
     [workoutRecords]
   );
 
+  const grantedSet = useMemo(
+    () => new Set(grantedBubbleIds),
+    [grantedBubbleIds],
+  );
+
   const itemsWithStatus = useMemo<UnlockItemWithStatus[]>(
     () =>
       unlockItems.map((item) => {
+        // 이벤트 보상으로 지급된 아이템은 조건 무관 해금
+        if (grantedSet.has(item.id)) return { ...item, unlocked: true };
+
         const { condition } = item;
         if (!condition) return { ...item, unlocked: true };
         let unlocked = true;
@@ -41,7 +52,7 @@ export function useUnlockItems(workoutRecords: WorkoutRecord[]) {
         }
         return { ...item, unlocked };
       }),
-    [monthlyAverageSteps, consecutiveStreak]
+    [monthlyAverageSteps, consecutiveStreak, grantedSet]
   );
 
   return { itemsWithStatus, totalSteps, monthlyAverageSteps, consecutiveStreak };

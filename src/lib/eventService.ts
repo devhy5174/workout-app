@@ -281,6 +281,41 @@ export async function fetchEventAchievers(
 
 // ── 보상 지급 ─────────────────────────────────────────────
 
+// ── 유저의 이벤트 보상 목록 조회 ──────────────────────────
+
+export type UserEventGrantInfo = {
+  grantedBubbleIds: string[];
+  grantedTitles: string[];
+};
+
+export async function fetchUserEventGrants(
+  userId: string,
+): Promise<UserEventGrantInfo> {
+  const { data } = await supabase
+    .from("event_grants")
+    .select("bubble_id, title_text")
+    .eq("user_id", userId);
+
+  if (!data) return { grantedBubbleIds: [], grantedTitles: [] };
+
+  return {
+    grantedBubbleIds: [
+      ...new Set(
+        data
+          .filter((g: any) => g.bubble_id)
+          .map((g: any) => g.bubble_id as string),
+      ),
+    ],
+    grantedTitles: [
+      ...new Set(
+        data
+          .filter((g: any) => g.title_text)
+          .map((g: any) => g.title_text as string),
+      ),
+    ],
+  };
+}
+
 // 고정 이벤트 자동 지급 (조건 달성 시 유저가 직접 self-grant)
 export async function autoGrantFixedEvent(
   eventId: string,

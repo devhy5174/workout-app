@@ -184,3 +184,36 @@ public_profiles (뷰)
 2. **Diet.tsx 루프 수정:**
    - `MEAL_CONFIGS.map` 처리 시 반드시 위의 `scaleFactor` 로직을 구현하여 끼니 타이틀 칼로리와 하위 음식 칼로리가 동적으로 변하게 만들 것.
    - 추후 프리미엄 기능(메뉴 대체 버튼 등)이 들어올 수 있도록 카드 UI 내부에 확장 가능한 컴포넌트 공간을 확보할 것.
+
+## Supabase Tables
+
+| table_name         | columns                                                                                                                                                                                                                                                                                                                                                                |
+| ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| active_sessions    | id (uuid), user_id (uuid), exercise_type (text), started_at (timestamp with time zone), last_seen (timestamp with time zone), is_active (boolean), active_bubble (text)                                                                                                                                                                                                |
+| app_users          | id (uuid), email (text), nickname (text), gender (text), age (integer), character_id (text), theme (text), language (text), points (integer), streak (integer), height (numeric), weight (numeric), bmi (numeric), created_at (timestamp with time zone), activity_type_id (integer), title (text), is_admin (boolean), nickname_changed_at (timestamp with time zone) |
+| community_cheers   | post_id (uuid), user_id (uuid), created_at (timestamp with time zone)                                                                                                                                                                                                                                                                                                  |
+| community_posts    | id (uuid), user_id (uuid), text (text), tags (ARRAY), steps (integer), cheers (integer), created_at (timestamp with time zone)                                                                                                                                                                                                                                         |
+| notifications      | id (uuid), user_id (uuid), type (text), title (text), body (text), data (jsonb), is_read (boolean), created_at (timestamp with time zone)                                                                                                                                                                                                                              |
+| parties            | id (uuid), created_by (uuid), name (text), description (text), tags (ARRAY), target_steps (integer), exercise_time (text), max_members (integer), is_active (boolean), created_at (timestamp with time zone), start_date (date), end_date (date)                                                                                                                       |
+| party_cheers       | id (uuid), party_id (uuid), user_id (uuid), nickname (text), message (text), created_at (timestamp with time zone)                                                                                                                                                                                                                                                     |
+| party_members      | id (uuid), party_id (uuid), user_id (uuid), joined_at (timestamp with time zone)                                                                                                                                                                                                                                                                                       |
+| party_notices      | id (uuid), party_id (uuid), user_id (uuid), message (text), created_at (timestamp with time zone)                                                                                                                                                                                                                                                                      |
+| point_history      | id (uuid), user_id (uuid), points (integer), description (text), icon (text), type (text), created_at (timestamp with time zone)                                                                                                                                                                                                                                       |
+| public_profiles    | id (uuid), nickname (text), character_id (text), points (integer), streak (integer), title (text), activity_type_id (integer)                                                                                                                                                                                                                                          |
+| push_subscriptions | id (uuid), user_id (uuid), endpoint (text), p256dh (text), auth_key (text), created_at (timestamp with time zone)                                                                                                                                                                                                                                                      |
+| user_goals         | id (uuid), user_id (uuid), goal_type (text), goal_value (numeric), is_active (boolean), created_at (timestamp with time zone)                                                                                                                                                                                                                                          |
+| workout_history    | id (uuid), user_id (uuid), date (date), duration (integer), distance (numeric), steps (integer), calories (integer), points_earned (integer), workout_type (text), goal_achieved (boolean), created_at (timestamp with time zone)                                                                                                                                      |
+
+## Supabase Relations
+
+| table_name       | column_name | foreign_table_name | foreign_column_name |
+| ---------------- | ----------- | ------------------ | ------------------- |
+| party_members    | party_id    | parties            | id                  |
+| parties          | created_by  | app_users          | id                  |
+| party_members    | user_id     | app_users          | id                  |
+| workout_history  | user_id     | app_users          | id                  |
+| user_goals       | user_id     | app_users          | id                  |
+| community_cheers | post_id     | community_posts    | id                  |
+| party_cheers     | party_id    | parties            | id                  |
+| party_cheers     | user_id     | app_users          | id                  |
+| party_notices    | party_id    | parties            | id                  |
