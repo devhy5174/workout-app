@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { HiLockClosed, HiExclamationCircle, HiLogout, HiUserAdd, HiCheckCircle } from "react-icons/hi";
+import type { ComponentType } from "react";
+import { HiLockClosed, HiExclamationCircle, HiLogout, HiUserAdd, HiCheckCircle, HiUserGroup } from "react-icons/hi";
 import AlertModal from "../components/ui/AlertModal";
 import { PARTY_TAGS } from "../data/tags";
 import { validatePostText } from "../data/nicknameFilters";
@@ -804,7 +805,7 @@ export default function Party() {
   const [joinTarget, setJoinTarget] = useState<PartyData | null>(null);
   const [leaveTarget, setLeaveTarget] = useState<PartyData | null>(null);
   const [alertModal, setAlertModal] = useState<{
-    icon: (props: { className?: string }) => React.ReactElement;
+    icon: ComponentType<{ className?: string }>;
     iconClass?: string;
     title: string;
     message: string;
@@ -984,12 +985,12 @@ export default function Party() {
       <div className="flex-1 overflow-y-auto px-4 mt-4 pb-20 flex flex-col gap-4">
         {isLoading ? (
           <div className="flex flex-col items-center justify-center py-20 gap-3 text-gray-300">
-            <span className="text-4xl animate-pulse">🏕️</span>
+            <HiUserGroup className="text-5xl animate-pulse" />
             <p className="text-sm font-bold">파티를 불러오는 중...</p>
           </div>
         ) : list.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 gap-3 text-gray-300">
-            <span className="text-5xl">🏕️</span>
+            <HiUserGroup className="text-6xl" />
             {tab === "neighbor" ? (
               <>
                 <p className="font-bold text-sm">조건에 맞는 파티가 없어요</p>
