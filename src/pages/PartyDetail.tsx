@@ -5,7 +5,6 @@ import {
   HiUserAdd,
   HiUserRemove,
   HiLogout,
-  HiTrash,
 } from "react-icons/hi";
 import AlertModal from "../components/ui/AlertModal";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
@@ -23,7 +22,6 @@ import {
   getPartyNotices,
   sendPartyNotice,
   deletePartyNotice,
-  deleteParty,
   leavePartyAsLeader,
 } from "../lib/partyService";
 import type {
@@ -465,7 +463,6 @@ export default function PartyDetail() {
   );
   const [showJoinModal, setShowJoinModal] = useState(false);
   const [showLeaveModal, setShowLeaveModal] = useState(false);
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showLeaderLeaveModal, setShowLeaderLeaveModal] = useState(false);
   const [kickTarget, setKickTarget] = useState<PartyMember | null>(null);
   const [toast, setToast] = useState<{ message: string; icon?: string } | null>(
@@ -585,16 +582,6 @@ export default function PartyDetail() {
     setNotices((prev) => prev.filter((n) => n.id !== noticeId));
   };
 
-  const handleDeleteParty = async () => {
-    if (!party) return;
-    const { error } = await deleteParty(party.id);
-    setShowDeleteModal(false);
-    if (error) {
-      showToast("해체에 실패했어요. 잠시 후 다시 시도해 주세요.", "⚠️");
-    } else {
-      navigate("/party", { replace: true });
-    }
-  };
 
   const handleLeaderLeave = async () => {
     if (!party || !user) return;
@@ -963,12 +950,6 @@ export default function PartyDetail() {
               >
                 나가기
               </button>
-              <button
-                onClick={() => setShowDeleteModal(true)}
-                className="px-4 py-3 rounded-2xl bg-red-50 text-sm font-bold text-red-400 active:scale-95 transition"
-              >
-                해체
-              </button>
             </>
           ) : (
             <button
@@ -1081,22 +1062,6 @@ export default function PartyDetail() {
           />
         );
       })()}
-      {showDeleteModal && party && (
-        <AlertModal
-          icon={HiTrash}
-          iconClass="text-primary"
-          title="파티를 해체할까요?"
-          message={
-            <>
-              <span className="font-bold text-gray-700">"{party.name}"</span> 파티가<br />
-              영구적으로 삭제돼요. 되돌릴 수 없어요.
-            </>
-          }
-          confirmLabel="해체하기"
-          onConfirm={handleDeleteParty}
-          onCancel={() => setShowDeleteModal(false)}
-        />
-      )}
       {toast && <Toast message={toast.message} icon={toast.icon} />}
     </div>
   );

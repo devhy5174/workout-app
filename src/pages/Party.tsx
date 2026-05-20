@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { HiLockClosed, HiExclamationCircle, HiLogout, HiTrash, HiUserAdd, HiCheckCircle } from "react-icons/hi";
+import { HiLockClosed, HiExclamationCircle, HiLogout, HiUserAdd, HiCheckCircle } from "react-icons/hi";
 import AlertModal from "../components/ui/AlertModal";
 import { PARTY_TAGS } from "../data/tags";
 import { validatePostText } from "../data/nicknameFilters";
@@ -64,7 +64,6 @@ function PartyCard({
   onMembers,
   onJoin,
   onLeave,
-  onDelete,
   onNavigate,
 }: {
   party: PartyData;
@@ -74,7 +73,6 @@ function PartyCard({
   onMembers: (p: PartyData) => void;
   onJoin?: (p: PartyData) => void;
   onLeave?: (p: PartyData) => void;
-  onDelete?: (p: PartyData) => void;
   onNavigate: (partyId: string) => void;
 }) {
   const slotFull = party.member_count >= party.max_members;
@@ -102,18 +100,6 @@ function PartyCard({
             >
               {party.name}
             </p>
-            {isLeader && onDelete && (
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onDelete(party);
-                }}
-                aria-label="파티 삭제"
-                className="flex-shrink-0 w-7 h-7 rounded-full bg-red-50 text-red-400 text-xs font-bold flex items-center justify-center hover:bg-red-100 transition"
-              >
-                ✕
-              </button>
-            )}
           </div>
           <p
             className="text-xs text-gray-400 mt-0.5 line-clamp-2 cursor-pointer"
@@ -808,7 +794,6 @@ export default function Party() {
     joinParty,
     leaveParty,
     kickMember,
-    deleteParty,
   } = useParty(user?.id ?? null);
 
   const [tab, setTab] = useState<Tab>("neighbor");
@@ -816,7 +801,6 @@ export default function Party() {
   const [membersParty, setMembersParty] = useState<PartyData | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
-  const [deleteTarget, setDeleteTarget] = useState<PartyData | null>(null);
   const [joinTarget, setJoinTarget] = useState<PartyData | null>(null);
   const [leaveTarget, setLeaveTarget] = useState<PartyData | null>(null);
   const [alertModal, setAlertModal] = useState<{
@@ -891,11 +875,6 @@ export default function Party() {
     setLeaveTarget(null);
   };
 
-  const handleDeleteConfirm = async () => {
-    if (!deleteTarget) return;
-    await deleteParty(deleteTarget.id);
-    setDeleteTarget(null);
-  };
 
   const filteredParties = parties.filter((p) => {
     const matchesSearch =
@@ -1039,7 +1018,7 @@ export default function Party() {
                 onMembers={setMembersParty}
                 onJoin={handleJoinAttempt}
                 onLeave={handleLeaveAttempt}
-                onDelete={setDeleteTarget}
+
                 onNavigate={(partyId) => {
                   if (isJoined(partyId)) {
                     navigate(`/party/${partyId}`);
@@ -1090,17 +1069,6 @@ export default function Party() {
           title="파티가 생성됐어요!"
           message="내 파티 탭에서 확인할 수 있어요"
           onConfirm={() => setShowSuccessModal(false)}
-        />
-      )}
-      {deleteTarget && (
-        <AlertModal
-          icon={HiTrash}
-          iconClass="text-primary"
-          title="파티를 삭제할까요?"
-          message={<><span className="font-bold text-gray-700">"{deleteTarget.name}"</span> 파티가 목록에서 제거돼요</>}
-          confirmLabel="삭제"
-          onConfirm={handleDeleteConfirm}
-          onCancel={() => setDeleteTarget(null)}
         />
       )}
       {joinTarget && (
