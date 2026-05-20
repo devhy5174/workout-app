@@ -963,16 +963,9 @@ export default function PartyDetail() {
     <div className="flex flex-col min-h-screen bg-bg mb-10">
       {/* 헤더 */}
       <div className="flex items-center gap-3 px-5 pt-5 pb-3">
-        <button
-          onClick={() => navigate(-1)}
-          aria-label="뒤로가기"
-          className="w-10 h-10 rounded-2xl bg-white shadow-sm flex items-center justify-center text-gray-500 text-lg active:scale-95 transition"
-        >
-          ←
-        </button>
-        <h2 className="text-lg font-extrabold text-gray-800 truncate flex-1">
-          {party.emoji} {party.name}
-        </h2>
+        <div className="flex-1 min-w-0">
+          <CheerTicker messages={cheerMessages} />
+        </div>
         <button
           onClick={() => navigate("/party")}
           aria-label="파티 목록"
@@ -1031,6 +1024,14 @@ export default function PartyDetail() {
             )}
           </div>
         </div>
+
+        {/* 파티 공지 */}
+        <NoticeSection
+          notices={notices}
+          isLeader={leader}
+          onPost={handlePostNotice}
+          onDelete={handleDeleteNotice}
+        />
 
         {/* 오늘 파티 현황 */}
         <div className="bg-white rounded-3xl shadow-sm p-5 flex flex-col gap-3">
@@ -1137,17 +1138,6 @@ export default function PartyDetail() {
             </>
           )}
         </div>
-
-        {/* 파티 공지 */}
-        <NoticeSection
-          notices={notices}
-          isLeader={leader}
-          onPost={handlePostNotice}
-          onDelete={handleDeleteNotice}
-        />
-
-        {/* 응원 ticker bar */}
-        <CheerTicker messages={cheerMessages} />
 
         {/* 파티 멤버 활동 그리드 */}
         <div className="bg-white rounded-3xl shadow-sm p-5 flex flex-col gap-3">

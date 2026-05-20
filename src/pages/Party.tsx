@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { HiLockClosed, HiExclamationCircle } from "react-icons/hi";
 import { PARTY_TAGS } from "../data/tags";
 import { validatePostText } from "../data/nicknameFilters";
 import { useUser } from "../context/UserContext";
@@ -928,12 +929,31 @@ function DeleteConfirmModal({
   );
 }
 
-function Toast({ message, icon = "🎉" }: { message: string; icon?: string }) {
+function AlertModal({
+  icon: Icon,
+  iconClass = "text-primary",
+  title,
+  message,
+  onClose,
+}: {
+  icon: React.ComponentType<{ className?: string }>;
+  iconClass?: string;
+  title: string;
+  message: string;
+  onClose: () => void;
+}) {
   return (
-    <div className="fixed top-6 inset-x-0 flex justify-center z-50 pointer-events-none">
-      <div className="bg-gray-800 text-white text-sm font-bold px-5 py-3 rounded-2xl shadow-xl flex items-center gap-2 whitespace-nowrap">
-        <span>{icon}</span>
-        <span>{message}</span>
+    <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center px-6">
+      <div className="w-full max-w-sm bg-white rounded-3xl p-7 flex flex-col items-center gap-4 shadow-xl">
+        <Icon className={`text-5xl ${iconClass}`} />
+        <p className="font-extrabold text-gray-800 text-lg text-center">{title}</p>
+        <p className="text-sm text-gray-400 text-center leading-relaxed">{message}</p>
+        <button
+          onClick={onClose}
+          className="w-full py-3 rounded-2xl bg-primary text-white text-sm font-extrabold active:scale-95 transition"
+        >
+          확인
+        </button>
       </div>
     </div>
   );
@@ -965,16 +985,14 @@ export default function Party() {
   const [deleteTarget, setDeleteTarget] = useState<PartyData | null>(null);
   const [joinTarget, setJoinTarget] = useState<PartyData | null>(null);
   const [leaveTarget, setLeaveTarget] = useState<PartyData | null>(null);
-  const [toast, setToast] = useState<{ message: string; icon?: string } | null>(
-    null,
-  );
+  const [alertModal, setAlertModal] = useState<{
+    icon: React.ComponentType<{ className?: string }>;
+    iconClass?: string;
+    title: string;
+    message: string;
+  } | null>(null);
   const [filterTagId, setFilterTagId] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
-
-  const showToast = (message: string, icon?: string) => {
-    setToast({ message, icon });
-    setTimeout(() => setToast(null), 2500);
-  };
 
   const handleCreate = async (input: CreatePartyInput) => {
     const { error } = await createParty(input);
@@ -986,7 +1004,12 @@ export default function Party() {
 
   const handleJoinAttempt = (p: PartyData) => {
     if (myParties.length > 0) {
-      showToast("이미 참가한 파티가 있어요. 탈퇴 후 참가해주세요.", "🔒");
+      setAlertModal({
+        icon: HiLockClosed,
+        iconClass: "text-primary",
+        title: "이미 참가한 파티가 있어요",
+        message: "탈퇴 후 다른 파티에 참가할 수 있어요",
+      });
       return;
     }
     setJoinTarget(p);
@@ -994,7 +1017,12 @@ export default function Party() {
 
   const handleCreateAttempt = () => {
     if (myParties.length > 0) {
-      showToast("이미 참가한 파티가 있어요. 탈퇴 후 만들 수 있어요.", "🔒");
+      setAlertModal({
+        icon: HiLockClosed,
+        iconClass: "text-primary",
+        title: "이미 참가한 파티가 있어요",
+        message: "탈퇴 후 새 파티를 만들 수 있어요",
+      });
       return;
     }
     setShowCreateModal(true);
@@ -1012,7 +1040,12 @@ export default function Party() {
 
   const handleLeaveAttempt = (p: PartyData) => {
     if (isLeader(p)) {
-      showToast("방장은 탈퇴할 수 없어요. 파티를 삭제해주세요.", "👑");
+      setAlertModal({
+        icon: HiExclamationCircle,
+        iconClass: "text-yellow-400",
+        title: "방장은 탈퇴할 수 없어요",
+        message: "파티를 삭제하거나 방장을 넘긴 후 나갈 수 있어요",
+      });
       return;
     }
     setLeaveTarget(p);
@@ -1177,7 +1210,12 @@ export default function Party() {
                   if (isJoined(partyId)) {
                     navigate(`/party/${partyId}`);
                   } else {
-                    showToast("파티에 참가한 후 입장할 수 있어요", "🔒");
+                    setAlertModal({
+                      icon: HiLockClosed,
+                      iconClass: "text-primary",
+                      title: "참가 후 입장할 수 있어요",
+                      message: "파티에 참가하면 멤버들과 함께할 수 있어요",
+                    });
                   }
                 }}
               />
@@ -1235,7 +1273,15 @@ export default function Party() {
           onCancel={() => setLeaveTarget(null)}
         />
       )}
-      {toast && <Toast message={toast.message} icon={toast.icon} />}
+      {alertModal && (
+        <AlertModal
+          icon={alertModal.icon}
+          iconClass={alertModal.iconClass}
+          title={alertModal.title}
+          message={alertModal.message}
+          onClose={() => setAlertModal(null)}
+        />
+      )}
     </div>
   );
 }
