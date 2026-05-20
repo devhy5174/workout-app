@@ -15,6 +15,7 @@ import {
   HiX,
 } from "react-icons/hi";
 import { RiKakaoTalkFill } from "react-icons/ri";
+import AlertModal from "../components/ui/AlertModal";
 import { FcGoogle } from "react-icons/fc";
 import { useTheme } from "../context/ThemeContext";
 import { useUser } from "../context/UserContext";
@@ -391,6 +392,7 @@ export default function Settings() {
   const navigate = useNavigate();
 
   const [sheet, setSheet] = useState<Sheet>(null);
+  const [pendingInquiry, setPendingInquiry] = useState<{ label: string; url: string } | null>(null);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
 
   const handleLogout = async () => {
@@ -530,7 +532,7 @@ export default function Settings() {
                 type="button"
                 aria-label="카카오톡으로 문의하기"
                 onClick={() =>
-                  window.open("http://pf.kakao.com/_EnhbX/chat", "_blank")
+                  setPendingInquiry({ label: "카카오톡 채널", url: "http://pf.kakao.com/_EnhbX/chat" })
                 }
                 className="w-8 h-8 rounded-full flex items-center justify-center"
                 style={{ backgroundColor: "#FEE500" }}
@@ -540,7 +542,9 @@ export default function Settings() {
               <button
                 type="button"
                 aria-label="이메일로 문의하기"
-                onClick={() => window.open("mailto:devhy5174@gmail.com")}
+                onClick={() =>
+                  setPendingInquiry({ label: "이메일", url: "mailto:devhy5174@gmail.com" })
+                }
                 className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center"
               >
                 <HiMail size={16} className="text-gray-500" />
@@ -694,6 +698,20 @@ export default function Settings() {
         onConfirm={handleLogout}
         onClose={() => setShowLogoutModal(false)}
       />
+      {pendingInquiry && (
+        <AlertModal
+          icon={HiChatAlt2}
+          iconClass="text-primary"
+          title="외부 링크로 이동해요"
+          message={`${pendingInquiry.label}(으)로 이동합니다. 계속하시겠어요?`}
+          confirmLabel="이동하기"
+          onConfirm={() => {
+            window.open(pendingInquiry.url, "_blank");
+            setPendingInquiry(null);
+          }}
+          onCancel={() => setPendingInquiry(null)}
+        />
+      )}
     </div>
   );
 }
