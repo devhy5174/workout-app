@@ -249,8 +249,21 @@ export async function fetchEventAchievers(
       partyMemberIds[m.party_id].push(m.user_id);
     }
 
+    // avg_steps 이면 이벤트 기간 일수로 나눠 일평균 계산
+    const eventDays = Math.max(
+      Math.ceil(
+        (new Date(endDate).getTime() - new Date(startDate).getTime()) /
+          (1000 * 60 * 60 * 24),
+      ) + 1,
+      1,
+    );
+    const partyProgress = (pid: string) =>
+      conditionType === "avg_steps"
+        ? Math.round(partySteps[pid] / eventDays)
+        : partySteps[pid];
+
     const achievingPartyIds = Object.keys(partySteps).filter(
-      (pid) => partySteps[pid] >= conditionValue,
+      (pid) => partyProgress(pid) >= conditionValue,
     );
     if (!achievingPartyIds.length) return [];
 
@@ -269,7 +282,7 @@ export async function fetchEventAchievers(
       (partyMemberIds[pid] ?? []).map((uid) => ({
         userId: uid,
         nickname: profileMap.get(uid) ?? "익명",
-        progress: partySteps[pid],
+        progress: partyProgress(pid),
         alreadyGranted: grantedSet.has(uid),
         partyName: partyNameMap.get(pid) ?? "알 수 없는 파티",
       })),

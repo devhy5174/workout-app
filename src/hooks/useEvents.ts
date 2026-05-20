@@ -30,6 +30,9 @@ export function getRewardLabel(event: AppEvent): string {
 }
 
 export function getConditionLabel(event: AppEvent): string {
+  if (event.category === "party" && event.conditionType === "avg_steps") {
+    return `파티 하루 평균 ${event.conditionValue.toLocaleString()}보/일 달성`;
+  }
   const meta = CONDITION_META[event.conditionType];
   return `${event.conditionValue.toLocaleString()}${meta.unit} ${meta.label}`;
 }
