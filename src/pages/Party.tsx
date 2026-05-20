@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { HiLockClosed, HiExclamationCircle } from "react-icons/hi";
+import { HiLockClosed, HiExclamationCircle, HiLogout, HiTrash } from "react-icons/hi";
 import AlertModal from "../components/ui/AlertModal";
 import { PARTY_TAGS } from "../data/tags";
 import { validatePostText } from "../data/nicknameFilters";
@@ -852,83 +852,6 @@ function JoinConfirmModal({
   );
 }
 
-function LeaveConfirmModal({
-  partyName,
-  onConfirm,
-  onCancel,
-}: {
-  partyName: string;
-  onConfirm: () => void;
-  onCancel: () => void;
-}) {
-  return (
-    <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center px-6">
-      <div className="w-full max-w-sm bg-white rounded-3xl p-7 flex flex-col items-center gap-4 shadow-xl">
-        <span className="text-5xl">👋</span>
-        <p className="font-extrabold text-gray-800 text-lg text-center">
-          파티를 나갈까요?
-        </p>
-        <p className="text-sm text-gray-400 text-center">
-          <span className="font-bold text-gray-600">"{partyName}"</span>{" "}
-          파티에서 나가게 돼요
-        </p>
-        <div className="flex gap-3 w-full">
-          <button
-            onClick={onCancel}
-            className="flex-1 py-3 rounded-2xl bg-gray-100 text-sm font-bold text-gray-500 active:scale-95 transition"
-          >
-            취소
-          </button>
-          <button
-            onClick={onConfirm}
-            className="flex-1 py-3 rounded-2xl bg-red-500 text-white text-sm font-extrabold active:scale-95 transition"
-          >
-            나가기
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function DeleteConfirmModal({
-  partyName,
-  onConfirm,
-  onCancel,
-}: {
-  partyName: string;
-  onConfirm: () => void;
-  onCancel: () => void;
-}) {
-  return (
-    <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center px-6">
-      <div className="w-full max-w-sm bg-white rounded-3xl p-7 flex flex-col items-center gap-4 shadow-xl">
-        <span className="text-5xl">🗑️</span>
-        <p className="font-extrabold text-gray-800 text-lg text-center">
-          파티를 삭제할까요?
-        </p>
-        <p className="text-sm text-gray-400 text-center">
-          <span className="font-bold text-gray-600">"{partyName}"</span> 파티가
-          목록에서 제거돼요
-        </p>
-        <div className="flex gap-3 w-full">
-          <button
-            onClick={onCancel}
-            className="flex-1 py-3 rounded-2xl bg-gray-100 text-sm font-bold text-gray-500 active:scale-95 transition"
-          >
-            취소
-          </button>
-          <button
-            onClick={onConfirm}
-            className="flex-1 py-3 rounded-2xl bg-red-500 text-white text-sm font-extrabold active:scale-95 transition"
-          >
-            삭제
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 
 type Tab = "neighbor" | "mine";
@@ -1225,8 +1148,12 @@ export default function Party() {
         <SuccessModal onClose={() => setShowSuccessModal(false)} />
       )}
       {deleteTarget && (
-        <DeleteConfirmModal
-          partyName={deleteTarget.name}
+        <AlertModal
+          icon={HiTrash}
+          iconClass="text-primary"
+          title="파티를 삭제할까요?"
+          message={<><span className="font-bold text-gray-700">"{deleteTarget.name}"</span> 파티가 목록에서 제거돼요</>}
+          confirmLabel="삭제"
           onConfirm={handleDeleteConfirm}
           onCancel={() => setDeleteTarget(null)}
         />
@@ -1239,8 +1166,12 @@ export default function Party() {
         />
       )}
       {leaveTarget && (
-        <LeaveConfirmModal
-          partyName={leaveTarget.name}
+        <AlertModal
+          icon={HiLogout}
+          iconClass="text-primary"
+          title="파티를 나갈까요?"
+          message={<><span className="font-bold text-gray-700">"{leaveTarget.name}"</span> 파티에서 나가게 돼요</>}
+          confirmLabel="나가기"
           onConfirm={handleLeaveConfirm}
           onCancel={() => setLeaveTarget(null)}
         />
