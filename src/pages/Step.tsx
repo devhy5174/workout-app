@@ -339,7 +339,18 @@ export default function Step() {
     monthlyAverageSteps,
     consecutiveStreak,
   } = useUnlockItems(workoutRecords, grantedBubbleIds);
-  const { byCategory, activeEvents, hasNewEvents, markEventsSeen } = useEvents();
+  const { events, byCategory, activeEvents, hasNewEvents, markEventsSeen } = useEvents();
+  const [eventSubTab, setEventSubTab] = useState<"active" | "past">("active");
+
+  const today = new Date().toISOString().slice(0, 10);
+  const pastEvents = events.filter(
+    (e) => e.isActive && !e.isFixed && e.endDate < today,
+  ).sort((a, b) => b.endDate.localeCompare(a.endDate));
+  const pastByCategory = {
+    personal: pastEvents.filter((e) => e.category === "personal"),
+    party: pastEvents.filter((e) => e.category === "party"),
+    streak: pastEvents.filter((e) => e.category === "streak"),
+  } as const;
 
   // 고정 streak 이벤트 조건 달성 시 자동 지급
   const autoGrantedRef = useRef<Set<string>>(new Set());
@@ -969,78 +980,104 @@ export default function Step() {
         {/* ── 이벤트 ── */}
         {tab === "events" && (
           <div className="flex flex-col gap-4 pb-4">
-            {/* 헤더 */}
-            <div className="flex items-center justify-between px-1">
-              <p className="text-xs font-bold text-gray-400">
-                진행 중인 이벤트{" "}
-                <span className="text-[var(--color-primary)]">
-                  {activeEvents.length}개
-                </span>
-              </p>
+            {/* 서브 탭 */}
+            <div className="flex bg-gray-100 rounded-xl p-1 gap-1">
+              {(["active", "past"] as const).map((st) => (
+                <button
+                  key={st}
+                  onClick={() => setEventSubTab(st)}
+                  className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                    eventSubTab === st
+                      ? "bg-white text-gray-800 shadow-sm"
+                      : "text-gray-400"
+                  }`}
+                >
+                  {st === "active" ? `진행 중 ${activeEvents.length > 0 ? `(${activeEvents.length})` : ""}` : `지난 이벤트 ${pastEvents.length > 0 ? `(${pastEvents.length})` : ""}`}
+                </button>
+              ))}
             </div>
 
-            {/* 이벤트 없음 */}
-            {activeEvents.length === 0 && (
-              <div className="flex flex-col items-center py-12 gap-3">
-                <div className="w-16 h-16 rounded-3xl bg-gradient-to-br from-orange-400 to-pink-500 flex items-center justify-center shadow-lg">
-                  <HiCalendar className="text-3xl text-white" />
-                </div>
-                <p className="text-sm font-bold text-gray-400">
-                  현재 진행 중인 이벤트가 없어요
-                </p>
-                <p className="text-xs text-gray-300 flex items-center gap-1">
-                  이벤트를 기대해주세요 <HiSparkles className="text-gray-300" />
-                </p>
-                {/* 예고 프리뷰 */}
-                <div className="bg-white rounded-3xl shadow-sm px-6 py-5 w-full flex flex-col gap-3 mt-2">
-                  {SEASON_PREVIEWS.map((item) => (
-                    <div
-                      key={item.name}
-                      className="flex items-center gap-3 opacity-50"
-                    >
-                      <div
-                        className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 ${item.bg}`}
-                      >
-                        <item.Icon className={`text-lg ${item.color}`} />
+            {/* 진행 중 탭 */}
+            {eventSubTab === "active" && (
+              <>
+                {activeEvents.length === 0 && (
+                  <div className="flex flex-col items-center py-12 gap-3">
+                    <div className="w-16 h-16 rounded-3xl bg-gradient-to-br from-orange-400 to-pink-500 flex items-center justify-center shadow-lg">
+                      <HiCalendar className="text-3xl text-white" />
+                    </div>
+                    <p className="text-sm font-bold text-gray-400">
+                      현재 진행 중인 이벤트가 없어요
+                    </p>
+                    <p className="text-xs text-gray-300 flex items-center gap-1">
+                      이벤트를 기대해주세요 <HiSparkles className="text-gray-300" />
+                    </p>
+                    <div className="bg-white rounded-3xl shadow-sm px-6 py-5 w-full flex flex-col gap-3 mt-2">
+                      {SEASON_PREVIEWS.map((item) => (
+                        <div key={item.name} className="flex items-center gap-3 opacity-50">
+                          <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 ${item.bg}`}>
+                            <item.Icon className={`text-lg ${item.color}`} />
+                          </div>
+                          <div>
+                            <p className="text-sm font-bold text-gray-600">{item.name}</p>
+                            <p className="text-xs text-gray-400">{item.desc}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {(["personal", "party", "streak"] as const).map((cat) => {
+                  const catEvents = byCategory[cat];
+                  if (catEvents.length === 0) return null;
+                  const catMeta = CATEGORY_META[cat];
+                  return (
+                    <div key={cat}>
+                      <div className="flex items-center gap-2 mb-2 px-1">
+                        <span className={`text-xs font-extrabold px-2.5 py-1 rounded-full ${catMeta.bg} ${catMeta.color}`}>
+                          {catMeta.emoji} {catMeta.label}
+                        </span>
                       </div>
-                      <div>
-                        <p className="text-sm font-bold text-gray-600">
-                          {item.name}
-                        </p>
-                        <p className="text-xs text-gray-400">{item.desc}</p>
+                      <div className="flex flex-col gap-3">
+                        {catEvents.map((event) => (
+                          <EventCard key={event.id} event={event} />
+                        ))}
                       </div>
                     </div>
-                  ))}
-                </div>
-              </div>
+                  );
+                })}
+              </>
             )}
 
-            {/* 카테고리별 이벤트 섹션 */}
-            {(["personal", "party", "streak"] as const).map((cat) => {
-              const catEvents = byCategory[cat];
-              if (catEvents.length === 0) return null;
-              const catMeta = CATEGORY_META[cat];
-              return (
-                <div key={cat}>
-                  {/* 섹션 헤더 */}
-                  <div className="flex items-center gap-2 mb-2 px-1">
-                    <span
-                      className={`text-xs font-extrabold px-2.5 py-1 rounded-full ${catMeta.bg} ${catMeta.color}`}
-                    >
-                      {catMeta.emoji} {catMeta.label}
-                    </span>
-                    <span className="text-[11px] text-gray-400 font-semibold">
-                      {catEvents.length}개 진행 중
-                    </span>
+            {/* 지난 이벤트 탭 */}
+            {eventSubTab === "past" && (
+              <>
+                {pastEvents.length === 0 && (
+                  <div className="flex flex-col items-center py-12 gap-2">
+                    <p className="text-sm font-bold text-gray-400">지난 이벤트가 없어요</p>
+                    <p className="text-xs text-gray-300">종료된 이벤트가 여기에 표시돼요</p>
                   </div>
-                  <div className="flex flex-col gap-3">
-                    {catEvents.map((event) => (
-                      <EventCard key={event.id} event={event} />
-                    ))}
-                  </div>
-                </div>
-              );
-            })}
+                )}
+                {(["personal", "party", "streak"] as const).map((cat) => {
+                  const catEvents = pastByCategory[cat];
+                  if (catEvents.length === 0) return null;
+                  const catMeta = CATEGORY_META[cat];
+                  return (
+                    <div key={cat}>
+                      <div className="flex items-center gap-2 mb-2 px-1">
+                        <span className={`text-xs font-extrabold px-2.5 py-1 rounded-full ${catMeta.bg} ${catMeta.color}`}>
+                          {catMeta.emoji} {catMeta.label}
+                        </span>
+                      </div>
+                      <div className="flex flex-col gap-3 opacity-60">
+                        {catEvents.map((event) => (
+                          <EventCard key={event.id} event={event} />
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
+              </>
+            )}
           </div>
         )}
       </div>
