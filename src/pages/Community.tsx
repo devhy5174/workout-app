@@ -1,6 +1,7 @@
 import { useState } from "react";
 import CommunityWriteModal from "../components/CommunityWriteModal";
-import Modal from "../components/ui/Modal";
+import AlertModal from "../components/ui/AlertModal";
+import { HiTrash } from "react-icons/hi";
 import { useCommunity } from "../hooks/useCommunity";
 import { getCardById, type SensoryCard } from "../lib/communityService";
 import { getAvatarCharacterById } from "../data/avatarCharacters";
@@ -432,16 +433,20 @@ export default function CommunityPage() {
       </div>
 
       {/* ── 삭제 확인 모달 ── */}
-      <Modal
-        isOpen={deleteTargetId !== null}
-        title="게시글 삭제"
-        message="이 기록을 삭제할까요? 삭제 후에는 되돌릴 수 없어요."
-        onConfirm={() => {
-          if (deleteTargetId) removePost(deleteTargetId);
-          setDeleteTargetId(null);
-        }}
-        onClose={() => setDeleteTargetId(null)}
-      />
+      {deleteTargetId !== null && (
+        <AlertModal
+          icon={HiTrash}
+          iconClass="text-primary"
+          title="게시글 삭제"
+          message="이 기록을 삭제할까요? 삭제 후에는 되돌릴 수 없어요."
+          confirmLabel="삭제"
+          onConfirm={() => {
+            if (deleteTargetId) removePost(deleteTargetId);
+            setDeleteTargetId(null);
+          }}
+          onCancel={() => setDeleteTargetId(null)}
+        />
+      )}
 
       {/* ── 글쓰기 모달 ── */}
       <CommunityWriteModal

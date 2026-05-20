@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { HiLockClosed, HiExclamationCircle } from "react-icons/hi";
+import AlertModal from "../components/ui/AlertModal";
 import { PARTY_TAGS } from "../data/tags";
 import { validatePostText } from "../data/nicknameFilters";
 import { useUser } from "../context/UserContext";
@@ -929,35 +930,6 @@ function DeleteConfirmModal({
   );
 }
 
-function AlertModal({
-  icon: Icon,
-  iconClass = "text-primary",
-  title,
-  message,
-  onClose,
-}: {
-  icon: React.ComponentType<{ className?: string }>;
-  iconClass?: string;
-  title: string;
-  message: string;
-  onClose: () => void;
-}) {
-  return (
-    <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center px-6">
-      <div className="w-full max-w-sm bg-white rounded-3xl p-7 flex flex-col items-center gap-4 shadow-xl">
-        <Icon className={`text-5xl ${iconClass}`} />
-        <p className="font-extrabold text-gray-800 text-lg text-center">{title}</p>
-        <p className="text-sm text-gray-400 text-center leading-relaxed">{message}</p>
-        <button
-          onClick={onClose}
-          className="w-full py-3 rounded-2xl bg-primary text-white text-sm font-extrabold active:scale-95 transition"
-        >
-          확인
-        </button>
-      </div>
-    </div>
-  );
-}
 
 type Tab = "neighbor" | "mine";
 
@@ -986,7 +958,7 @@ export default function Party() {
   const [joinTarget, setJoinTarget] = useState<PartyData | null>(null);
   const [leaveTarget, setLeaveTarget] = useState<PartyData | null>(null);
   const [alertModal, setAlertModal] = useState<{
-    icon: React.ComponentType<{ className?: string }>;
+    icon: (props: { className?: string }) => React.ReactElement;
     iconClass?: string;
     title: string;
     message: string;
@@ -1279,7 +1251,7 @@ export default function Party() {
           iconClass={alertModal.iconClass}
           title={alertModal.title}
           message={alertModal.message}
-          onClose={() => setAlertModal(null)}
+          onConfirm={() => setAlertModal(null)}
         />
       )}
     </div>

@@ -1,6 +1,13 @@
 import { useState, useEffect, useRef } from "react";
 import { FaUser } from "react-icons/fa";
-import { HiUserGroup } from "react-icons/hi";
+import {
+  HiUserGroup,
+  HiUserAdd,
+  HiUserRemove,
+  HiLogout,
+  HiTrash,
+} from "react-icons/hi";
+import AlertModal from "../components/ui/AlertModal";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { useUser } from "../context/UserContext";
 import { useActiveBubble } from "../context/ActiveBubbleContext";
@@ -316,256 +323,12 @@ function CheerInput({
   );
 }
 
-function WelcomeModal({
-  partyName,
-  partyEmoji,
-  onClose,
-}: {
-  partyName: string;
-  partyEmoji: string;
-  onClose: () => void;
-}) {
-  return (
-    <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center px-6">
-      <div className="w-full max-w-sm bg-white rounded-3xl p-7 flex flex-col items-center gap-4 shadow-xl">
-        <span className="text-5xl">{partyEmoji}</span>
-        <p className="font-extrabold text-gray-800 text-xl text-center">
-          파티에 합류했어요!
-        </p>
-        <p className="text-sm text-gray-500 text-center leading-relaxed">
-          <span className="font-bold text-gray-700">"{partyName}"</span>의<br />
-          새 파티원이 되었어요!
-          <br />
-          함께 목표를 달성해봐요 💪
-        </p>
-        <button
-          onClick={onClose}
-          className="w-full py-3 rounded-2xl bg-primary text-white text-sm font-extrabold active:scale-95 transition"
-        >
-          파티 둘러보기
-        </button>
-      </div>
-    </div>
-  );
-}
-
-function KickConfirmModal({
-  nickname,
-  onConfirm,
-  onCancel,
-}: {
-  nickname: string;
-  onConfirm: () => void;
-  onCancel: () => void;
-}) {
-  return (
-    <div className="fixed inset-0 bg-black/40 z-[60] flex items-center justify-center px-6">
-      <div className="w-full max-w-sm bg-white rounded-3xl p-7 flex flex-col items-center gap-4 shadow-xl">
-        <span className="text-5xl">🧹</span>
-        <p className="font-extrabold text-gray-800 text-lg text-center">
-          파티 정리할까요?
-        </p>
-        <p className="text-sm text-gray-500 text-center leading-relaxed">
-          <span className="font-bold text-gray-700">"{nickname}"</span> 님은
-          <br />
-          7일 이상 활동하지 않은 멤버예요.
-          <br />
-          파티에서 정리하시겠어요?
-        </p>
-        <div className="flex gap-3 w-full">
-          <button
-            onClick={onCancel}
-            className="flex-1 py-3 rounded-2xl bg-gray-100 text-sm font-bold text-gray-500 active:scale-95 transition"
-          >
-            취소
-          </button>
-          <button
-            onClick={onConfirm}
-            className="flex-1 py-3 rounded-2xl bg-red-500 text-white text-sm font-extrabold active:scale-95 transition"
-          >
-            정리하기
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function JoinConfirmModal({
-  partyName,
-  onConfirm,
-  onCancel,
-}: {
-  partyName: string;
-  onConfirm: () => void;
-  onCancel: () => void;
-}) {
-  return (
-    <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center px-6">
-      <div className="w-full max-w-sm bg-white rounded-3xl p-7 flex flex-col items-center gap-4 shadow-xl">
-        <p className="font-extrabold text-gray-800 text-lg text-center">
-          파티에 참가할까요?
-        </p>
-        <p className="text-sm text-gray-400 text-center">
-          <span className="font-bold text-gray-600">"{partyName}"</span> 파티에
-          참가해요
-        </p>
-        <div className="flex gap-3 w-full">
-          <button
-            onClick={onCancel}
-            className="flex-1 py-3 rounded-2xl bg-gray-100 text-sm font-bold text-gray-500 active:scale-95 transition"
-          >
-            취소
-          </button>
-          <button
-            onClick={onConfirm}
-            className="flex-1 py-3 rounded-2xl bg-primary text-white text-sm font-extrabold active:scale-95 transition"
-          >
-            참가하기
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function LeaveConfirmModal({
-  partyName,
-  onConfirm,
-  onCancel,
-}: {
-  partyName: string;
-  onConfirm: () => void;
-  onCancel: () => void;
-}) {
-  return (
-    <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center px-6">
-      <div className="w-full max-w-sm bg-white rounded-3xl p-7 flex flex-col items-center gap-4 shadow-xl">
-        <span className="text-5xl">👋</span>
-        <p className="font-extrabold text-gray-800 text-lg text-center">
-          파티를 나갈까요?
-        </p>
-        <p className="text-sm text-gray-400 text-center">
-          <span className="font-bold text-gray-600">"{partyName}"</span>{" "}
-          파티에서 나가게 돼요
-        </p>
-        <div className="flex gap-3 w-full">
-          <button
-            onClick={onCancel}
-            className="flex-1 py-3 rounded-2xl bg-gray-100 text-sm font-bold text-gray-500 active:scale-95 transition"
-          >
-            취소
-          </button>
-          <button
-            onClick={onConfirm}
-            className="flex-1 py-3 rounded-2xl bg-red-500 text-white text-sm font-extrabold active:scale-95 transition"
-          >
-            나가기
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 function Toast({ message, icon = "🎉" }: { message: string; icon?: string }) {
   return (
     <div className="fixed top-6 inset-x-0 flex justify-center z-50 pointer-events-none">
       <div className="bg-gray-800 text-white text-sm font-bold px-5 py-3 rounded-2xl shadow-xl flex items-center gap-2 whitespace-nowrap">
         <span>{icon}</span>
         <span>{message}</span>
-      </div>
-    </div>
-  );
-}
-
-function LeaderLeaveModal({
-  partyName,
-  hasOtherMembers,
-  onConfirm,
-  onCancel,
-}: {
-  partyName: string;
-  hasOtherMembers: boolean;
-  onConfirm: () => void;
-  onCancel: () => void;
-}) {
-  return (
-    <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center px-6">
-      <div className="w-full max-w-sm bg-white rounded-3xl p-7 flex flex-col items-center gap-4 shadow-xl">
-        <span className="text-5xl">{hasOtherMembers ? "👑" : "💥"}</span>
-        <p className="font-extrabold text-gray-800 text-lg text-center">
-          {hasOtherMembers ? "방장을 넘기고 나갈까요?" : "파티를 나갈까요?"}
-        </p>
-        <p className="text-sm text-gray-400 text-center leading-relaxed">
-          {hasOtherMembers ? (
-            <>
-              <span className="font-bold text-gray-600">"{partyName}"</span> 파티의<br />
-              방장이 가장 오래된 멤버에게<br />
-              자동으로 넘어가요.
-            </>
-          ) : (
-            <>
-              혼자 남은 파티라<br />
-              나가면 <span className="font-bold text-gray-600">"{partyName}"</span> 파티가<br />
-              자동으로 해체돼요.
-            </>
-          )}
-        </p>
-        <div className="flex gap-3 w-full">
-          <button
-            onClick={onCancel}
-            className="flex-1 py-3 rounded-2xl bg-gray-100 text-sm font-bold text-gray-500 active:scale-95 transition"
-          >
-            취소
-          </button>
-          <button
-            onClick={onConfirm}
-            className="flex-1 py-3 rounded-2xl bg-red-500 text-white text-sm font-extrabold active:scale-95 transition"
-          >
-            {hasOtherMembers ? "넘기고 나가기" : "해체하고 나가기"}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function DeletePartyModal({
-  partyName,
-  onConfirm,
-  onCancel,
-}: {
-  partyName: string;
-  onConfirm: () => void;
-  onCancel: () => void;
-}) {
-  return (
-    <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center px-6">
-      <div className="w-full max-w-sm bg-white rounded-3xl p-7 flex flex-col items-center gap-4 shadow-xl">
-        <span className="text-5xl">💥</span>
-        <p className="font-extrabold text-gray-800 text-lg text-center">
-          파티를 해체할까요?
-        </p>
-        <p className="text-sm text-gray-400 text-center leading-relaxed">
-          <span className="font-bold text-gray-600">"{partyName}"</span> 파티가
-          <br />
-          영구적으로 삭제돼요. 되돌릴 수 없어요.
-        </p>
-        <div className="flex gap-3 w-full">
-          <button
-            onClick={onCancel}
-            className="flex-1 py-3 rounded-2xl bg-gray-100 text-sm font-bold text-gray-500 active:scale-95 transition"
-          >
-            취소
-          </button>
-          <button
-            onClick={onConfirm}
-            className="flex-1 py-3 rounded-2xl bg-red-500 text-white text-sm font-extrabold active:scale-95 transition"
-          >
-            해체하기
-          </button>
-        </div>
       </div>
     </div>
   );
@@ -646,7 +409,9 @@ function NoticeSection({
               type="text"
               value={input}
               onChange={handleNoticeChange}
-              onKeyDown={(e) => e.key === "Enter" && !noticeError && handlePost()}
+              onKeyDown={(e) =>
+                e.key === "Enter" && !noticeError && handlePost()
+              }
               placeholder="공지 입력 (60자 이내)"
               maxLength={60}
               className="flex-1 text-xs font-semibold text-gray-700 placeholder-gray-300 outline-none bg-transparent"
@@ -665,7 +430,9 @@ function NoticeSection({
             </button>
           </div>
           {noticeError && (
-            <p className="text-[10px] text-red-400 font-semibold px-1">{noticeError}</p>
+            <p className="text-[10px] text-red-400 font-semibold px-1">
+              {noticeError}
+            </p>
           )}
         </div>
       )}
@@ -1183,7 +950,7 @@ export default function PartyDetail() {
       </div>
 
       {/* 하단 액션 버튼 */}
-      <div className="bg-white rounded-3xl shadow-sm p-4 flex gap-2">
+      <div className="bg-white rounded-3xl shadow-sm p-4 flex gap-2 mb-5">
         {joined ? (
           leader ? (
             <>
@@ -1227,44 +994,105 @@ export default function PartyDetail() {
       </div>
 
       {showWelcomeModal && party && (
-        <WelcomeModal
-          partyName={party.name}
-          partyEmoji={party.emoji}
-          onClose={() => setShowWelcomeModal(false)}
+        <AlertModal
+          icon={HiUserGroup}
+          iconClass="text-primary"
+          title="파티에 합류했어요!"
+          message={
+            <>
+              <span className="font-bold text-gray-700">"{party.name}"</span>의<br />
+              새 파티원이 되었어요!<br />
+              함께 목표를 달성해봐요 💪
+            </>
+          }
+          confirmLabel="파티 둘러보기"
+          onConfirm={() => setShowWelcomeModal(false)}
         />
       )}
       {showJoinModal && (
-        <JoinConfirmModal
-          partyName={party.name}
+        <AlertModal
+          icon={HiUserAdd}
+          iconClass="text-primary"
+          title="파티에 참가할까요?"
+          message={
+            <><span className="font-bold text-gray-700">"{party.name}"</span> 파티에 참가해요</>
+          }
+          confirmLabel="참가하기"
           onConfirm={handleJoinConfirm}
           onCancel={() => setShowJoinModal(false)}
         />
       )}
       {showLeaveModal && (
-        <LeaveConfirmModal
-          partyName={party.name}
+        <AlertModal
+          icon={HiLogout}
+          iconClass="text-primary"
+          title="파티를 나갈까요?"
+          message={
+            <><span className="font-bold text-gray-700">"{party.name}"</span> 파티에서 나가게 돼요</>
+          }
+          confirmLabel="나가기"
           onConfirm={handleLeaveConfirm}
           onCancel={() => setShowLeaveModal(false)}
         />
       )}
       {kickTarget && (
-        <KickConfirmModal
-          nickname={kickTarget.nickname}
+        <AlertModal
+          icon={HiUserRemove}
+          iconClass="text-primary"
+          title="파티 정리할까요?"
+          message={
+            <>
+              <span className="font-bold text-gray-700">"{kickTarget.nickname}"</span> 님은<br />
+              7일 이상 활동하지 않은 멤버예요.<br />
+              파티에서 정리하시겠어요?
+            </>
+          }
+          confirmLabel="정리하기"
           onConfirm={handleKickConfirm}
           onCancel={() => setKickTarget(null)}
+          zClass="z-[60]"
         />
       )}
-      {showLeaderLeaveModal && party && (
-        <LeaderLeaveModal
-          partyName={party.name}
-          hasOtherMembers={members.filter((m) => m.user_id !== user?.id).length > 0}
-          onConfirm={handleLeaderLeave}
-          onCancel={() => setShowLeaderLeaveModal(false)}
-        />
-      )}
+      {showLeaderLeaveModal && party && (() => {
+        const hasOthers = members.filter((m) => m.user_id !== user?.id).length > 0;
+        return (
+          <AlertModal
+            icon={HiUserGroup}
+            iconClass="text-yellow-400"
+            title={hasOthers ? "방장을 넘기고 나갈까요?" : "파티를 나갈까요?"}
+            message={
+              hasOthers ? (
+                <>
+                  <span className="font-bold text-gray-700">"{party.name}"</span> 파티의<br />
+                  방장이 가장 오래된 멤버에게<br />
+                  자동으로 넘어가요.
+                </>
+              ) : (
+                <>
+                  혼자 남은 파티라<br />
+                  나가면 <span className="font-bold text-gray-700">"{party.name}"</span> 파티가<br />
+                  자동으로 해체돼요.
+                </>
+              )
+            }
+            confirmLabel={hasOthers ? "넘기고 나가기" : "해체하고 나가기"}
+            onConfirm={handleLeaderLeave}
+            onCancel={() => setShowLeaderLeaveModal(false)}
+          />
+        );
+      })()}
       {showDeleteModal && party && (
-        <DeletePartyModal
-          partyName={party.name}
+        <AlertModal
+          icon={HiTrash}
+          iconClass="text-primary"
+          title="파티를 해체할까요?"
+          message={
+            <>
+              <span className="font-bold text-gray-700">"{party.name}"</span> 파티가<br />
+              영구적으로 삭제돼요. 되돌릴 수 없어요.
+            </>
+          }
+          confirmLabel="해체하기"
           onConfirm={handleDeleteParty}
           onCancel={() => setShowDeleteModal(false)}
         />
