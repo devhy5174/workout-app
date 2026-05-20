@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { FaPlay, FaPause, FaStop, FaUsers } from "react-icons/fa";
 import { useActivityType } from "../context/ActivityTypeContext";
@@ -12,6 +12,23 @@ import { FAKE_ACTIVE_USERS } from "../data/fakeActiveUsers";
 import { DIET_BY_CHARACTER } from "../data/characterWorkoutDiet";
 import { useTodayStats } from "../hooks/useTodayStats";
 import { notifyGoalReached } from "../utils/notificationTriggers";
+
+const WK_KEY = {
+  state: "wk_state",
+  steps: "wk_steps",
+  elapsed: "wk_elapsed",
+  resumeAt: "wk_resume_at",
+  stepsAt: "wk_steps_at",
+  activityType: "wk_activity_type",
+};
+
+// 활동 유형별 분당 걸음수
+const STEPS_PER_SEC: Record<string, number> = {
+  walker: 100 / 60,
+  power_walker: 120 / 60,
+  runner: 150 / 60,
+  hiker: 90 / 60,
+};
 
 const DIET_BY_DURATION = {
   light: {
@@ -70,13 +87,13 @@ export default function Workout() {
   const { selectedBubbleId } = useActiveBubble();
 
   const [state, setState] = useState<WorkoutState>(
-    () => (sessionStorage.getItem("wk_state") as WorkoutState) ?? "idle",
+    () => (localStorage.getItem(WK_KEY.state) as WorkoutState) ?? "idle",
   );
   const [steps, setSteps] = useState<number>(() =>
-    Number(sessionStorage.getItem("wk_steps") ?? 0),
+    Number(localStorage.getItem(WK_KEY.steps) ?? 0),
   );
   const [elapsed, setElapsed] = useState<number>(() =>
-    Number(sessionStorage.getItem("wk_elapsed") ?? 0),
+    Number(localStorage.getItem(WK_KEY.elapsed) ?? 0),
   );
   const [showStartModal, setShowStartModal] = useState(false);
   const [showModal, setShowModal] = useState(false);
@@ -85,6 +102,9 @@ export default function Workout() {
   const [showBuddies, setShowBuddies] = useState(true);
   const [tooShort, setTooShort] = useState(false);
   const isSaved = useRef(false);
+  const wakeLockRef = useRef<WakeLockSentinel | null>(null);
+  const stepsRef = useRef(steps);
+  useEffect(() => { stepsRef.current = steps; }, [steps]);
 
   // 링 주변 공전할 친구 2명
   const buddies = useMemo(() => {
@@ -92,11 +112,11 @@ export default function Workout() {
     return shuffled.slice(0, 2);
   }, []);
 
-  // 화면 이탈 후 복귀 시 상태 유지
+  // 상태 localStorage 동기화
   useEffect(() => {
-    sessionStorage.setItem("wk_state", state);
-    sessionStorage.setItem("wk_steps", String(steps));
-    sessionStorage.setItem("wk_elapsed", String(elapsed));
+    localStorage.setItem(WK_KEY.state, state);
+    localStorage.setItem(WK_KEY.steps, String(steps));
+    localStorage.setItem(WK_KEY.elapsed, String(elapsed));
   }, [state, steps, elapsed]);
 
   const characterEmoji = selectedActivityType?.emoji ?? "🏃";
@@ -169,9 +189,7 @@ export default function Workout() {
   }, [state, goalProgress]);
 
   const clearWorkoutSession = () => {
-    sessionStorage.removeItem("wk_state");
-    sessionStorage.removeItem("wk_steps");
-    sessionStorage.removeItem("wk_elapsed");
+    Object.values(WK_KEY).forEach((k) => localStorage.removeItem(k));
   };
 
   const performSave = async () => {
@@ -240,6 +258,44 @@ export default function Workout() {
     setShowModal(true);
   };
 
+  // 앱 재실행 시 백그라운드 경과 시간 복구
+  useEffect(() => {
+    if (state !== "running") return;
+    const resumeAt = Number(localStorage.getItem(WK_KEY.resumeAt) ?? 0);
+    if (!resumeAt) return;
+    const missedSec = Math.floor((Date.now() - resumeAt) / 1000);
+    if (missedSec <= 2) return;
+    const actType = localStorage.getItem(WK_KEY.activityType) ?? selectedActivityType?.type ?? "walker";
+    const missedSteps = Math.round(missedSec * (STEPS_PER_SEC[actType] ?? STEPS_PER_SEC.walker));
+    setElapsed((prev) => prev + missedSec);
+    setSteps((prev) => prev + missedSteps);
+    localStorage.removeItem(WK_KEY.resumeAt);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Wake Lock: 운동 중 화면 자동 꺼짐 방지
+  useEffect(() => {
+    if (state !== "running") {
+      wakeLockRef.current?.release().catch(() => {});
+      wakeLockRef.current = null;
+      return;
+    }
+    if (!("wakeLock" in navigator)) return;
+    navigator.wakeLock.request("screen").then((lock) => {
+      wakeLockRef.current = lock;
+    }).catch(() => {});
+    // 화면이 잠깐 꺼졌다 켜지면 재요청
+    const onVisible = () => {
+      if (document.visibilityState === "visible" && !wakeLockRef.current) {
+        navigator.wakeLock.request("screen").then((lock) => {
+          wakeLockRef.current = lock;
+        }).catch(() => {});
+      }
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => document.removeEventListener("visibilitychange", onVisible);
+  }, [state]);
+
   // 세션 시작/종료
   useEffect(() => {
     if (state === "running" && user) {
@@ -254,18 +310,35 @@ export default function Workout() {
     return () => clearInterval(id);
   }, [state, user]);
 
+  // 운동 시작/재개 시 resumeAt 저장, 정지/완료 시 제거
+  useEffect(() => {
+    if (state === "running") {
+      localStorage.setItem(WK_KEY.resumeAt, String(Date.now()));
+      localStorage.setItem(WK_KEY.activityType, selectedActivityType?.type ?? "walker");
+    } else {
+      localStorage.removeItem(WK_KEY.resumeAt);
+    }
+  }, [state, selectedActivityType]);
+
   // 걸음 수 증가 (유형별 페이스)
   useEffect(() => {
     if (state !== "running") return;
     const intervalMap: Record<string, number> = {
-      walker: 600, // 분당 100보
+      walker: 600,       // 분당 100보
       power_walker: 500, // 분당 120보
-      runner: 400, // 분당 150보
-      hiker: 667, // 분당 90보
+      runner: 400,       // 분당 150보
+      hiker: 667,        // 분당 90보
     };
     const ms = intervalMap[selectedActivityType?.type ?? "walker"] ?? 600;
     const id = setInterval(() => {
-      setSteps((prev) => prev + 1);
+      setSteps((prev) => {
+        const next = prev + 1;
+        stepsRef.current = next;
+        // resumeAt/steps 갱신 (백그라운드 복구 기준점)
+        localStorage.setItem(WK_KEY.resumeAt, String(Date.now()));
+        localStorage.setItem(WK_KEY.steps, String(next));
+        return next;
+      });
     }, ms);
     return () => clearInterval(id);
   }, [state, selectedActivityType]);
