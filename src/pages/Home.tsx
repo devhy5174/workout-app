@@ -73,7 +73,6 @@ const GOAL_TYPE_UNIT = {
   calories: "kcal",
 };
 
-let weatherMsgShownOnce = false;
 
 function ProgressBar({
   value,
@@ -140,18 +139,7 @@ export default function Home() {
   );
   const displayedText = useTypingEffect(bubbleMsg);
 
-  // 앱 최초 1회만 날씨 메시지로 교체
-  useEffect(() => {
-    if (weatherCondition && !weatherMsgShownOnce) {
-      const msg = getWeatherMessage(weatherCondition);
-      if (msg) {
-        setBubbleMsg(msg);
-        weatherMsgShownOnce = true;
-      }
-    }
-  }, [weatherCondition]);
-
-  const [activeUsers, setActiveUsers] = useState<DisplayUser[]>([]);
+const [activeUsers, setActiveUsers] = useState<DisplayUser[]>([]);
   const { top3, isLoading: top3Loading } = useWeeklyTop3();
 
   useEffect(() => {
