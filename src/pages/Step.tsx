@@ -125,6 +125,115 @@ const PREMIUM_PLAN_BENEFITS = [
   "광고 없이 즐기는 클린 앱 환경",
 ] as const;
 
+// ── 연속 챌린지 카드 (관리자 streak 이벤트 기반) ─────────
+function StreakChallengeCard({
+  event,
+  streak,
+}: {
+  event: AppEvent;
+  streak: number;
+}) {
+  const target = event.conditionValue;
+  const isCompleted = streak >= target;
+
+  // 최대 30개 dot으로 시각화, 초과분은 비율로 매핑
+  const DOT_COUNT = Math.min(target, 30);
+  const scale = target / DOT_COUNT;
+
+  const rewardLabel =
+    event.reward.type === "title"
+      ? (event.reward.titleText ?? "칭호 보상")
+      : (BUBBLE_PREVIEWS[event.reward.bubbleId ?? ""]?.text ?? "말풍선 보상");
+
+  return (
+    <div className="rounded-2xl bg-white shadow-sm p-5">
+      <div className="flex items-start justify-between mb-3">
+        <div>
+          <p className="font-extrabold text-gray-800 text-sm">{event.title}</p>
+          <p className="text-[11px] text-gray-400 mt-0.5">
+            {event.description || "하루라도 빠지면 처음부터 다시 시작돼요"}
+          </p>
+        </div>
+        <div className="text-right flex-shrink-0 ml-2">
+          <span
+            className="text-xl font-extrabold"
+            style={{ color: "var(--color-primary)" }}
+          >
+            {Math.min(streak, target)}
+          </span>
+          <span className="text-xs text-gray-400 font-bold"> / {target}일</span>
+        </div>
+      </div>
+
+      {/* dots grid */}
+      <div className="grid grid-cols-10 gap-1 mb-3">
+        {Array.from({ length: DOT_COUNT }, (_, i) => {
+          const dayThreshold = Math.round((i + 1) * scale);
+          const isFilled = streak >= dayThreshold;
+          const isGoal = i === DOT_COUNT - 1;
+          return (
+            <div key={i} className="flex items-center justify-center">
+              <div
+                className={`w-6 h-6 rounded-full flex items-center justify-center transition-all ${
+                  isGoal
+                    ? isCompleted
+                      ? "ring-2 ring-amber-400 ring-offset-1"
+                      : "ring-2 ring-amber-200 ring-offset-1 bg-gray-50"
+                    : !isFilled
+                      ? "bg-gray-100"
+                      : ""
+                }`}
+                style={isFilled ? { background: "var(--color-primary)" } : {}}
+              >
+                {isGoal && (
+                  <span className="text-[10px]">
+                    {isCompleted ? "🏆" : "🎯"}
+                  </span>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* 보상 미리보기 */}
+      <div
+        className={`flex items-center gap-3 rounded-xl p-3 ${
+          isCompleted ? "bg-amber-50" : "bg-gray-50"
+        }`}
+      >
+        <div className="flex flex-col items-center flex-shrink-0">
+          <div className="bg-gradient-to-r from-amber-400 to-orange-500 text-white text-[9px] font-extrabold px-2 py-1 rounded-full whitespace-nowrap leading-tight">
+            {rewardLabel}
+          </div>
+          <div className="w-2 h-2 bg-amber-500 rotate-45 rounded-[1px] -mt-1" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <p
+            className={`text-xs font-bold ${
+              isCompleted ? "text-amber-700" : "text-gray-600"
+            }`}
+          >
+            {isCompleted ? "달성 완료! 보상 지급 대기 중 🎉" : "달성 시 보상 지급"}
+          </p>
+          <p className="text-[10px] text-gray-400 mt-0.5">
+            {isCompleted
+              ? "이벤트 종료 후 관리자가 보상을 지급합니다"
+              : streak > 0
+                ? `${target - streak}일 더 연속 운동하면 달성!`
+                : "오늘부터 시작해보세요 💪"}
+          </p>
+        </div>
+        {isCompleted && (
+          <span className="flex-shrink-0 bg-amber-400 text-white text-[10px] font-extrabold px-2.5 py-1 rounded-full">
+            달성 ✓
+          </span>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ── 이벤트 카드 ──────────────────────────────────────────
 function EventCard({ event }: { event: AppEvent }) {
   const catMeta = CATEGORY_META[event.category];
@@ -299,99 +408,15 @@ export default function Step() {
 
       <div className="flex-1 overflow-y-auto px-4 mt-4 pb-24 flex flex-col gap-5">
         {/* ── STEP 보상 ── */}
-        {tab === "step" && (
+        {tab === "step" && byCategory.streak.length > 0 && (
           <>
-            {/* 30일 연속 챌린지 카드 */}
-            <div className="rounded-2xl bg-white shadow-sm p-5">
-              <div className="flex items-start justify-between mb-3">
-                <div>
-                  <p className="font-extrabold text-gray-800 text-sm">
-                    🔥 30일 연속 챌린지
-                  </p>
-                  <p className="text-[11px] text-gray-400 mt-0.5">
-                    하루라도 빠지면 처음부터 다시 시작돼요
-                  </p>
-                </div>
-                <div className="text-right flex-shrink-0 ml-2">
-                  <span
-                    className="text-xl font-extrabold"
-                    style={{ color: "var(--color-primary)" }}
-                  >
-                    {Math.min(consecutiveStreak, 30)}
-                  </span>
-                  <span className="text-xs text-gray-400 font-bold">
-                    {" "}
-                    / 30일
-                  </span>
-                </div>
-              </div>
-
-              {/* 30 dots grid */}
-              <div className="grid grid-cols-10 gap-1 mb-3">
-                {Array.from({ length: 30 }, (_, i) => {
-                  const dayNum = i + 1;
-                  const isFilled = dayNum <= consecutiveStreak;
-                  const isGoal = dayNum === 30;
-                  return (
-                    <div key={i} className="flex items-center justify-center">
-                      <div
-                        className={`w-6 h-6 rounded-full flex items-center justify-center transition-all ${
-                          isGoal
-                            ? consecutiveStreak >= 30
-                              ? "ring-2 ring-amber-400 ring-offset-1"
-                              : "ring-2 ring-amber-200 ring-offset-1 bg-gray-50"
-                            : !isFilled
-                              ? "bg-gray-100"
-                              : ""
-                        }`}
-                        style={
-                          isFilled ? { background: "var(--color-primary)" } : {}
-                        }
-                      >
-                        {isGoal && (
-                          <span className="text-[10px]">
-                            {consecutiveStreak >= 30 ? "🏆" : "🎯"}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-
-              {/* 보상 말풍선 미리보기 + 상태 메시지 */}
-              <div
-                className={`flex items-center gap-3 rounded-xl p-3 ${consecutiveStreak >= 30 ? "bg-amber-50" : "bg-gray-50"}`}
-              >
-                <div className="flex flex-col items-center flex-shrink-0">
-                  <div className="bg-gradient-to-r from-amber-400 to-orange-500 text-white text-[9px] font-extrabold px-2 py-1 rounded-full whitespace-nowrap leading-tight">
-                    꾸준한 30일 🏆
-                  </div>
-                  <div className="w-2 h-2 bg-amber-500 rotate-45 rounded-[1px] -mt-1" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p
-                    className={`text-xs font-bold ${consecutiveStreak >= 30 ? "text-amber-700" : "text-gray-600"}`}
-                  >
-                    {consecutiveStreak >= 30
-                      ? "말풍선 해금됨! 🎉"
-                      : "30일 달성 보상 말풍선"}
-                  </p>
-                  <p className="text-[10px] text-gray-400 mt-0.5">
-                    {consecutiveStreak >= 30
-                      ? "아래 말풍선 목록에서 선택하세요"
-                      : consecutiveStreak > 0
-                        ? `${30 - consecutiveStreak}일 더 연속 운동하면 해금!`
-                        : "오늘부터 시작해보세요 💪"}
-                  </p>
-                </div>
-                {consecutiveStreak >= 30 && (
-                  <span className="flex-shrink-0 bg-amber-400 text-white text-[10px] font-extrabold px-2.5 py-1 rounded-full">
-                    해금 ✓
-                  </span>
-                )}
-              </div>
-            </div>
+            {byCategory.streak.map((event) => (
+              <StreakChallengeCard
+                key={event.id}
+                event={event}
+                streak={consecutiveStreak}
+              />
+            ))}
           </>
         )}
 
