@@ -365,6 +365,195 @@ function EventFormSheet({
   );
 }
 
+// ── 시간대별 운동 차트 ────────────────────────────────────
+const TIME_ZONE_LABELS: { label: string; range: string; color: string }[] = [
+  { label: "새벽", range: "00–05", color: "text-indigo-400" },
+  { label: "아침", range: "06–11", color: "text-amber-400" },
+  { label: "오후", range: "12–17", color: "text-orange-400" },
+  { label: "저녁", range: "18–23", color: "text-violet-400" },
+];
+
+function WorkoutHourlyChart({
+  data,
+  isLoading,
+}: {
+  data: number[];
+  isLoading: boolean;
+}) {
+  const maxVal = Math.max(...data, 1);
+  const total = data.reduce((s, v) => s + v, 0);
+
+  const peakHour = data.indexOf(Math.max(...data));
+  const peakLabel =
+    peakHour < 6
+      ? "새벽"
+      : peakHour < 12
+        ? "아침"
+        : peakHour < 18
+          ? "오후"
+          : "저녁";
+
+  const zoneCount = [
+    data.slice(0, 6).reduce((s, v) => s + v, 0),
+    data.slice(6, 12).reduce((s, v) => s + v, 0),
+    data.slice(12, 18).reduce((s, v) => s + v, 0),
+    data.slice(18, 24).reduce((s, v) => s + v, 0),
+  ];
+  const topZoneIdx = zoneCount.indexOf(Math.max(...zoneCount));
+
+  if (isLoading) {
+    return (
+      <div className="bg-white rounded-2xl shadow-sm p-5">
+        <div className="h-4 bg-gray-100 rounded-lg animate-pulse w-32 mb-4" />
+        <div className="flex items-end gap-0.5 h-20">
+          {Array.from({ length: 24 }).map((_, i) => (
+            <div
+              key={i}
+              className="flex-1 bg-gray-100 rounded-sm animate-pulse"
+              style={{ height: `${30 + Math.random() * 70}%` }}
+            />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
+      {/* 헤더 */}
+      <div
+        className="px-5 py-3.5 flex items-center gap-2"
+        style={{
+          background:
+            "linear-gradient(135deg, var(--color-primary)15, var(--color-secondary)15)",
+        }}
+      >
+        <HiChartBar size={16} className="text-[var(--color-primary)]" />
+        <p className="text-sm font-extrabold text-gray-800">
+          시간대별 운동 시작
+        </p>
+        {total > 0 && (
+          <span className="ml-auto text-[11px] font-bold text-gray-400">
+            총 {total}회
+          </span>
+        )}
+      </div>
+
+      <div className="px-4 pt-4 pb-3">
+        {total === 0 ? (
+          <div className="flex flex-col items-center py-8 gap-2 text-gray-300">
+            <HiChartBar size={32} />
+            <p className="text-xs font-bold">운동 기록이 없어요</p>
+          </div>
+        ) : (
+          <>
+            {/* 피크 시간 배지 */}
+            <div className="flex items-center gap-2 mb-3">
+              <span
+                className="text-[11px] font-extrabold px-2.5 py-1 rounded-full text-white"
+                style={{
+                  background:
+                    "linear-gradient(135deg, var(--color-primary), var(--color-secondary))",
+                }}
+              >
+                피크 {String(peakHour).padStart(2, "0")}시 ({peakLabel})
+              </span>
+              <span className="text-[11px] text-gray-400 font-semibold">
+                {data[peakHour]}회
+              </span>
+            </div>
+
+            {/* 바 차트 */}
+            <div className="flex items-end gap-px h-16 mb-1">
+              {data.map((val, hour) => {
+                const heightPct = (val / maxVal) * 100;
+                const isNight = hour < 6;
+                const isMorning = hour >= 6 && hour < 12;
+                const isAfternoon = hour >= 12 && hour < 18;
+                const isPeak = hour === peakHour;
+
+                let barColor: string;
+                if (isPeak) {
+                  barColor =
+                    "linear-gradient(to top, var(--color-primary), var(--color-secondary))";
+                } else if (isNight) {
+                  barColor = "linear-gradient(to top, #818cf8, #a5b4fc)";
+                } else if (isMorning) {
+                  barColor = "linear-gradient(to top, #fb923c, #fcd34d)";
+                } else if (isAfternoon) {
+                  barColor = "linear-gradient(to top, #f97316, #fdba74)";
+                } else {
+                  barColor = "linear-gradient(to top, #8b5cf6, #c4b5fd)";
+                }
+
+                return (
+                  <div
+                    key={hour}
+                    className="flex-1 rounded-t-sm transition-all"
+                    style={{
+                      height: `${Math.max(heightPct, val > 0 ? 4 : 1)}%`,
+                      background: val > 0 ? barColor : "#f3f4f6",
+                      opacity: val === 0 ? 0.4 : 1,
+                    }}
+                    title={`${String(hour).padStart(2, "0")}시: ${val}회`}
+                  />
+                );
+              })}
+            </div>
+
+            {/* x축 레이블 */}
+            <div className="flex justify-between px-px mb-4">
+              {["00", "06", "12", "18", "23"].map((t) => (
+                <span key={t} className="text-[9px] text-gray-300 font-semibold">
+                  {t}
+                </span>
+              ))}
+            </div>
+
+            {/* 시간대별 요약 */}
+            <div className="grid grid-cols-4 gap-2">
+              {TIME_ZONE_LABELS.map((zone, i) => {
+                const cnt = zoneCount[i];
+                const pct = total > 0 ? Math.round((cnt / total) * 100) : 0;
+                const isTop = i === topZoneIdx;
+                return (
+                  <div
+                    key={zone.label}
+                    className={`rounded-xl p-2 flex flex-col gap-0.5 transition-all ${
+                      isTop
+                        ? "bg-[var(--color-primary)]/8 ring-1 ring-[var(--color-primary)]/20"
+                        : "bg-gray-50"
+                    }`}
+                  >
+                    <p
+                      className={`text-[11px] font-extrabold ${isTop ? "text-[var(--color-primary)]" : "text-gray-500"}`}
+                    >
+                      {zone.label}
+                    </p>
+                    <p
+                      className={`text-[10px] font-semibold ${isTop ? "text-[var(--color-primary)]/70" : "text-gray-400"}`}
+                    >
+                      {zone.range}
+                    </p>
+                    <p
+                      className={`text-sm font-extrabold ${isTop ? "text-[var(--color-primary)]" : "text-gray-700"}`}
+                    >
+                      {pct}%
+                    </p>
+                    <p className="text-[9px] text-gray-400 font-semibold">
+                      {cnt}회
+                    </p>
+                  </div>
+                );
+              })}
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ── 탭: 대시보드 ──────────────────────────────────────────
 function DashboardTab({
   stats,
@@ -429,6 +618,11 @@ function DashboardTab({
         </div>
         <HiBadgeCheck size={40} className="text-white/30" />
       </div>
+
+      <WorkoutHourlyChart
+        data={stats?.hourlyDistribution ?? Array(24).fill(0)}
+        isLoading={isLoading}
+      />
     </div>
   );
 }

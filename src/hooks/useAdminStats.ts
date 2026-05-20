@@ -5,6 +5,7 @@ import {
   fetchTodayWorkouts,
   fetchTotalUsers,
   fetchTotalWorkouts,
+  fetchWorkoutHourlyDistribution,
   type SubscriberStats,
 } from "../lib/adminService";
 
@@ -16,6 +17,7 @@ export type AdminStats = {
   activeUsersToday: number;
   workoutSessionsToday: number;
   totalWorkouts: number;
+  hourlyDistribution: number[];
 };
 
 export function useAdminStats() {
@@ -26,13 +28,14 @@ export function useAdminStats() {
 
   const load = useCallback(async () => {
     setIsLoading(true);
-    const [totalUsers, newUsersToday, todayWorkouts, totalWorkouts, subStats] =
+    const [totalUsers, newUsersToday, todayWorkouts, totalWorkouts, subStats, hourlyDistribution] =
       await Promise.all([
         fetchTotalUsers(),
         fetchNewUsersToday(),
         fetchTodayWorkouts(),
         fetchTotalWorkouts(),
         fetchSubscriberStats(),
+        fetchWorkoutHourlyDistribution(),
       ]);
     setStats({
       totalUsers,
@@ -40,6 +43,7 @@ export function useAdminStats() {
       activeUsersToday: todayWorkouts.activeUsers,
       workoutSessionsToday: todayWorkouts.sessions,
       totalWorkouts,
+      hourlyDistribution,
     });
     setSubscriberStats(subStats);
     setIsLoading(false);

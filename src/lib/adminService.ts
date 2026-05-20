@@ -65,6 +65,24 @@ export async function fetchTotalWorkouts(): Promise<number> {
   return count ?? 0;
 }
 
+// 시간대별 운동 시작 분포 (created_at 기준 0~23시 버킷)
+export async function fetchWorkoutHourlyDistribution(): Promise<number[]> {
+  const { data, error } = await supabase
+    .from("workout_history")
+    .select("created_at");
+
+  if (error || !data) return Array(24).fill(0);
+
+  const buckets = Array(24).fill(0);
+  for (const r of data) {
+    if (r.created_at) {
+      const hour = new Date(r.created_at).getHours();
+      buckets[hour]++;
+    }
+  }
+  return buckets;
+}
+
 // public_profiles 기반 streak 집계 (RLS UNRESTRICTED)
 export async function fetchSubscriberStats(): Promise<SubscriberStats> {
   const { data, error } = await supabase
