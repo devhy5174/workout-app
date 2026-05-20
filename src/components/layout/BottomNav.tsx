@@ -48,12 +48,12 @@ export default function BottomNav() {
           ? pathname === "/party" || isPartyDetailActive
           : pathname === to;
 
-        if (isParty && myPartyId) {
+        if (isParty) {
           return (
             <button
               key={to}
-              onClick={() => navigate(`/party/${myPartyId}`)}
-              aria-label="내 파티"
+              onClick={() => navigate(myPartyId ? `/party/${myPartyId}` : "/party")}
+              aria-label={myPartyId ? "내 파티" : "파티 목록"}
               className={`relative flex-1 flex flex-col items-center py-2 gap-0.5 transition ${
                 active ? "text-[var(--color-primary)]" : "text-gray-400"
               }`}
@@ -80,14 +80,6 @@ export default function BottomNav() {
               active ? "text-[var(--color-primary)]" : "text-gray-400"
             }`}
           >
-            {isParty && partyActive && (
-              <span className="absolute -top-7 left-45 -translate-x-1/2 animate-bounce pointer-events-none z-20">
-                <span className="relative flex items-center whitespace-nowrap bg-primary text-white text-[9px] font-extrabold px-2 py-0.5 rounded-full shadow-md">
-                  파티원 운동중!
-                  <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-0 h-0 border-l-[4px] border-l-transparent border-r-[4px] border-r-transparent border-t-[4px] border-t-primary" />
-                </span>
-              </span>
-            )}
             <Icon className="text-xl" />
             <span className="text-[9px] font-semibold">{label}</span>
           </Link>
