@@ -1,3 +1,5 @@
+//# 닉네임 변경 바텀시트
+
 import { useState, useEffect } from "react";
 import { HiBadgeCheck, HiLockClosed, HiX } from "react-icons/hi";
 import { useUser } from "../../context/UserContext";
@@ -32,11 +34,15 @@ export function NicknameSheet({
 
   useEffect(() => {
     const trimmed = value.trim();
-    if (!trimmed || trimmed === current || validateNicknameLocally(trimmed)) return;
+    if (!trimmed || trimmed === current || validateNicknameLocally(trimmed))
+      return;
 
     setIsCheckingDuplicate(true);
     const timer = setTimeout(async () => {
-      const { isDuplicate } = await checkNicknameDuplicate(trimmed, currentUserId);
+      const { isDuplicate } = await checkNicknameDuplicate(
+        trimmed,
+        currentUserId,
+      );
       setIsCheckingDuplicate(false);
       if (isDuplicate) setError("이미 사용 중인 닉네임이에요.");
     }, 500);
@@ -56,7 +62,10 @@ export function NicknameSheet({
   async function handleSave() {
     const trimmed = value.trim();
     const localError = validateNicknameLocally(trimmed);
-    if (localError) { setError(localError); return; }
+    if (localError) {
+      setError(localError);
+      return;
+    }
     if (error) return;
 
     setIsSaving(true);
@@ -82,7 +91,10 @@ export function NicknameSheet({
           <div className="flex flex-col items-center gap-4 py-4">
             <div
               className="w-16 h-16 rounded-full flex items-center justify-center"
-              style={{ background: "linear-gradient(135deg, var(--color-primary), var(--color-secondary))" }}
+              style={{
+                background:
+                  "linear-gradient(135deg, var(--color-primary), var(--color-secondary))",
+              }}
             >
               <HiBadgeCheck size={36} className="text-white" />
             </div>
@@ -90,14 +102,17 @@ export function NicknameSheet({
               <p className="text-lg font-extrabold text-gray-800">변경 완료!</p>
               <p className="text-sm text-gray-400 mt-1">
                 닉네임이{" "}
-                <span className="font-bold text-gray-600">{value.trim()}</span>
-                {" "}으로 변경됐어요.
+                <span className="font-bold text-gray-600">{value.trim()}</span>{" "}
+                으로 변경됐어요.
               </p>
             </div>
             <button
               onClick={onClose}
               className="mt-2 w-full py-4 rounded-2xl text-white font-extrabold text-base active:scale-95 transition shadow-md"
-              style={{ background: "linear-gradient(135deg, var(--color-primary), var(--color-secondary))" }}
+              style={{
+                background:
+                  "linear-gradient(135deg, var(--color-primary), var(--color-secondary))",
+              }}
             >
               확인
             </button>
@@ -105,7 +120,9 @@ export function NicknameSheet({
         ) : (
           <>
             <div className="flex items-center justify-between mb-5">
-              <h3 className="text-lg font-extrabold text-gray-800">닉네임 변경</h3>
+              <h3 className="text-lg font-extrabold text-gray-800">
+                닉네임 변경
+              </h3>
               <button
                 onClick={onClose}
                 className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500"
@@ -121,10 +138,13 @@ export function NicknameSheet({
                   <HiLockClosed size={28} className="text-gray-400" />
                 </div>
                 <p className="text-sm font-bold text-gray-700 text-center">
-                  닉네임은 {NICKNAME_CHANGE_COOLDOWN_DAYS}일에 한 번 변경할 수 있어요.
+                  닉네임은 {NICKNAME_CHANGE_COOLDOWN_DAYS}일에 한 번 변경할 수
+                  있어요.
                 </p>
                 <div className="bg-orange-50 border border-orange-100 rounded-2xl px-5 py-3 text-center w-full">
-                  <p className="text-xs text-gray-400 mb-0.5">다음 변경 가능일까지</p>
+                  <p className="text-xs text-gray-400 mb-0.5">
+                    다음 변경 가능일까지
+                  </p>
                   <p className="text-xl font-extrabold text-[var(--color-primary)]">
                     {remainingDays}일 남음
                   </p>
@@ -138,7 +158,9 @@ export function NicknameSheet({
               </div>
             ) : (
               <>
-                <div className={`flex items-center gap-2 rounded-2xl px-4 py-3 mb-2 ${error ? "bg-red-50" : "bg-gray-50"}`}>
+                <div
+                  className={`flex items-center gap-2 rounded-2xl px-4 py-3 mb-2 ${error ? "bg-red-50" : "bg-gray-50"}`}
+                >
                   <input
                     type="text"
                     value={value}
@@ -148,20 +170,35 @@ export function NicknameSheet({
                     className="flex-1 bg-transparent text-base font-bold text-gray-800 outline-none placeholder:text-gray-300"
                     autoFocus
                   />
-                  <span className="text-xs text-gray-400">{value.length}/{NICKNAME_MAX_LENGTH}</span>
+                  <span className="text-xs text-gray-400">
+                    {value.length}/{NICKNAME_MAX_LENGTH}
+                  </span>
                 </div>
                 <p className="text-xs text-gray-400 px-1 mb-1">
                   한글·영문·숫자만 사용 가능 · 공백·특수문자 불가
                 </p>
-                {error && <p className="text-xs text-red-500 mb-1 px-1">{error}</p>}
+                {error && (
+                  <p className="text-xs text-red-500 mb-1 px-1">{error}</p>
+                )}
                 {!error && isCheckingDuplicate && (
-                  <p className="text-xs text-gray-400 mb-1 px-1">중복 확인 중...</p>
+                  <p className="text-xs text-gray-400 mb-1 px-1">
+                    중복 확인 중...
+                  </p>
                 )}
                 <button
                   onClick={handleSave}
-                  disabled={isSaving || !value.trim() || value.trim() === current || !!error || isCheckingDuplicate}
+                  disabled={
+                    isSaving ||
+                    !value.trim() ||
+                    value.trim() === current ||
+                    !!error ||
+                    isCheckingDuplicate
+                  }
                   className="mt-3 w-full py-4 rounded-2xl text-white font-extrabold text-base active:scale-95 transition shadow-md disabled:opacity-50"
-                  style={{ background: "linear-gradient(135deg, var(--color-primary), var(--color-secondary))" }}
+                  style={{
+                    background:
+                      "linear-gradient(135deg, var(--color-primary), var(--color-secondary))",
+                  }}
                 >
                   {isSaving ? "저장 중..." : "저장하기"}
                 </button>

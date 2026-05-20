@@ -1,3 +1,5 @@
+// 약관/개인정보 텍스트 시트
+
 export function TextSheet({
   title,
   children,

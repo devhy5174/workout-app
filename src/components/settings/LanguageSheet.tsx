@@ -1,6 +1,13 @@
+//# 언어 선택 바텀시트
+
 import type { Language } from "../../hooks/useSettings";
 
-const languages: { value: Language; label: string; native: string; flag: string }[] = [
+const languages: {
+  value: Language;
+  label: string;
+  native: string;
+  flag: string;
+}[] = [
   { value: "ko", label: "한국어", native: "Korean", flag: "🇰🇷" },
   { value: "en", label: "English", native: "영어", flag: "🇺🇸" },
 ];
@@ -52,7 +59,9 @@ export function LanguageSheet({
                 <div className="flex items-center gap-3">
                   <span className="text-2xl">{lang.flag}</span>
                   <div>
-                    <p className={`font-bold text-sm ${isSelected ? "text-[var(--color-primary)]" : "text-gray-700"}`}>
+                    <p
+                      className={`font-bold text-sm ${isSelected ? "text-[var(--color-primary)]" : "text-gray-700"}`}
+                    >
                       {lang.label}
                     </p>
                     <p className="text-xs text-gray-400">{lang.native}</p>
