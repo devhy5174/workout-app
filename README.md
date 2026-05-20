@@ -110,9 +110,10 @@ npm run dev
 
 ### 🛡️ 관리자 (Admin)
 
-- 대시보드: 가입자 수 / 오늘 운동 인원 / 프리미엄 구독자
+- 대시보드: 가입자 수 / 오늘 운동 인원 / 프리미엄 구독자 / **시간대별 운동 시작 차트**
 - 공지사항 작성 → 홈 배너 자동 표시
-- 이벤트 관리 (생성·수정·삭제)
+- 이벤트 관리 (생성·수정·삭제·ON/OFF 토글)
+- 이벤트 달성자 확인 → 보상 수동 지급 (기간제 이벤트)
 - 프리미엄 말풍선 아이템 관리
 
 ---
@@ -140,7 +141,8 @@ npm run dev
 | `workout_history` | 운동 기록                      |
 | `active_sessions` | 실시간 운동 세션               |
 | `user_goals`      | 유저 목표                      |
-| `events`          | 이벤트                         |
+| `events`          | 이벤트 정의                    |
+| `event_grants`    | 이벤트 보상 지급 내역          |
 
 ---
 
@@ -150,6 +152,186 @@ npm run dev
 - **프리미엄**: 말풍선 아이템 · 대체 식단 새로고침 · 고급 분석 리포트 (예정)
 
 ---
+
+---
+
+## 🎪 이벤트 시스템 (Event System)
+
+관리자가 이벤트를 생성하면 유저가 조건을 달성해 보상(말풍선·칭호)을 획득하는 풀스택 이벤트 플랫폼입니다.  
+기간제 이벤트와 고정(무기한) 이벤트 두 가지 방식을 지원합니다.
+
+---
+
+### 📦 파일 구조
+
+| 파일 | 역할 |
+|------|------|
+| `src/data/events.ts` | `AppEvent` 타입 정의 · `CATEGORY_META` 상수 |
+| `src/lib/eventService.ts` | Supabase CRUD · 달성자 집계 · 보상 지급 |
+| `src/context/EventsContext.tsx` | 이벤트 목록 전역 상태 (Supabase 연동) |
+| `src/hooks/useEvents.ts` | `byCategory` · `activeEvents` · 상태 라벨 계산 |
+| `src/hooks/useEventGrants.ts` | 유저 보상 수령 목록 조회 (`event_grants`) |
+| `src/pages/Step.tsx` | 유저향 — STEP 보상탭 · 이벤트탭 렌더링 |
+| `src/pages/Admin.tsx` | 관리자향 — 이벤트 CRUD · 달성자 확인 · 보상 지급 |
+| `supabase/events_system.sql` | `events` · `event_grants` 테이블 DDL + RLS |
+| `supabase/add_is_fixed.sql` | `is_fixed` 컬럼 추가 + self-grant 정책 마이그레이션 |
+
+---
+
+### 🗄️ DB 구조
+
+#### `events` 테이블
+
+| 컬럼 | 타입 | 설명 |
+|------|------|------|
+| `id` | uuid | PK |
+| `title` | text | 이벤트 제목 |
+| `description` | text | 상세 설명 |
+| `start_date` | date | 시작일 (고정 이벤트는 생성일로 자동 설정) |
+| `end_date` | date | 종료일 (고정 이벤트는 `9999-12-31`) |
+| `category` | text | `personal` · `party` · `streak` |
+| `condition_type` | text | `total_steps` · `avg_steps` · `consecutive_days` |
+| `condition_value` | integer | 조건 기준값 |
+| `reward_type` | text | `bubble` · `title` |
+| `bubble_id` | text? | 보상 말풍선 ID |
+| `title_text` | text? | 보상 칭호 텍스트 |
+| `is_active` | boolean | 이벤트 ON/OFF |
+| `is_fixed` | boolean | 고정 이벤트 여부 (기간 제한 없음) |
+
+#### `event_grants` 테이블
+
+| 컬럼 | 타입 | 설명 |
+|------|------|------|
+| `id` | uuid | PK |
+| `event_id` | uuid | FK → events |
+| `user_id` | uuid | FK → app_users |
+| `reward_type` | text | 지급된 보상 타입 |
+| `bubble_id` | text? | 지급된 말풍선 ID |
+| `title_text` | text? | 지급된 칭호 텍스트 |
+| `granted_by` | uuid | 지급자 (관리자 ID · 자기 자신) |
+
+---
+
+### 🗂️ 이벤트 카테고리 3종
+
+| 카테고리 | 조건 기준 | 달성자 집계 방식 |
+|----------|-----------|----------------|
+| `personal` (개인) | 기간 내 총 걸음수 또는 일평균 걸음수 | `workout_history` 기간 필터 → 유저별 합산 |
+| `party` (파티) | 기간 내 파티 합산 걸음수 | 파티원 전원 걸음수 합산 → 목표 초과 파티 선별 |
+| `streak` (연속) | 연속 운동 일수 | `public_profiles.streak` 컬럼 직접 조회 |
+
+---
+
+### ⚡ 이벤트 타입 2종
+
+#### 기간제 이벤트 (time-limited)
+
+```
+관리자가 시작일/종료일 설정 → 유저가 기간 내 조건 달성
+→ 이벤트 종료 후 관리자가 Admin 페이지에서 달성자 목록 확인
+→ 개별 지급 또는 "전체 지급" 버튼으로 일괄 보상 지급
+→ event_grants INSERT (granted_by = 관리자 ID)
+→ 유저 Step 보상탭에 보상 아이템 자동 해금
+```
+
+- 유저 화면: "달성 완료! 보상 지급 대기 중 🎉" 배지 + 관리자 지급 안내 메시지
+- 관리자 화면: 이벤트 만료 후 "달성자 확인" 버튼 → 바텀 시트에 달성자 목록 + 지급 버튼
+
+#### 고정 이벤트 (fixed / permanent)
+
+```
+관리자가 is_fixed = true 로 생성 → 기간 제한 없이 상시 운영
+→ 유저가 조건 달성 시 클라이언트에서 즉시 self-grant 실행
+→ event_grants INSERT (granted_by = 유저 자신)
+→ 보상 아이템 즉시 해금 — 관리자 개입 불필요
+```
+
+- 유저 화면: "해금됨! 🎉" 에메랄드 배지 + "아래 목록에서 보상을 선택하세요" 안내
+- RLS: `user_id = auth.uid() AND is_fixed = true` 조건부 INSERT 허용 정책 적용
+
+---
+
+### 🔑 RLS 정책
+
+| 테이블 | 정책 | 허용 대상 |
+|--------|------|-----------|
+| `events` | SELECT | 모든 유저 |
+| `events` | INSERT · UPDATE · DELETE | 관리자 (`is_admin = true`) |
+| `event_grants` | SELECT | 본인 레코드만 |
+| `event_grants` | INSERT (관리자 지급) | 관리자 |
+| `event_grants` | INSERT (self-grant) | 본인 + 고정 이벤트 조건 |
+| `workout_history` | SELECT | 관리자 (달성자 집계용) |
+
+---
+
+### 🔗 프론트엔드 연동 흐름
+
+#### 유저가 보상을 받는 과정
+
+```
+1. useEventGrants(user.id)
+   └─ fetchUserEventGrants() → event_grants 쿼리
+   └─ { grantedBubbleIds, grantedTitles } 반환
+
+2. useUnlockItems(workoutRecords, grantedBubbleIds)
+   └─ grantedBubbleIds에 포함된 아이템 → unlocked: true 강제 설정
+   └─ Step 보상탭 아이템 목록에 즉시 반영
+
+3. grantedTitles
+   └─ Step 보상탭 "이벤트 보상 칭호" 섹션에 별도 렌더링
+   └─ 일반 칭호와 동일하게 선택·적용 가능
+```
+
+#### 고정 이벤트 자동 지급 (Step.tsx)
+
+```typescript
+// 마운트/streak 변경 시 달성 여부 확인 후 중복 없이 self-grant
+const autoGrantedRef = useRef<Set<string>>(new Set());
+useEffect(() => {
+  byCategory.streak.forEach((event) => {
+    if (!event.isFixed) return;
+    if (consecutiveStreak < event.conditionValue) return;
+    if (autoGrantedRef.current.has(event.id)) return;
+    autoGrantedRef.current.add(event.id);
+    autoGrantFixedEvent(event.id, user.id, event.reward);
+  });
+}, [byCategory.streak, consecutiveStreak, user]);
+```
+
+---
+
+### 🛠️ Supabase 초기 설정
+
+이벤트 시스템을 처음 세팅할 때 SQL Editor에서 순서대로 실행합니다.
+
+```bash
+# 1. 테이블·RLS 생성
+supabase/events_system.sql
+
+# 2. 고정 이벤트 컬럼·self-grant 정책 추가
+supabase/add_is_fixed.sql
+```
+
+---
+
+### 🎯 관리자 운영 가이드
+
+#### 이벤트 만들기
+
+1. Admin → 이벤트 탭 → **+ 이벤트 추가** 버튼
+2. 제목·설명 입력
+3. 카테고리 선택: 개인 / 파티 / 연속
+4. 조건 선택: 총 걸음수 / 일평균 걸음수 / 연속 일수
+5. 보상 선택: 말풍선 ID 또는 칭호 텍스트 입력
+6. **고정 이벤트** 토글 ON → 기간 입력 생략, 상시 운영
+7. 저장 후 ON/OFF 토글로 즉시 활성화 제어
+
+#### 기간제 이벤트 보상 지급
+
+1. 이벤트 종료 후 해당 이벤트 카드의 **달성자 확인** 버튼 클릭
+2. 달성자 목록 바텀 시트에서 개별 **지급** 또는 상단 **전체 지급** 실행
+3. 이미 지급된 유저는 "지급됨" 표시로 중복 방지
+4. 파티 이벤트는 파티명 기준으로 그룹화하여 표시
 
 ---
 
