@@ -38,14 +38,15 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
 function ProtectedLayout() {
   const { user, userProfile, isLoading } = useUser();
 
-  const introShown = sessionStorage.getItem("intro_shown");
-  if (!introShown) {
-    sessionStorage.setItem("intro_shown", "1");
-    return <Navigate to="/intro" replace />;
-  }
-
   if (isLoading) return <LoadingScreen />;
-  if (!user) return <Navigate to="/auth" replace />;
+  if (!user) {
+    const introShown = sessionStorage.getItem("intro_shown");
+    if (!introShown) {
+      sessionStorage.setItem("intro_shown", "1");
+      return <Navigate to="/intro" replace />;
+    }
+    return <Navigate to="/auth" replace />;
+  }
   if (!userProfile) return <LoadingScreen />;
   if (!userProfile.nickname) return <Navigate to="/onboarding" replace />;
 
