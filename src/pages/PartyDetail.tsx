@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { FaUser } from "react-icons/fa";
+import { HiUserGroup } from "react-icons/hi";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { useUser } from "../context/UserContext";
 import { useActiveBubble } from "../context/ActiveBubbleContext";
@@ -972,6 +973,14 @@ export default function PartyDetail() {
         <h2 className="text-lg font-extrabold text-gray-800 truncate flex-1">
           {party.emoji} {party.name}
         </h2>
+        <button
+          onClick={() => navigate("/party")}
+          aria-label="파티 목록"
+          className="shrink-0 h-8 px-3 rounded-2xl bg-white shadow-sm flex items-center gap-1 text-gray-500 text-[11px] font-bold active:scale-95 transition"
+        >
+          <HiUserGroup className="text-sm" />
+          목록
+        </button>
       </div>
 
       <div className="flex-1 overflow-y-auto px-4 pb-6 flex flex-col gap-4">

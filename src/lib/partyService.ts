@@ -67,6 +67,16 @@ async function withLeaderNicknames(rows: any[]): Promise<Party[]> {
   }));
 }
 
+export async function getUserPartyId(userId: string): Promise<string | null> {
+  const { data } = await supabase
+    .from("party_members")
+    .select("party_id")
+    .eq("user_id", userId)
+    .limit(1)
+    .maybeSingle();
+  return (data as any)?.party_id ?? null;
+}
+
 export async function hasActivePartyMember(myUserId: string): Promise<boolean> {
   const { data: myMemberships } = await supabase
     .from("party_members")
