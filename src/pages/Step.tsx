@@ -1029,19 +1029,11 @@ export default function Step() {
                 {(["personal", "party", "streak"] as const).map((cat) => {
                   const catEvents = byCategory[cat];
                   if (catEvents.length === 0) return null;
-                  const catMeta = CATEGORY_META[cat];
                   return (
-                    <div key={cat}>
-                      <div className="flex items-center gap-2 mb-2 px-1">
-                        <span className={`text-xs font-extrabold px-2.5 py-1 rounded-full ${catMeta.bg} ${catMeta.color}`}>
-                          {catMeta.emoji} {catMeta.label}
-                        </span>
-                      </div>
-                      <div className="flex flex-col gap-3">
-                        {catEvents.map((event) => (
-                          <EventCard key={event.id} event={event} />
-                        ))}
-                      </div>
+                    <div key={cat} className="flex flex-col gap-3">
+                      {catEvents.map((event) => (
+                        <EventCard key={event.id} event={event} />
+                      ))}
                     </div>
                   );
                 })}
@@ -1060,19 +1052,11 @@ export default function Step() {
                 {(["personal", "party", "streak"] as const).map((cat) => {
                   const catEvents = pastByCategory[cat];
                   if (catEvents.length === 0) return null;
-                  const catMeta = CATEGORY_META[cat];
                   return (
-                    <div key={cat}>
-                      <div className="flex items-center gap-2 mb-2 px-1">
-                        <span className={`text-xs font-extrabold px-2.5 py-1 rounded-full ${catMeta.bg} ${catMeta.color}`}>
-                          {catMeta.emoji} {catMeta.label}
-                        </span>
-                      </div>
-                      <div className="flex flex-col gap-3 opacity-60">
-                        {catEvents.map((event) => (
-                          <EventCard key={event.id} event={event} />
-                        ))}
-                      </div>
+                    <div key={cat} className="flex flex-col gap-3 opacity-60">
+                      {catEvents.map((event) => (
+                        <EventCard key={event.id} event={event} />
+                      ))}
                     </div>
                   );
                 })}
