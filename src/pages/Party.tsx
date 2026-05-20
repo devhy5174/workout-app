@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { HiLockClosed, HiExclamationCircle, HiLogout, HiTrash } from "react-icons/hi";
+import { HiLockClosed, HiExclamationCircle, HiLogout, HiTrash, HiUserAdd, HiCheckCircle } from "react-icons/hi";
 import AlertModal from "../components/ui/AlertModal";
 import { PARTY_TAGS } from "../data/tags";
 import { validatePostText } from "../data/nicknameFilters";
@@ -791,67 +791,6 @@ function CreatePartyModal({
   );
 }
 
-function SuccessModal({ onClose }: { onClose: () => void }) {
-  return (
-    <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center px-6">
-      <div className="w-full max-w-sm bg-white rounded-3xl p-7 flex flex-col items-center gap-4 shadow-xl">
-        <span className="text-5xl">🎉</span>
-        <p className="font-extrabold text-gray-800 text-lg text-center">
-          파티가 생성됐어요!
-        </p>
-        <p className="text-sm text-gray-400 text-center">
-          내 파티 탭에서 확인할 수 있어요
-        </p>
-        <button
-          onClick={onClose}
-          className="w-full py-3 rounded-2xl bg-primary text-white text-sm font-extrabold active:scale-95 transition"
-        >
-          확인
-        </button>
-      </div>
-    </div>
-  );
-}
-
-function JoinConfirmModal({
-  partyName,
-  onConfirm,
-  onCancel,
-}: {
-  partyName: string;
-  onConfirm: () => void;
-  onCancel: () => void;
-}) {
-  return (
-    <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center px-6">
-      <div className="w-full max-w-sm bg-white rounded-3xl p-7 flex flex-col items-center gap-4 shadow-xl">
-        <span className="text-5xl">🎉</span>
-        <p className="font-extrabold text-gray-800 text-lg text-center">
-          파티에 참가할까요?
-        </p>
-        <p className="text-sm text-gray-400 text-center">
-          <span className="font-bold text-gray-600">"{partyName}"</span> 파티에
-          참가해요
-        </p>
-        <div className="flex gap-3 w-full">
-          <button
-            onClick={onCancel}
-            className="flex-1 py-3 rounded-2xl bg-gray-100 text-sm font-bold text-gray-500 active:scale-95 transition"
-          >
-            취소
-          </button>
-          <button
-            onClick={onConfirm}
-            className="flex-1 py-3 rounded-2xl bg-primary text-white text-sm font-extrabold active:scale-95 transition"
-          >
-            참가하기
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 
 
 type Tab = "neighbor" | "mine";
@@ -1145,7 +1084,13 @@ export default function Party() {
         />
       )}
       {showSuccessModal && (
-        <SuccessModal onClose={() => setShowSuccessModal(false)} />
+        <AlertModal
+          icon={HiCheckCircle}
+          iconClass="text-primary"
+          title="파티가 생성됐어요!"
+          message="내 파티 탭에서 확인할 수 있어요"
+          onConfirm={() => setShowSuccessModal(false)}
+        />
       )}
       {deleteTarget && (
         <AlertModal
@@ -1159,8 +1104,12 @@ export default function Party() {
         />
       )}
       {joinTarget && (
-        <JoinConfirmModal
-          partyName={joinTarget.name}
+        <AlertModal
+          icon={HiUserAdd}
+          iconClass="text-primary"
+          title="파티에 참가할까요?"
+          message={<><span className="font-bold text-gray-700">"{joinTarget.name}"</span> 파티에 참가해요</>}
+          confirmLabel="참가하기"
           onConfirm={handleJoinConfirm}
           onCancel={() => setJoinTarget(null)}
         />
