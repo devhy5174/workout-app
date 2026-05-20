@@ -339,7 +339,7 @@ export default function Step() {
     monthlyAverageSteps,
     consecutiveStreak,
   } = useUnlockItems(workoutRecords, grantedBubbleIds);
-  const { byCategory, activeEvents } = useEvents();
+  const { byCategory, activeEvents, hasNewEvents, markEventsSeen } = useEvents();
 
   // 고정 streak 이벤트 조건 달성 시 자동 지급
   const autoGrantedRef = useRef<Set<string>>(new Set());
@@ -391,6 +391,7 @@ export default function Step() {
   const selectTab = (key: Tab) => {
     setTab(key);
     setSearchParams({ tab: key }, { replace: true });
+    if (key === "events") markEventsSeen();
   };
 
   const tabs: { key: Tab; label: string }[] = [
@@ -423,11 +424,16 @@ export default function Step() {
           <button
             key={key}
             onClick={() => selectTab(key)}
-            className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition-all ${
+            className={`relative flex-1 py-2.5 rounded-xl text-sm font-bold transition-all ${
               tab === key ? "bg-primary text-white shadow-sm" : "text-gray-400"
             }`}
           >
             {label}
+            {key === "events" && hasNewEvents && tab !== "events" && (
+              <span className="absolute top-1 right-3 min-w-[16px] h-4 px-1 rounded-full bg-red-500 text-white text-[9px] font-extrabold flex items-center justify-center leading-none">
+                N
+              </span>
+            )}
           </button>
         ))}
       </div>

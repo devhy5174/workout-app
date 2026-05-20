@@ -25,6 +25,7 @@ import { WORKOUT_MBTI_DICTIONARY } from "../data/premiumReportData";
 import { HiBell } from "react-icons/hi";
 import { useNotifications } from "../hooks/useNotifications";
 import { NotificationDrawer } from "../components/notifications/NotificationDrawer";
+import { useEvents } from "../hooks/useEvents";
 
 type DisplayUser = {
   nickname: string;
@@ -134,6 +135,7 @@ export default function Home() {
     markAllAsRead,
     deleteNotification,
   } = useNotifications(user?.id ?? null);
+  const { hasNewEvents } = useEvents();
   const [bubbleMsg, setBubbleMsg] = useState(() =>
     getRandomMessage(activityType),
   );
@@ -297,6 +299,9 @@ const [activeUsers, setActiveUsers] = useState<DisplayUser[]>([]);
               <span className="absolute -top-0.5 -right-0.5 min-w-[14px] h-3.5 px-0.5 rounded-full bg-red-500 text-white text-[8px] font-bold flex items-center justify-center leading-none">
                 {unreadCount > 99 ? "99+" : unreadCount}
               </span>
+            )}
+            {hasNewEvents && unreadCount === 0 && (
+              <span className="absolute -top-0.5 -right-0.5 w-3 h-3 rounded-full bg-orange-400 border-2 border-white" />
             )}
           </button>
         </div>

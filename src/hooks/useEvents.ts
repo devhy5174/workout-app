@@ -1,10 +1,12 @@
-import { useMemo } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useEventsContext } from '../context/EventsContext';
 import type { AppEvent, EventCategory } from '../data/events';
 import { CATEGORY_META, CONDITION_META, REWARD_TYPE_META } from '../data/events';
 import { BUBBLE_PREVIEWS } from '../data/bubblePreviews';
 
 const today = new Date().toISOString().slice(0, 10);
+
+const EVENTS_SEEN_KEY = 'events_last_seen';
 
 export function getEventStatus(event: AppEvent) {
   if (!event.isActive) return { label: '비활성', color: 'text-gray-400 bg-gray-100' };
@@ -41,6 +43,19 @@ export function useEvents() {
   const { events, isLoading, addEvent, updateEvent, deleteEvent, toggleEvent, refresh } =
     useEventsContext();
 
+  const [, forceRender] = useState(0);
+
+  const hasNewEvents = useMemo(() => {
+    const raw = localStorage.getItem(EVENTS_SEEN_KEY);
+    const lastSeen = raw ? new Date(raw) : new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+    return events.some((e) => e.isActive && new Date(e.createdAt) > lastSeen);
+  }, [events]);
+
+  const markEventsSeen = useCallback(() => {
+    localStorage.setItem(EVENTS_SEEN_KEY, new Date().toISOString());
+    forceRender((n) => n + 1);
+  }, []);
+
   const activeEvents = useMemo(
     () =>
       events.filter(
@@ -65,6 +80,8 @@ export function useEvents() {
     isLoading,
     activeEvents,
     byCategory,
+    hasNewEvents,
+    markEventsSeen,
     addEvent,
     updateEvent,
     deleteEvent,
