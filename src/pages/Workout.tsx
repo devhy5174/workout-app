@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef, useCallback } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { FaPlay, FaPause, FaStop, FaUsers } from "react-icons/fa";
 import { useActivityType } from "../context/ActivityTypeContext";
@@ -12,6 +12,7 @@ import { FAKE_ACTIVE_USERS } from "../data/fakeActiveUsers";
 import { DIET_BY_CHARACTER } from "../data/characterWorkoutDiet";
 import { useTodayStats } from "../hooks/useTodayStats";
 import { notifyGoalReached } from "../utils/notificationTriggers";
+import WorkoutNative, { isNative } from "../lib/workoutNative";
 
 const WK_KEY = {
   state: "wk_state",
@@ -254,6 +255,7 @@ export default function Workout() {
 
   const handleStop = async () => {
     setState("done");
+    if (isNative()) WorkoutNative.stopWorkout().catch(() => {});
     await performSave();
     setShowModal(true);
   };
@@ -311,6 +313,7 @@ export default function Workout() {
   }, [state, user]);
 
   // 운동 시작/재개 시 resumeAt 저장, 정지/완료 시 제거
+  // 네이티브 앱이면 ForegroundService도 연동
   useEffect(() => {
     if (state === "running") {
       localStorage.setItem(WK_KEY.resumeAt, String(Date.now()));
@@ -319,6 +322,30 @@ export default function Workout() {
       localStorage.removeItem(WK_KEY.resumeAt);
     }
   }, [state, selectedActivityType]);
+
+  // 네이티브: 상태 변화에 따라 ForegroundService 제어
+  useEffect(() => {
+    if (!isNative()) return;
+    if (state === "running") {
+      WorkoutNative.startWorkout({
+        activityType: selectedActivityType?.type ?? "walker",
+        nickname: userProfile?.nickname ?? "",
+      }).catch(() => {});
+    } else if (state === "paused") {
+      WorkoutNative.pauseWorkout().catch(() => {});
+    }
+  }, [state]);
+
+  // 네이티브: ForegroundService에서 실시간 걸음수/시간 수신
+  useEffect(() => {
+    if (!isNative()) return;
+    let listener: { remove: () => void } | null = null;
+    WorkoutNative.addListener("workoutUpdate", (data) => {
+      setSteps(data.steps);
+      setElapsed(data.elapsed);
+    }).then((l) => { listener = l; }).catch(() => {});
+    return () => { listener?.remove(); };
+  }, []);
 
   // 걸음 수 증가 (유형별 페이스)
   useEffect(() => {

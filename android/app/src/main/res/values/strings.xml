@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">함께걸어요</string>
+    <string name="title_activity_main">함께걸어요</string>
+    <string name="package_name">com.devhy.walkwithme</string>
+    <string name="custom_url_scheme">com.devhy.walkwithme</string>
+</resources>
