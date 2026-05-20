@@ -678,12 +678,16 @@ export default function Step() {
               <button
                 type="button"
                 onClick={startTrial}
-                className="w-full rounded-2xl bg-gradient-to-r from-primary to-secondary px-5 py-4 flex items-center justify-between shadow-md active:scale-95 transition min-h-[44px]"
+                className="w-full rounded-2xl bg-gradient-to-r from-primary to-secondary px-5 py-7 flex items-center justify-between shadow-md active:scale-95 transition min-h-[44px]"
                 aria-label="프리미엄 7일 무료 체험하기"
               >
                 <div className="flex flex-col items-start gap-0.5">
-                  <span className="text-white font-extrabold text-sm">✨ 7일 무료 체험하기</span>
-                  <span className="text-white/70 text-[10px] font-semibold">모든 프리미엄 기능을 7일간 무료로!</span>
+                  <span className="text-white font-extrabold text-sm">
+                    ✨ 7일 무료 체험하기
+                  </span>
+                  <span className="text-white/70 text-[10px] font-semibold">
+                    모든 프리미엄 기능을 7일간 무료로!
+                  </span>
                 </div>
                 <span className="text-white font-extrabold text-xs bg-white/20 px-2.5 py-1 rounded-full shrink-0">
                   무료
@@ -692,7 +696,9 @@ export default function Step() {
             ) : (
               <div className="w-full rounded-2xl border border-primary/20 bg-primary/5 px-5 py-4 flex items-center justify-between min-h-[44px]">
                 <div className="flex flex-col items-start gap-0.5">
-                  <span className="text-sm font-extrabold text-primary">✨ 프리미엄 체험 중</span>
+                  <span className="text-sm font-extrabold text-primary">
+                    ✨ 프리미엄 체험 중
+                  </span>
                   <span className="text-[10px] font-semibold text-gray-400">
                     {trialDaysLeft}일 후 체험이 종료돼요
                   </span>
