@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import CommunityWriteModal from "../components/CommunityWriteModal";
 import AlertModal from "../components/ui/AlertModal";
 import { HiTrash } from "react-icons/hi";
@@ -40,9 +40,20 @@ function formatSteps(steps: number): string {
 }
 
 // ─── 발자국 아이콘 ─────────────────────────────────────────
-function FootprintIcon({ className = "" }: { className?: string }) {
+function FootprintIcon({
+  className = "",
+  style,
+}: {
+  className?: string;
+  style?: React.CSSProperties;
+}) {
   return (
-    <svg className={className} viewBox="0 0 24 24" fill="currentColor">
+    <svg
+      className={className}
+      style={style}
+      viewBox="0 0 24 24"
+      fill="currentColor"
+    >
       <ellipse cx="8.5" cy="7" rx="2.5" ry="3.5" />
       <ellipse cx="15.5" cy="10" rx="2.5" ry="3.5" />
       <ellipse cx="6" cy="14" rx="2" ry="2.8" transform="rotate(-15 6 14)" />
@@ -96,16 +107,16 @@ function PostCard({
           ))}
         </div>
         <div
-          className="flex items-center gap-1.5 rounded-full px-3 py-1.5 flex-shrink-0"
-          style={{ background: "var(--color-primary-light)" }}
+          className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 flex-shrink-0 ${frame.premium ? `bg-white ${frame.stepsBorderClass} ${frame.labelColorClass}` : ""}`}
+          style={frame.premium ? undefined : { background: "var(--color-primary-light)" }}
         >
           <FootprintIcon
-            className="w-3.5 h-3.5
-            text-var(--color-primary) "
+            className="w-3.5 h-3.5"
+            style={frame.premium ? undefined : { color: "var(--color-primary)" }}
           />
           <span
             className="text-[14px] font-extrabold"
-            style={{ color: "var(--color-primary)" }}
+            style={frame.premium ? undefined : { color: "var(--color-primary)" }}
           >
             {post.steps}
           </span>
@@ -121,7 +132,9 @@ function PostCard({
 
       {/* 하단 바: 칭호 + 버튼 */}
       <div className="flex items-center justify-between pt-2.5 border-t border-stone-50">
-        <span className="text-[11px] text-stone-400 font-light">
+        <span
+          className={`text-[11px]  ${frame.premium ? frame.labelColorClass : "text-stone-500"} text-bold`}
+        >
           {post.title}
         </span>
         <div className="flex items-center gap-1.5">
