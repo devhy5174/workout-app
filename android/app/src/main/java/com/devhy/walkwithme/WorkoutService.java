@@ -218,18 +218,25 @@ public class WorkoutService extends Service implements SensorEventListener {
             .build();
     }
 
-    // Capacitor 빌드 후 assets/public/assets/images/characters/ 경로에서 로드
+    // Vite 빌드 시 해시가 붙으므로 prefix로 스캔해서 찾음
+    // 예: character_01-CYcv8PvW.webp
     private Bitmap loadCharacterBitmap(String charId) {
         if (charId == null || charId.isEmpty()) return null;
-        String path = "public/assets/images/characters/" + charId + ".webp";
         try {
-            InputStream is = getAssets().open(path);
-            Bitmap raw = BitmapFactory.decodeStream(is);
-            is.close();
-            return toCircleBitmap(raw);
+            String[] files = getAssets().list("public/assets");
+            if (files == null) return null;
+            for (String filename : files) {
+                if (filename.startsWith(charId + "-") && filename.endsWith(".webp")) {
+                    InputStream is = getAssets().open("public/assets/" + filename);
+                    Bitmap raw = BitmapFactory.decodeStream(is);
+                    is.close();
+                    return toCircleBitmap(raw);
+                }
+            }
         } catch (Exception e) {
             return null;
         }
+        return null;
     }
 
     private Bitmap toCircleBitmap(Bitmap src) {
