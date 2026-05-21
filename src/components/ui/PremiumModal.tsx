@@ -38,22 +38,22 @@ export default function PremiumModal({
           <p className="text-sm text-gray-500 leading-relaxed">{description}</p>
         </div>
 
-        <div className="flex flex-col gap-2 w-full">
-          <button
-            type="button"
-            onClick={handleSubscribe}
-            className="w-full bg-gray-900 text-white py-4 rounded-2xl font-black shadow-lg"
-            aria-label="프리미엄 구독 페이지로 이동"
-          >
-            👑 프리미엄 구독하기
-          </button>
+        <div className="flex gap-3 w-full">
           <button
             type="button"
             onClick={onClose}
-            className="w-full py-2.5 rounded-2xl font-bold text-sm text-gray-400 bg-gray-50"
+            className="flex-1 py-3 rounded-2xl font-bold text-sm text-gray-500 bg-gray-100"
             aria-label="닫기"
           >
             닫기
+          </button>
+          <button
+            type="button"
+            onClick={handleSubscribe}
+            className="flex-1 py-3 rounded-2xl font-black text-sm text-white bg-gray-900 shadow-lg"
+            aria-label="프리미엄 구독 페이지로 이동"
+          >
+            👑 프리미엄 보러가기
           </button>
         </div>
       </div>

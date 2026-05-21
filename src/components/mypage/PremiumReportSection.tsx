@@ -1,6 +1,7 @@
 import React, { useState } from "react";
-import { HiLockClosed, HiMap, HiInformationCircle } from "react-icons/hi";
+import { HiMap, HiInformationCircle, HiLockClosed } from "react-icons/hi";
 import MbtiInfoModal from "../ui/MbtiInfoModal";
+import PremiumModal from "../ui/PremiumModal";
 import { HiMapPin, HiFire, HiArrowTrendingUp, HiClock } from "react-icons/hi2";
 
 const CARD_ICONS: Record<
@@ -37,8 +38,16 @@ const PremiumReportSection: React.FC<PremiumSectionProps> = ({
   onUpgrade,
   workouts,
 }) => {
-  const [drillStyle, setDrillStyle] = useState<DrillStyle>("adult");
+  const [drillStyle, setDrillStyle] = useState<DrillStyle>(
+    () => (localStorage.getItem("drill_style") as DrillStyle) ?? "adult",
+  );
+
+  function changeDrillStyle(style: DrillStyle) {
+    setDrillStyle(style);
+    localStorage.setItem("drill_style", style);
+  }
   const [showMbtiInfo, setShowMbtiInfo] = useState(false);
+  const [showPremiumModal, setShowPremiumModal] = useState(false);
 
   // 월간 합산
   const totalDistance = workouts.reduce((sum, w) => sum + w.distance, 0);
@@ -76,9 +85,12 @@ const PremiumReportSection: React.FC<PremiumSectionProps> = ({
 
   const typeCounts: Record<string, number> = {};
   workouts.forEach((w) => {
-    if (w.workout_type) typeCounts[w.workout_type] = (typeCounts[w.workout_type] ?? 0) + 1;
+    if (w.workout_type)
+      typeCounts[w.workout_type] = (typeCounts[w.workout_type] ?? 0) + 1;
   });
-  const dominantWorkoutType = Object.entries(typeCounts).sort((a, b) => b[1] - a[1])[0]?.[0];
+  const dominantWorkoutType = Object.entries(typeCounts).sort(
+    (a, b) => b[1] - a[1],
+  )[0]?.[0];
 
   const mbtiCode = calculateWorkoutMBTI({
     workoutDays,
@@ -109,88 +121,80 @@ const PremiumReportSection: React.FC<PremiumSectionProps> = ({
           <div className="flex items-center gap-2">
             <span className="text-xl">👑</span>
             <h2 className="text-lg font-extrabold text-gray-800">
-              월간 리포트 & 유산소 MBTI
+              이달의 운동 리포트
             </h2>
           </div>
+          {isPremium ? (
+            <div className="flex items-center bg-gray-100 rounded-xl p-1 gap-1">
+              <button
+                onClick={() => changeDrillStyle("mz")}
+                className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${drillStyle === "mz" ? "bg-white text-gray-800 shadow-sm" : "text-gray-400"}`}
+              >
+                🔥 매운맛
+              </button>
+              <button
+                onClick={() => changeDrillStyle("adult")}
+                className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${drillStyle === "adult" ? "bg-white text-gray-800 shadow-sm" : "text-gray-400"}`}
+              >
+                ☕ 순한맛
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={() => setShowPremiumModal(true)}
+              className="flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-bold text-white shadow-sm"
+              style={{
+                background:
+                  "linear-gradient(135deg, var(--color-primary), var(--color-secondary))",
+              }}
+            >
+              <HiLockClosed className="text-[10px]" />
+              프리미엄 기록 분석
+            </button>
+          )}
         </div>
 
-        <div className="relative">
-          {/* 프리미엄 blur */}
-
-          <div
-            className={`space-y-4 transition-all duration-500 ${
-              !isPremium ? "blur-md pointer-events-none select-none" : ""
-            }`}
-          >
-            {/* 유산소 mbti */}
-            <div>
-              {/* 섹션 제목 */}
-              <div className="flex items-center gap-1.5 mb-3 px-1">
-                <span className="text-base font-extrabold text-gray-800">
-                  📊 유산소 MBTI
-                </span>
+        {isPremium ? (
+          <div className="space-y-4">
+            {/* 유산소 MBTI — 컴팩트 뱃지 */}
+            <div className="bg-white rounded-2xl px-4 py-3 shadow-sm border border-gray-100">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm">📊</span>
+                  <span className="text-xs font-bold text-gray-400">
+                    유산소 MBTI
+                  </span>
+                  <span className="font-black text-gray-800 text-sm">
+                    {mbtiCode}
+                  </span>
+                  <span className="text-xs text-gray-500 font-semibold">
+                    · {badge?.title} {badge?.emoji}
+                  </span>
+                </div>
                 <button
                   onClick={() => setShowMbtiInfo(true)}
-                  className="text-gray-400 hover:text-gray-600 transition-colors"
+                  className="text-gray-300 hover:text-gray-500 transition-colors"
                   aria-label="유산소 MBTI 안내"
                 >
-                  <HiInformationCircle className="text-lg" />
+                  <HiInformationCircle className="text-base" />
                 </button>
               </div>
-
-              <div className="relative bg-gradient-to-br from-indigo-500 to-purple-600 p-6 rounded-3xl text-white">
-                <div className="flex items-start mb-6">
-                  <div>
-                    <p className="text-indigo-100 text-xs font-bold mb-1">
-                      MONTHLY STYLE
-                    </p>
-                    <h3 className="text-2xl font-black">
-                      {mbtiCode} {badge?.emoji}
-                    </h3>
-                    <p className="text-sm text-indigo-100 mt-1">
-                      {badge?.title}{" "}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="bg-white/10 rounded-2xl p-5 backdrop-blur-sm">
-                  <p className="text-sm leading-relaxed text-indigo-50">
-                    {badge?.description}
-                  </p>
-                </div>
-              </div>
+              {badge?.description && (
+                <p
+                  className="mt-2 text-xs text-gray-500 leading-relaxed pl-1 underline underline-offset-[3px] decoration-2"
+                  style={{ textDecorationColor: "var(--color-primary)" }}
+                >
+                  ✓ {badge.description}
+                </p>
+              )}
             </div>
+
             {/* 리포트 카드 */}
             <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
-              <div className="flex items-center justify-between mb-5">
-                <div className="flex items-center gap-2 text-primary font-bold">
-                  <HiMap />
-                  <span>이달의 운동 분석</span>
-                </div>
-                <div className="flex items-center bg-gray-100 rounded-xl p-1 gap-1">
-                  <button
-                    onClick={() => setDrillStyle("mz")}
-                    className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${
-                      drillStyle === "mz"
-                        ? "bg-white text-gray-800 shadow-sm"
-                        : "text-gray-400"
-                    }`}
-                  >
-                    🔥 매운맛
-                  </button>
-                  <button
-                    onClick={() => setDrillStyle("adult")}
-                    className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${
-                      drillStyle === "adult"
-                        ? "bg-white text-gray-800 shadow-sm"
-                        : "text-gray-400"
-                    }`}
-                  >
-                    ☕ 순한맛
-                  </button>
-                </div>
+              <div className="flex items-center gap-2 text-primary font-bold mb-5">
+                <HiMap />
+                <span>이달의 운동 분석</span>
               </div>
-
               <div className="flex flex-col gap-3">
                 {cards.map((card) => (
                   <div
@@ -223,34 +227,92 @@ const PremiumReportSection: React.FC<PremiumSectionProps> = ({
               </div>
             </div>
           </div>
-
-          {/* 무료 유저 blur overlay */}
-          {!isPremium && (
-            <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-white/10 px-6 text-center">
-              <div className="bg-white p-4 rounded-full shadow-xl mb-4">
-                <HiLockClosed className="text-3xl text-amber-500" />
+        ) : (
+          /* 비프리미엄 — 미리보기 카드 */
+          <div className="space-y-3">
+            {/* MBTI 미리보기 */}
+            {/* 유산소 MBTI — 컴팩트 뱃지 */}
+            <div className="bg-white rounded-2xl px-4 py-3 shadow-sm border border-gray-100 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="text-sm">📊</span>
+                <span className="text-xs font-bold text-gray-400">
+                  유산소 MBTI
+                </span>
               </div>
-              <p className="text-lg font-black text-gray-800 mb-2">
-                나의 운동 스타일이 궁금하신가요?
-              </p>
-              <p className="text-sm text-gray-500 mb-6">
-                프리미엄 구독 시,
-                <br />
-                재밌는 월간리포트와 나의 숨겨진 유산소 MBTI를 <br />
-                확인할 수 있습니다 👀
-              </p>
               <button
-                onClick={onUpgrade}
-                className="w-full max-w-[280px] bg-gray-900 text-white py-4 rounded-2xl font-black shadow-lg"
+                onClick={() => setShowMbtiInfo(true)}
+                className="text-gray-300 hover:text-gray-500 transition-colors"
+                aria-label="유산소 MBTI 안내"
               >
-                👑 프리미엄 구독하기
+                <HiInformationCircle className="text-base" />
               </button>
             </div>
-          )}
-        </div>
+            {/* 리포트 미리보기 */}
+            <div className="bg-white p-5 rounded-3xl shadow-sm border border-gray-100">
+              <div className="flex items-center gap-2 mb-4">
+                <HiMap className="text-gray-300" />
+                <span className="text-sm font-bold text-gray-400">
+                  이달의 운동 분석
+                </span>
+              </div>
+              <div className="flex flex-col gap-3">
+                {[
+                  {
+                    icon: HiMapPin,
+                    label: "이달 이동 거리",
+                    color: "text-blue-300",
+                    bg: "bg-blue-50",
+                  },
+                  {
+                    icon: HiFire,
+                    label: "이달 칼로리",
+                    color: "text-orange-300",
+                    bg: "bg-orange-50",
+                  },
+                  {
+                    icon: HiArrowTrendingUp,
+                    label: "이달 걸음 수",
+                    color: "text-green-300",
+                    bg: "bg-green-50",
+                  },
+                  {
+                    icon: HiClock,
+                    label: "이달 운동 시간",
+                    color: "text-purple-300",
+                    bg: "bg-purple-50",
+                  },
+                ].map(({ icon: Icon, label, color, bg }) => (
+                  <div
+                    key={label}
+                    className="bg-gray-50 rounded-2xl px-4 py-3 flex items-center gap-4"
+                  >
+                    <div
+                      className={`w-10 h-10 rounded-2xl flex items-center justify-center flex-shrink-0 ${bg}`}
+                    >
+                      <Icon className={`text-xl ${color}`} />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-xs text-gray-400 font-medium mb-1.5">
+                        {label}
+                      </p>
+                      <div className="h-2 bg-gray-200 rounded-full w-2/3" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {showMbtiInfo && <MbtiInfoModal onClose={() => setShowMbtiInfo(false)} />}
+      {showPremiumModal && (
+        <PremiumModal
+          onClose={() => setShowPremiumModal(false)}
+          title="프리미엄 기록 분석"
+          description="실제로 기록된 데이터로 재밌는 월간리포트와 나의 숨겨진 유산소 MBTI를 확인할 수 있습니다."
+        />
+      )}
     </>
   );
 };
