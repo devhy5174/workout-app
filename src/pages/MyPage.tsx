@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import Diet from "./Diet";
 import InfoTab from "../components/mypage/InfoTab";
@@ -24,6 +24,21 @@ export default function MyPage() {
   const [activeTab, setActiveTab] = useState<Tab>(
     isValidTab(initialTab) ? initialTab : "info",
   );
+
+  // hash 기반 섹션 스크롤 (예: #mbti-report)
+  useEffect(() => {
+    const hash = window.location.hash.slice(1);
+    if (!hash) return;
+    const tryScroll = (attempts: number) => {
+      const el = document.getElementById(hash);
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "start" });
+      } else if (attempts > 0) {
+        setTimeout(() => tryScroll(attempts - 1), 150);
+      }
+    };
+    setTimeout(() => tryScroll(5), 100);
+  }, [activeTab]);
 
   return (
     <div className="flex flex-col h-full bg-bg">

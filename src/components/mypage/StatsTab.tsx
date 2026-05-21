@@ -301,11 +301,13 @@ export default function StatsTab() {
       <WorkoutCalendar workoutRecords={workoutRecords} />
 
       {/* 프리미엄 월간 리포트 */}
+      <div id="mbti-report">
       <PremiumReportSection
         isPremium={isPremium}
         onUpgrade={() => navigate(getPremiumTabPath())}
         workouts={workoutRecords}
       />
+      </div>
     </div>
   );
 }

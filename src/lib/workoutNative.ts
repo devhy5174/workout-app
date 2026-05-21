@@ -1,4 +1,4 @@
-import { registerPlugin } from "@capacitor/core";
+import { registerPlugin, Capacitor } from "@capacitor/core";
 
 export interface WorkoutPlugin {
   startWorkout(options: { activityType: string; nickname: string }): Promise<void>;
@@ -20,13 +20,8 @@ export interface WorkoutUpdate {
 
 const WorkoutNative = registerPlugin<WorkoutPlugin>("Workout");
 
-// Android 네이티브 앱인지 확인
 export function isNative(): boolean {
-  return typeof (window as unknown as { Capacitor?: { isNative?: boolean } })
-    .Capacitor?.isNative === "boolean"
-    ? (window as unknown as { Capacitor?: { isNative?: boolean } }).Capacitor!
-        .isNative!
-    : false;
+  return Capacitor.isNativePlatform();
 }
 
 export default WorkoutNative;

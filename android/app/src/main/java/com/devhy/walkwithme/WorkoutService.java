@@ -194,6 +194,7 @@ public class WorkoutService extends Service implements SensorEventListener {
                 .bigText(lineA + "\n" + lineB))
             .setOngoing(true)
             .setOnlyAlertOnce(true)
+            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .setContentIntent(piOpen)
             .addAction(0, isPaused ? "▶ 재개" : "⏸ 일시정지", piPause)
             .addAction(0, "■ 종료", piStop)

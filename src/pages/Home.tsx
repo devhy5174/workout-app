@@ -22,6 +22,7 @@ import { PartyHighlightTicker } from "../components/ui/PartyHighlightTicker";
 import WeatherWidget from "../components/ui/WeatherWidget";
 import { calculateWorkoutMBTI } from "../utils/premiumMonthlyReportUtils";
 import { WORKOUT_MBTI_DICTIONARY } from "../data/premiumReportData";
+import WorkoutMbtiCard from "../components/home/WorkoutMbtiCard";
 import { HiBell } from "react-icons/hi";
 import { useNotifications } from "../hooks/useNotifications";
 import { NotificationDrawer } from "../components/notifications/NotificationDrawer";
@@ -267,6 +268,12 @@ const [activeUsers, setActiveUsers] = useState<DisplayUser[]>([]);
       if (hour >= 6 && hour <= 10) morningCount++;
       if (hour >= 19 && hour <= 23) nightCount++;
     });
+    const typeCounts: Record<string, number> = {};
+    monthly.forEach((w) => {
+      if (w.workout_type) typeCounts[w.workout_type] = (typeCounts[w.workout_type] ?? 0) + 1;
+    });
+    const dominantWorkoutType = Object.entries(typeCounts).sort((a, b) => b[1] - a[1])[0]?.[0];
+
     const code = calculateWorkoutMBTI({
       workoutDays: uniqueDays.size,
       weekendWorkoutCount: weekendCount,
@@ -276,6 +283,7 @@ const [activeUsers, setActiveUsers] = useState<DisplayUser[]>([]);
       totalCalories,
       morningWorkoutCount: morningCount,
       nightWorkoutCount: nightCount,
+      dominantWorkoutType,
     });
     const entry =
       WORKOUT_MBTI_DICTIONARY[code as keyof typeof WORKOUT_MBTI_DICTIONARY];
@@ -640,32 +648,11 @@ const [activeUsers, setActiveUsers] = useState<DisplayUser[]>([]);
         )}
       </div>
 
-      {/* 유산소 MBTI 미니 카드 — 프리미엄 전용 */}
-      {isPremium && mbtiData && (
-        <button
-          type="button"
-          onClick={() => navigate("/mypage?tab=stats")}
-          className="mx-4 mt-3 w-auto bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl px-4 py-3 flex items-center gap-3 active:scale-95 transition-transform text-left"
-          aria-label="유산소 MBTI 통계 페이지로 이동"
-        >
-          <div className="flex flex-col flex-1 min-w-0">
-            <p className="text-indigo-200 text-[10px] font-bold mb-0.5">
-              이번달 유산소 MBTI
-            </p>
-            <div className="flex items-center gap-2">
-              <span className="text-white font-black text-base">
-                {mbtiData.code}
-              </span>
-              <span className="text-indigo-100 text-xs font-semibold truncate">
-                {mbtiData.badge?.title} {mbtiData.badge?.emoji}
-              </span>
-            </div>
-          </div>
-          <span className="text-white/50 text-xs font-bold flex-shrink-0">
-            통계 보기 →
-          </span>
-        </button>
-      )}
+      {/* 유산소 MBTI 카드 — 자가선택(무료) + 실제기록(프리미엄) */}
+      <WorkoutMbtiCard
+        isPremium={isPremium}
+        premiumMbtiCode={mbtiData?.code ?? null}
+      />
 
       {/* 파티 활동 카드 */}
       <div className="mx-4 mt-4 bg-white rounded-3xl shadow-sm">

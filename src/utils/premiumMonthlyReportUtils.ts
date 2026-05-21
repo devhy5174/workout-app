@@ -4,7 +4,16 @@ import {
   STEP_MESSAGES,
 } from "../data/premiumReportData";
 
-export type WorkoutMBTI = "ERFM" | "ERFN" | "EWDM" | "WWDN" | "WRFN" | "EWFM";
+export type WorkoutMBTI =
+  | "ERFM" | "ERFN" | "ERDM" | "ERDN"
+  | "EWFM" | "EWFN" | "EWDM" | "EWDN"
+  | "WRFM" | "WRFN" | "WRDM" | "WRDN"
+  | "WWFM" | "WWFN" | "WWDM" | "WWDN";
+
+// power_walker → R(스피드형), hiker → W(레저형)
+export function activityTypeToMbtiAxis(type: string): "R" | "W" {
+  return type === "runner" || type === "power_walker" ? "R" : "W";
+}
 
 export type DrillStyle = "mz" | "adult";
 
@@ -65,6 +74,7 @@ export function calculateWorkoutMBTI({
   totalCalories,
   morningWorkoutCount,
   nightWorkoutCount,
+  dominantWorkoutType,
 }: {
   workoutDays: number;
   weekendWorkoutCount: number;
@@ -74,11 +84,14 @@ export function calculateWorkoutMBTI({
   totalCalories: number;
   morningWorkoutCount: number;
   nightWorkoutCount: number;
+  dominantWorkoutType?: string;
 }) {
   const frequency =
     workoutDays >= 15 || weekdayWorkoutCount > weekendWorkoutCount ? "E" : "W";
 
-  const speed = averageSpeed >= 7 ? "R" : "W";
+  const speed = dominantWorkoutType
+    ? activityTypeToMbtiAxis(dominantWorkoutType)
+    : averageSpeed >= 7 ? "R" : "W";
 
   const caloriePerKm = totalCalories / Math.max(totalDistance, 1);
   const purpose = caloriePerKm > 80 ? "F" : "D";

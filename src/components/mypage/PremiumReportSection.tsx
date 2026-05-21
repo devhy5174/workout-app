@@ -73,6 +73,12 @@ const PremiumReportSection: React.FC<PremiumSectionProps> = ({
     if (hour >= 19 && hour <= 23) nightWorkoutCount++;
   });
 
+  const typeCounts: Record<string, number> = {};
+  workouts.forEach((w) => {
+    if (w.workout_type) typeCounts[w.workout_type] = (typeCounts[w.workout_type] ?? 0) + 1;
+  });
+  const dominantWorkoutType = Object.entries(typeCounts).sort((a, b) => b[1] - a[1])[0]?.[0];
+
   const mbtiCode = calculateWorkoutMBTI({
     workoutDays,
     weekendWorkoutCount,
@@ -82,6 +88,7 @@ const PremiumReportSection: React.FC<PremiumSectionProps> = ({
     totalCalories,
     morningWorkoutCount,
     nightWorkoutCount,
+    dominantWorkoutType,
   });
 
   const badgeEntry =
