@@ -27,7 +27,7 @@ function mergeWithFakes(realPosts: CommunityPost[]): CommunityPost[] {
 
 export function useCommunity() {
   const { user } = useUser();
-  const [realPosts, setRealPosts] = useState<CommunityPost[]>([]);
+  const [, setRealPosts] = useState<CommunityPost[]>([]);
   const [posts, setPosts] = useState<CommunityPost[]>([]);
   const [myPosts, setMyPosts] = useState<CommunityPost[]>([]);
   const [isLoading, setIsLoading] = useState(true);
