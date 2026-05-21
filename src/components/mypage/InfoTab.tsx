@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { IoFootsteps, IoLocationSharp, IoFlame } from "react-icons/io5";
 import { useUser } from "../../context/UserContext";
 import { useActivityType } from "../../context/ActivityTypeContext";
 import { useCharacter } from "../../context/CharacterContext";
@@ -540,33 +541,29 @@ export default function InfoTab() {
               label: "걸음수",
               value: todayStats.steps.toLocaleString(),
               unit: "보",
-              emoji: "👟",
+              icon: <IoFootsteps className="text-2xl text-emerald-500" />,
             },
             {
               label: "거리",
               value: todayStats.distance.toFixed(2),
               unit: "km",
-              emoji: "📍",
+              icon: <IoLocationSharp className="text-2xl text-blue-500" />,
             },
             {
               label: "칼로리",
               value: Math.round(todayStats.calories).toLocaleString(),
               unit: "kcal",
-              emoji: "🔥",
+              icon: <IoFlame className="text-2xl text-orange-500" />,
             },
-          ].map(({ label, value, unit, emoji }) => (
+          ].map(({ label, value, unit, icon }) => (
             <div
               key={label}
-              className="flex flex-col items-center bg-gray-50 rounded-2xl py-4 gap-1"
+              className="flex flex-col items-center bg-gray-50 rounded-2xl py-5 gap-2"
             >
-              <span className="text-xl">{emoji}</span>
-              <p
-                className="text-lg font-extrabold leading-tight"
-                style={{ color: "var(--color-primary)" }}
-              >
-                {value}
+              {icon}
+              <p className="text-lg font-extrabold leading-tight text-gray-800">
+                {value}<span className="text-xs text-gray-400 font-normal ml-0.5">{unit}</span>
               </p>
-              <p className="text-[10px] text-gray-400 font-bold">{unit}</p>
               <p className="text-[10px] text-gray-400">{label}</p>
             </div>
           ))}

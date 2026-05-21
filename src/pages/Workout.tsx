@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { FaPlay, FaPause, FaStop, FaUsers } from "react-icons/fa";
+import { IoTime, IoFootsteps, IoLocationSharp, IoFlame } from "react-icons/io5";
 import { useActivityType } from "../context/ActivityTypeContext";
 import { useUser } from "../context/UserContext";
 import { getAvatarCharacterById } from "../data/avatarCharacters";
@@ -405,11 +406,37 @@ export default function Workout() {
     return () => clearInterval(id);
   }, [state]);
 
+  const statIcon = (
+    Icon: React.ComponentType<{ className?: string }>,
+    _bg: string,
+    color: string,
+  ) => <Icon className={`text-xl ${color}`} />;
+
   const stats = [
-    { label: "시간", value: formatTime(elapsed), unit: "시간", icon: "⏱️" },
-    { label: "걸음수", value: steps.toLocaleString(), unit: "보", icon: "👟" },
-    { label: "거리", value: distance.toFixed(2), unit: "km", icon: "📍" },
-    { label: "칼로리", value: String(calories), unit: "kcal", icon: "🔥" },
+    {
+      label: "시간",
+      value: formatTime(elapsed),
+      unit: "시간",
+      icon: statIcon(IoTime, "bg-violet-100", "text-violet-500"),
+    },
+    {
+      label: "걸음수",
+      value: steps.toLocaleString(),
+      unit: "보",
+      icon: statIcon(IoFootsteps, "bg-emerald-100", "text-emerald-500"),
+    },
+    {
+      label: "거리",
+      value: distance.toFixed(2),
+      unit: "km",
+      icon: statIcon(IoLocationSharp, "bg-blue-100", "text-blue-500"),
+    },
+    {
+      label: "칼로리",
+      value: String(calories),
+      unit: "kcal",
+      icon: statIcon(IoFlame, "bg-orange-100", "text-orange-500"),
+    },
   ];
 
   return (
@@ -693,8 +720,8 @@ export default function Workout() {
               key={s.label}
               className="bg-white rounded-2xl p-3 flex flex-col items-center gap-1 shadow-sm"
             >
-              <span className="text-lg">{s.icon}</span>
-              <p className="font-extrabold text-gray-800 text-sm leading-none">
+              {s.icon}
+              <p className="font-extrabold text-gray-800 text-base leading-none mt-1">
                 {s.value}
               </p>
               <p className="text-[10px] text-gray-400">{s.unit || s.label}</p>
@@ -924,26 +951,33 @@ export default function Workout() {
 
                 <div className="px-6 py-5 flex flex-col gap-3">
                   {[
-                    { icon: "⏱️", label: "운동 시간", value: durationLabel },
-
                     {
-                      icon: "📍",
+                      icon: <IoTime className="text-xl text-violet-500" />,
+                      label: "운동 시간",
+                      value: durationLabel,
+                    },
+                    {
+                      icon: <IoLocationSharp className="text-xl text-blue-500" />,
                       label: "거리",
                       value: `${distance.toFixed(2)} km`,
                     },
                     {
-                      icon: "👟",
+                      icon: <IoFootsteps className="text-xl text-emerald-500" />,
                       label: "걸음 수",
                       value: `${steps.toLocaleString()} 보`,
                     },
-                    { icon: "🔥", label: "칼로리", value: `${calories} kcal` },
+                    {
+                      icon: <IoFlame className="text-xl text-orange-500" />,
+                      label: "칼로리",
+                      value: `${calories} kcal`,
+                    },
                   ].map((row) => (
                     <div
                       key={row.label}
                       className="flex items-center justify-between py-2 border-b border-gray-50"
                     >
                       <div className="flex items-center gap-2">
-                        <span className="text-lg">{row.icon}</span>
+                        {row.icon}
                         <span className="text-sm text-gray-500 font-semibold">
                           {row.label}
                         </span>
