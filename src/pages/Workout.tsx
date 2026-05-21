@@ -8,7 +8,7 @@ import { activityTypes } from "../data/activityTypes";
 import { storage } from "../utils/storage";
 import { startSession, updateSession, endSession } from "../lib/sessionService";
 import { useActiveBubble } from "../context/ActiveBubbleContext";
-import { FAKE_ACTIVE_USERS } from "../data/fakeActiveUsers";
+import { FAKE_ACTIVE_USERS } from "../data/fakeUsers";
 import { DIET_BY_CHARACTER } from "../data/characterWorkoutDiet";
 import { useTodayStats } from "../hooks/useTodayStats";
 import { notifyGoalReached } from "../utils/notificationTriggers";
@@ -82,8 +82,7 @@ export default function Workout() {
   const navigate = useNavigate();
   const { selectedActivityType, selectedId, selectActivityType } =
     useActivityType();
-  const { user, userGoal, saveWorkout, userProfile } =
-    useUser();
+  const { user, userGoal, saveWorkout, userProfile } = useUser();
   const { todayStats } = useTodayStats(user?.id ?? null);
   const { selectedBubbleId } = useActiveBubble();
 
@@ -105,7 +104,9 @@ export default function Workout() {
   const isSaved = useRef(false);
   const wakeLockRef = useRef<WakeLockSentinel | null>(null);
   const stepsRef = useRef(steps);
-  useEffect(() => { stepsRef.current = steps; }, [steps]);
+  useEffect(() => {
+    stepsRef.current = steps;
+  }, [steps]);
 
   // 링 주변 공전할 친구 2명
   const buddies = useMemo(() => {
@@ -267,12 +268,17 @@ export default function Workout() {
     if (!resumeAt) return;
     const missedSec = Math.floor((Date.now() - resumeAt) / 1000);
     if (missedSec <= 2) return;
-    const actType = localStorage.getItem(WK_KEY.activityType) ?? selectedActivityType?.type ?? "walker";
-    const missedSteps = Math.round(missedSec * (STEPS_PER_SEC[actType] ?? STEPS_PER_SEC.walker));
+    const actType =
+      localStorage.getItem(WK_KEY.activityType) ??
+      selectedActivityType?.type ??
+      "walker";
+    const missedSteps = Math.round(
+      missedSec * (STEPS_PER_SEC[actType] ?? STEPS_PER_SEC.walker),
+    );
     setElapsed((prev) => prev + missedSec);
     setSteps((prev) => prev + missedSteps);
     localStorage.removeItem(WK_KEY.resumeAt);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Wake Lock: 운동 중 화면 자동 꺼짐 방지
@@ -283,15 +289,21 @@ export default function Workout() {
       return;
     }
     if (!("wakeLock" in navigator)) return;
-    navigator.wakeLock.request("screen").then((lock) => {
-      wakeLockRef.current = lock;
-    }).catch(() => {});
+    navigator.wakeLock
+      .request("screen")
+      .then((lock) => {
+        wakeLockRef.current = lock;
+      })
+      .catch(() => {});
     // 화면이 잠깐 꺼졌다 켜지면 재요청
     const onVisible = () => {
       if (document.visibilityState === "visible" && !wakeLockRef.current) {
-        navigator.wakeLock.request("screen").then((lock) => {
-          wakeLockRef.current = lock;
-        }).catch(() => {});
+        navigator.wakeLock
+          .request("screen")
+          .then((lock) => {
+            wakeLockRef.current = lock;
+          })
+          .catch(() => {});
       }
     };
     document.addEventListener("visibilitychange", onVisible);
@@ -301,7 +313,11 @@ export default function Workout() {
   // 세션 시작/종료
   useEffect(() => {
     if (state === "running" && user) {
-      startSession(user.id, selectedActivityType?.type ?? "walker", selectedBubbleId);
+      startSession(
+        user.id,
+        selectedActivityType?.type ?? "walker",
+        selectedBubbleId,
+      );
     }
   }, [state === "running"]);
 
@@ -317,7 +333,10 @@ export default function Workout() {
   useEffect(() => {
     if (state === "running") {
       localStorage.setItem(WK_KEY.resumeAt, String(Date.now()));
-      localStorage.setItem(WK_KEY.activityType, selectedActivityType?.type ?? "walker");
+      localStorage.setItem(
+        WK_KEY.activityType,
+        selectedActivityType?.type ?? "walker",
+      );
     } else {
       localStorage.removeItem(WK_KEY.resumeAt);
     }
@@ -343,19 +362,27 @@ export default function Workout() {
     let listener: { remove: () => void } | null = null;
     WorkoutNative.addListener("workoutUpdate", (data) => {
       // JS 타이머가 느슨해진 경우에만 보정 (2초 이상 차이날 때)
-      setElapsed((prev) => Math.abs(data.elapsed - prev) > 2 ? data.elapsed : prev);
-    }).then((l) => { listener = l; }).catch(() => {});
-    return () => { listener?.remove(); };
+      setElapsed((prev) =>
+        Math.abs(data.elapsed - prev) > 2 ? data.elapsed : prev,
+      );
+    })
+      .then((l) => {
+        listener = l;
+      })
+      .catch(() => {});
+    return () => {
+      listener?.remove();
+    };
   }, []);
 
   // 걸음 수 증가 (유형별 페이스)
   useEffect(() => {
     if (state !== "running") return;
     const intervalMap: Record<string, number> = {
-      walker: 600,       // 분당 100보
+      walker: 600, // 분당 100보
       power_walker: 500, // 분당 120보
-      runner: 400,       // 분당 150보
-      hiker: 667,        // 분당 90보
+      runner: 400, // 분당 150보
+      hiker: 667, // 분당 90보
     };
     const ms = intervalMap[selectedActivityType?.type ?? "walker"] ?? 600;
     const id = setInterval(() => {
