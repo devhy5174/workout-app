@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import CommunityWriteModal from "../components/CommunityWriteModal";
 import AlertModal from "../components/ui/AlertModal";
 import { HiTrash } from "react-icons/hi";
+import { PiHandsClappingFill } from "react-icons/pi";
 import { useCommunity } from "../hooks/useCommunity";
 import { getCardById, type SensoryCard } from "../lib/communityService";
 import { getAvatarCharacterById } from "../data/avatarCharacters";
@@ -25,6 +26,7 @@ interface Post {
   cheered: boolean;
   isMine?: boolean;
   character_id?: string | null;
+  frame_id: string | null;
 }
 
 type TabType = "community" | "mine";
@@ -82,103 +84,129 @@ function PostCard({
   showDelete?: boolean;
   frameId?: string | null;
 }) {
+  const [expanded, setExpanded] = useState(false);
+  const [cheerKey, setCheerKey] = useState(0);
+  const [showCheerPop, setShowCheerPop] = useState(false);
+
+  const isLong = post.text.length > 40 || post.text.includes("\n");
   const characterImage =
     getAvatarCharacterById(post.character_id)?.image ?? null;
   const frame = resolvePostFrame(frameId);
 
+  const handleCheer = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onCheer();
+    if (!post.cheered) {
+      setCheerKey((k) => k + 1);
+      setShowCheerPop(true);
+      setTimeout(() => setShowCheerPop(false), 800);
+    }
+  };
+
   const cardInner = (
     <div
-      className={`px-3.5 pt-3 pb-2.5 ${
+      className={`relative px-3.5 py-2.5 ${
         frame.premium
           ? "bg-white rounded-2xl"
           : "bg-white rounded-2xl border border-stone-100 shadow-sm"
-      }`}
+      } ${isLong ? "cursor-pointer select-none" : ""}`}
+      onClick={isLong ? () => setExpanded((v) => !v) : undefined}
     >
-      {/* 태그 배지(최대 2개) + 걸음수 배지 */}
-      <div className="flex items-center justify-between mb-2.5">
-        <div className="flex items-center gap-1 flex-wrap">
-          {post.tags.slice(0, 2).map((tag) => (
-            <span
-              key={tag}
-              className="rounded-full px-2.5 py-0.5 text-[11px] font-semibold bg-stone-100 text-stone-500"
-            >
-              #{tag}
-            </span>
-          ))}
-        </div>
+      {/* 프리미엄 배경 펄스 오버레이 — 아이콘·텍스트 색상 영향 없음 */}
+      {frame.premium && frame.bgPulseClass && (
+        <div className={`absolute inset-0 rounded-2xl pointer-events-none animate-card-bg-pulse ${frame.bgPulseClass}`} />
+      )}
+      <div className="relative flex items-center gap-2">
+        {/* 걸음수 */}
         <div
-          className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 flex-shrink-0 ${frame.premium ? `bg-white ${frame.stepsBorderClass} ${frame.labelColorClass}` : ""}`}
-          style={frame.premium ? undefined : { background: "var(--color-primary-light)" }}
+          className="flex-shrink-0 flex items-center"
+          style={frame.premium ? undefined : { color: "var(--color-primary)" }}
         >
-          <FootprintIcon
-            className="w-3.5 h-3.5"
-            style={frame.premium ? undefined : { color: "var(--color-primary)" }}
-          />
           <span
-            className="text-[14px] font-extrabold"
-            style={frame.premium ? undefined : { color: "var(--color-primary)" }}
+            className={`text-[13px] font-extrabold ${frame.premium ? frame.labelColorClass : ""}`}
           >
             {post.steps}
           </span>
         </div>
-      </div>
 
-      {/* 텍스트 */}
-      <div className="max-h-[80px] overflow-y-auto scrollbar-hide mb-2.5">
-        <p className="text-[14px] text-stone-700 font-normal leading-relaxed whitespace-pre-line">
-          {post.text}
-        </p>
-      </div>
+        <div className="w-px h-3.5 bg-stone-200 flex-shrink-0" />
 
-      {/* 하단 바: 칭호 + 버튼 */}
-      <div className="flex items-center justify-between pt-2.5 border-t border-stone-50">
-        <span
-          className={`text-[11px]  ${frame.premium ? frame.labelColorClass : "text-stone-500"} text-bold`}
-        >
-          {post.title}
-        </span>
-        <div className="flex items-center gap-1.5">
-          {showDelete && (
-            <button
-              onClick={onDelete}
-              aria-label="게시글 삭제"
-              className="text-[11px] text-stone-300 border border-stone-200 rounded-full px-2.5 py-1 active:scale-95 transition-transform duration-150"
-            >
-              삭제
-            </button>
-          )}
-          {!post.isMine && (
-            <button
-              onClick={onCheer}
-              aria-label={post.cheered ? "응원 취소" : "응원 보내기"}
-              className="flex items-center gap-1 rounded-full px-3 py-1.5 text-[11px] font-medium transition-all duration-150 active:scale-95 border"
-              style={
-                post.cheered
-                  ? {
-                      background: "var(--color-primary-light)",
-                      color: "var(--color-primary)",
-                      borderColor: "var(--color-primary)",
-                    }
-                  : {
-                      background: "#f8f8f7",
-                      color: "#a8a29e",
-                      borderColor: "#e7e5e4",
-                    }
-              }
-            >
-              <span>🌿</span>
-              <span>{post.cheered ? "응원 완료" : "응원하기"}</span>
-            </button>
+        {/* 글 내용 */}
+        <div className="flex-1 min-w-0 overflow-hidden">
+          <p
+            className={`text-[13px] text-stone-700 leading-snug ${!expanded && isLong ? "line-clamp-1" : "whitespace-pre-line"}`}
+          >
+            {post.text}
+          </p>
+          {expanded && post.tags.length > 0 && (
+            <div className="flex items-center gap-1 flex-wrap mt-1.5">
+              {post.tags.slice(0, 2).map((tag) => (
+                <span
+                  key={tag}
+                  className="rounded-full px-2 py-0.5 text-[10px] font-semibold bg-stone-100 text-stone-400"
+                >
+                  #{tag}
+                </span>
+              ))}
+            </div>
           )}
         </div>
+
+        {/* 박수 / 삭제 아이콘 — 내 글이면 숨김 */}
+        {(showDelete || !post.isMine) && (
+          <div className="relative flex-shrink-0 w-5 flex items-center justify-center">
+            {showCheerPop && (
+              <span
+                key={cheerKey}
+                className="absolute bottom-full left-1/2 mb-1 pointer-events-none animate-cheer-float text-[11px] font-bold whitespace-nowrap"
+                style={{ color: "var(--color-primary)" }}
+              >
+                응원해요!
+              </span>
+            )}
+            {showDelete ? (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDelete?.();
+                }}
+                aria-label="게시글 삭제"
+                className="text-stone-300 active:scale-95 transition-transform duration-150"
+              >
+                <HiTrash className="w-4 h-4" />
+              </button>
+            ) : (
+              <button
+                onClick={handleCheer}
+                aria-label={post.cheered ? "응원 취소" : "응원 보내기"}
+                className="active:scale-90 transition-transform duration-150"
+              >
+                <PiHandsClappingFill
+                  className="w-5 h-5 transition-all duration-150"
+                  style={{
+                    color: post.cheered ? "#d6d3d1" : "var(--color-primary)",
+                  }}
+                />
+              </button>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
 
   return (
-    <div className="flex items-start gap-2.5">
+    <div className="flex items-center gap-2.5">
       {/* 아바타 */}
-      <div className="flex-shrink-0 flex flex-col items-center gap-1 pt-1">
+      <div className="flex-shrink-0 flex flex-col items-center gap-0.5">
+        <>
+          {" "}
+          {post.profileTitle && (
+            <span className="text-[9px] text-stone-400 font-semibold text-center leading-tight">
+              {post.profileTitle}
+            </span>
+          )}
+        </>
         {characterImage ? (
           <img
             src={characterImage}
@@ -193,32 +221,17 @@ function PostCard({
             {post.nickname[0]}
           </div>
         )}
-        {post.profileTitle && (
-          <span className="text-[9px] -mb-1 -ml-2 text-stone-400 font-semibold text-center leading-tight">
-            {post.profileTitle}
-          </span>
-        )}
+
         <span className="text-[10px] text-stone-500 text-center font-semibold font-light">
           {post.nickname}
         </span>
       </div>
 
       {/* 말풍선 */}
-      <div className="flex-1 relative min-w-0">
-        {/* 꼬리 삼각형 */}
-        <div
-          className="absolute -left-[7px] top-3.5 w-0 h-0 z-10"
-          style={{
-            borderTop: "6px solid transparent",
-            borderBottom: "6px solid transparent",
-            borderRight: "8px solid white",
-            filter: "drop-shadow(-1px 0px 1px rgba(0,0,0,0.06))",
-          }}
-        />
-
+      <div className="flex-1 min-w-0">
         {frame.premium ? (
           <div
-            className={`p-[2px] rounded-[18px] ${frame.wrapperClass} ${frame.animationClass} shadow-md`}
+            className={`p-[2px] rounded-[20px] ${frame.wrapperClass} ${frame.animationClass} shadow-md`}
           >
             {cardInner}
           </div>
@@ -276,6 +289,7 @@ export default function CommunityPage() {
     cheered: cheeredIds.has(p.id),
     isMine: p.user_id === user?.id,
     character_id: p.character_id,
+    frame_id: p.frame_id ?? null,
   });
 
   const enrichedPosts = posts.map((p) => toPost(p));
@@ -371,7 +385,7 @@ export default function CommunityPage() {
                     key={post.id}
                     post={post}
                     onCheer={() => toggleCheer(post.id)}
-                    frameId={post.isMine ? selectedFrameId : null}
+                    frameId={post.frame_id ?? null}
                   />
                 ))
               ) : (
@@ -434,7 +448,7 @@ export default function CommunityPage() {
                     onCheer={() => toggleCheer(post.id)}
                     onDelete={() => setDeleteTargetId(post.id)}
                     showDelete
-                    frameId={selectedFrameId}
+                    frameId={post.frame_id ?? null}
                   />
                 ))
               ) : (
@@ -466,7 +480,7 @@ export default function CommunityPage() {
         isOpen={writeModalOpen}
         onClose={closeWriteModal}
         onSubmit={async (data) => {
-          await submitPost({ text: data.text, tags: data.tags });
+          await submitPost({ text: data.text, tags: data.tags, frame_id: selectedFrameId });
           closeWriteModal();
         }}
       />

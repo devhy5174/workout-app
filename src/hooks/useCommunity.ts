@@ -119,11 +119,11 @@ export function useCommunity() {
     }
   };
 
-  const submitPost = async (data: { text: string; tags: string[] }) => {
+  const submitPost = async (data: { text: string; tags: string[]; frame_id?: string | null }) => {
     if (!user) return { error: "로그인이 필요합니다." };
     const { steps } = await fetchTodayStats(user.id);
     const { data: newPost, error } = await createPost(
-      { text: data.text, tags: data.tags, steps },
+      { text: data.text, tags: data.tags, steps, frame_id: data.frame_id ?? null },
       user.id,
     );
     if (error || !newPost) return { error };

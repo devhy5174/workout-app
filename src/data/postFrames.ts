@@ -9,6 +9,8 @@ export interface PostFrameStyle {
   labelColorClass: string;
   /** 걸음수 배지 테두리 + 텍스트 클래스 (premium 전용) */
   stepsBorderClass: string;
+  /** 카드 배경 펄스 오버레이 그라데이션 클래스 (premium 전용) */
+  bgPulseClass: string;
 }
 
 export const POST_FRAMES: Record<string, PostFrameStyle> = {
@@ -19,6 +21,7 @@ export const POST_FRAMES: Record<string, PostFrameStyle> = {
     animationClass: "",
     labelColorClass: "text-stone-400",
     stepsBorderClass: "",
+    bgPulseClass: "",
   },
   shining_post_frame: {
     id: "shining_post_frame",
@@ -28,6 +31,7 @@ export const POST_FRAMES: Record<string, PostFrameStyle> = {
     animationClass: "animate-premium-bubble",
     labelColorClass: "text-amber-500",
     stepsBorderClass: "border border-amber-400",
+    bgPulseClass: "bg-gradient-to-br from-amber-50 via-yellow-50 to-amber-50",
   },
   aurora_post_frame: {
     id: "aurora_post_frame",
@@ -37,6 +41,7 @@ export const POST_FRAMES: Record<string, PostFrameStyle> = {
     animationClass: "animate-premium-bubble",
     labelColorClass: "text-violet-500",
     stepsBorderClass: "border border-violet-400",
+    bgPulseClass: "bg-gradient-to-br from-violet-50 via-pink-50 to-cyan-50",
   },
 };
 

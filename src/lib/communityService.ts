@@ -36,6 +36,7 @@ export type CommunityPost = {
   character_id: string | null;
   activity_type_id: number | null;
   profile_title: string | null;
+  frame_id: string | null;
 };
 
 type ProfileMap = Map<string, { nickname: string; character_id: string | null; activity_type_id: number | null; title: string | null }>;
@@ -87,6 +88,7 @@ function mergePost(row: any, profileMap: ProfileMap, cheersMap: Record<string, n
     character_id: profile?.character_id ?? null,
     activity_type_id: profile?.activity_type_id ?? null,
     profile_title: profile?.title ?? null,
+    frame_id: row.frame_id ?? null,
   };
 }
 
@@ -135,7 +137,7 @@ export async function getMyPosts(userId: string): Promise<CommunityPost[]> {
 }
 
 export async function createPost(
-  input: { text: string; tags: string[]; steps?: number },
+  input: { text: string; tags: string[]; steps?: number; frame_id?: string | null },
   userId: string,
 ): Promise<{ data: CommunityPost | null; error: string | null }> {
   const { data: row, error } = await supabase
@@ -146,6 +148,7 @@ export async function createPost(
       tags: input.tags,
       steps: input.steps ?? 0,
       cheers: 0,
+      frame_id: input.frame_id ?? null,
     })
     .select("*")
     .single();
