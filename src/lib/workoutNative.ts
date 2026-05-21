@@ -1,7 +1,7 @@
 import { registerPlugin, Capacitor } from "@capacitor/core";
 
 export interface WorkoutPlugin {
-  startWorkout(options: { activityType: string; nickname: string }): Promise<void>;
+  startWorkout(options: { activityType: string; nickname: string; characterId: string }): Promise<void>;
   pauseWorkout(): Promise<void>;
   resumeWorkout(): Promise<void>;
   stopWorkout(): Promise<void>;

@@ -330,18 +330,18 @@ export default function Workout() {
       WorkoutNative.startWorkout({
         activityType: selectedActivityType?.type ?? "walker",
         nickname: userProfile?.nickname ?? "",
+        characterId: userProfile?.character_id ?? "",
       }).catch(() => {});
     } else if (state === "paused") {
       WorkoutNative.pauseWorkout().catch(() => {});
     }
   }, [state]);
 
-  // 네이티브: ForegroundService에서 실시간 걸음수/시간 수신
+  // 네이티브: ForegroundService에서 elapsed만 수신 (steps는 JS 타이머로 계산)
   useEffect(() => {
     if (!isNative()) return;
     let listener: { remove: () => void } | null = null;
     WorkoutNative.addListener("workoutUpdate", (data) => {
-      setSteps(data.steps);
       setElapsed(data.elapsed);
     }).then((l) => { listener = l; }).catch(() => {});
     return () => { listener?.remove(); };
@@ -370,9 +370,10 @@ export default function Workout() {
     return () => clearInterval(id);
   }, [state, selectedActivityType]);
 
-  // 타이머 (1초마다)
+  // 타이머 (1초마다) — 네이티브에서는 ForegroundService가 elapsed 제공
   useEffect(() => {
     if (state !== "running") return;
+    if (isNative()) return;
     const id = setInterval(() => setElapsed((prev) => prev + 1), 1000);
     return () => clearInterval(id);
   }, [state]);

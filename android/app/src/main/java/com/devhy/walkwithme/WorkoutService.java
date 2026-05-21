@@ -9,6 +9,10 @@ import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Canvas;
+import android.graphics.Paint;
+import android.graphics.PorterDuff;
+import android.graphics.PorterDuffXfermode;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
@@ -17,17 +21,19 @@ import android.os.Binder;
 import android.os.Build;
 import android.os.IBinder;
 import androidx.core.app.NotificationCompat;
+import java.io.InputStream;
 
 public class WorkoutService extends Service implements SensorEventListener {
 
-    static final String CHANNEL_ID  = "workout_channel";
-    static final int    NOTIF_ID    = 1001;
+    static final String CHANNEL_ID    = "workout_channel";
+    static final int    NOTIF_ID      = 1001;
     static final String ACTION_START  = "ACTION_START";
     static final String ACTION_PAUSE  = "ACTION_PAUSE";
     static final String ACTION_RESUME = "ACTION_RESUME";
     static final String ACTION_STOP   = "ACTION_STOP";
-    static final String EXTRA_ACTIVITY = "activity_type";
-    static final String EXTRA_NICKNAME = "nickname";
+    static final String EXTRA_ACTIVITY  = "activity_type";
+    static final String EXTRA_NICKNAME  = "nickname";
+    static final String EXTRA_CHARACTER = "character_id";
     static final String BROADCAST_UPDATE = "com.devhy.walkwithme.WORKOUT_UPDATE";
 
     private SensorManager sensorManager;
@@ -41,6 +47,7 @@ public class WorkoutService extends Service implements SensorEventListener {
     private boolean isPaused     = false;
     private String activityType  = "walker";
     private String nickname      = "";
+    private String characterId   = "";
 
     private final IBinder binder = new LocalBinder();
 
@@ -70,6 +77,8 @@ public class WorkoutService extends Service implements SensorEventListener {
                                 ? intent.getStringExtra(EXTRA_ACTIVITY) : "walker";
                 nickname      = intent.getStringExtra(EXTRA_NICKNAME) != null
                                 ? intent.getStringExtra(EXTRA_NICKNAME) : "";
+                characterId   = intent.getStringExtra(EXTRA_CHARACTER) != null
+                                ? intent.getStringExtra(EXTRA_CHARACTER) : "";
                 baselineSteps = -1;
                 currentSteps  = 0;
                 startTimeMs   = System.currentTimeMillis();
@@ -111,7 +120,6 @@ public class WorkoutService extends Service implements SensorEventListener {
         return START_NOT_STICKY;
     }
 
-    // 1초마다 알림 시간 갱신
     private void startNotificationRefresh() {
         new Thread(() -> {
             while (!isPaused) {
@@ -169,8 +177,11 @@ public class WorkoutService extends Service implements SensorEventListener {
 
         String titleText = emoji + " " + label + " 중" +
             (nickname.isEmpty() ? "" : "  ·  " + nickname);
-        String lineA = "⏱ " + timeStr + "          👟 " + currentSteps + "보";
-        String lineB = "📍 " + String.format("%.2f", distance) + " km   🔥 " + calories + " kcal";
+        // 4개 항목 한 줄로 항상 표시
+        String statsLine = "⏱ " + timeStr
+            + "   👟 " + currentSteps + "보"
+            + "   📍 " + String.format("%.2f", distance) + "km"
+            + "   🔥 " + calories + "kcal";
 
         Intent openIntent = new Intent(this, MainActivity.class);
         openIntent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
@@ -187,16 +198,17 @@ public class WorkoutService extends Service implements SensorEventListener {
         PendingIntent piStop = PendingIntent.getService(this, 2, stopIntent,
             PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
 
-        // 캐릭터 이미지 (앱 아이콘 사용, 추후 캐릭터별 이미지로 교체 가능)
-        Bitmap largeIcon = BitmapFactory.decodeResource(getResources(), R.mipmap.ic_launcher);
+        // 캐릭터 이미지 로드 (Capacitor 번들 assets에서)
+        Bitmap largeIcon = loadCharacterBitmap(characterId);
+        if (largeIcon == null) {
+            largeIcon = BitmapFactory.decodeResource(getResources(), R.mipmap.ic_launcher);
+        }
 
         return new NotificationCompat.Builder(this, CHANNEL_ID)
             .setSmallIcon(R.mipmap.ic_launcher)
             .setLargeIcon(largeIcon)
             .setContentTitle(titleText)
-            .setContentText(lineA)
-            .setStyle(new NotificationCompat.BigTextStyle()
-                .bigText(lineA + "\n" + lineB))
+            .setContentText(statsLine)
             .setOngoing(true)
             .setOnlyAlertOnce(true)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
@@ -204,6 +216,33 @@ public class WorkoutService extends Service implements SensorEventListener {
             .addAction(0, isPaused ? "▶ 재개" : "⏸ 일시정지", piPause)
             .addAction(0, "■ 종료", piStop)
             .build();
+    }
+
+    // Capacitor 빌드 후 assets/public/assets/images/characters/ 경로에서 로드
+    private Bitmap loadCharacterBitmap(String charId) {
+        if (charId == null || charId.isEmpty()) return null;
+        String path = "public/assets/images/characters/" + charId + ".webp";
+        try {
+            InputStream is = getAssets().open(path);
+            Bitmap raw = BitmapFactory.decodeStream(is);
+            is.close();
+            return toCircleBitmap(raw);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    private Bitmap toCircleBitmap(Bitmap src) {
+        int size = Math.min(src.getWidth(), src.getHeight());
+        Bitmap output = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888);
+        Canvas canvas = new Canvas(output);
+        Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        canvas.drawCircle(size / 2f, size / 2f, size / 2f, paint);
+        paint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.SRC_IN));
+        int offsetX = -(src.getWidth() - size) / 2;
+        int offsetY = -(src.getHeight() - size) / 2;
+        canvas.drawBitmap(src, offsetX, offsetY, paint);
+        return output;
     }
 
     private void createNotificationChannel() {

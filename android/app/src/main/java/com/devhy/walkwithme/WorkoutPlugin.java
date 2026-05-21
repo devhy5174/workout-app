@@ -20,11 +20,13 @@ public class WorkoutPlugin extends Plugin {
     public void startWorkout(PluginCall call) {
         String activityType = call.getString("activityType", "walker");
         String nickname     = call.getString("nickname", "");
+        String characterId  = call.getString("characterId", "");
 
         Intent intent = new Intent(getContext(), WorkoutService.class);
         intent.setAction(WorkoutService.ACTION_START);
         intent.putExtra(WorkoutService.EXTRA_ACTIVITY, activityType);
         intent.putExtra(WorkoutService.EXTRA_NICKNAME, nickname);
+        intent.putExtra(WorkoutService.EXTRA_CHARACTER, characterId);
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             getContext().startForegroundService(intent);
