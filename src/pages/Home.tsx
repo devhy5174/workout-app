@@ -13,7 +13,7 @@ import {
 } from "../utils/streak";
 import { getRandomMessage, getWeatherMessage } from "../data/characterMessages";
 import { useWeather } from "../hooks/useWeather";
-import { FAKE_ACTIVE_USERS } from "../data/fakeActiveUsers";
+import { getLiveFakeUsers } from "../data/fakeUsers";
 import { getActiveSessions } from "../lib/sessionService";
 import { getAvatarCharacterById } from "../data/avatarCharacters";
 import { useWeeklyTop3 } from "../hooks/useWeeklyTop3";
@@ -207,7 +207,8 @@ const [activeUsers, setActiveUsers] = useState<DisplayUser[]>([]);
         setActiveUsers(realUsers.slice(0, 8));
       } else {
         const needed = 8 - realUsers.length;
-        const shuffledFake = [...FAKE_ACTIVE_USERS]
+        const liveFakes = getLiveFakeUsers();
+        const shuffledFake = [...liveFakes]
           .sort(() => Math.random() - 0.5)
           .slice(0, needed)
           .map((u) => ({

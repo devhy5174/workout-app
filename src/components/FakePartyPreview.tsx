@@ -1,141 +1,23 @@
 import { useState, useEffect, useRef } from "react";
 import { HiUserGroup } from "react-icons/hi";
-import { FAKE_ACTIVE_USERS } from "../data/fakeActiveUsers";
-import { avatarCharacters } from "../data/avatarCharacters";
+import {
+  FAKE_PARTY_MEMBERS,
+  FAKE_PARTY_CHEERS,
+  type FakeMember,
+} from "../data/fakeUsers";
 
-const c = avatarCharacters;
-
-type FakeMember = {
-  id: string;
-  nickname: string;
-  image: string;
-  todaySteps: number;
-  isActive: boolean;
-  isLeader: boolean;
-  inactive7: boolean;
-  title: string | null;
-  bubble: { text: string; colorClass: string; darkText?: boolean } | null;
-};
-
-const FAKE_MEMBERS: FakeMember[] = [
-  {
-    id: "m1",
-    nickname: "민준",
-    image: FAKE_ACTIVE_USERS[1].character_image,
-    todaySteps: 9100,
-    isActive: true,
-    isLeader: true,
-    inactive7: false,
-    title: "🏆 러닝왕",
-    bubble: { text: "신나는 중 🎵", colorClass: "bg-violet-500" },
-  },
-  {
-    id: "m2",
-    nickname: "태양",
-    image: FAKE_ACTIVE_USERS[6].character_image,
-    todaySteps: 8800,
-    isActive: true,
-    isLeader: false,
-    inactive7: false,
-    title: null,
-    bubble: { text: "파이팅! 🔥", colorClass: "bg-orange-400" },
-  },
-  {
-    id: "m3",
-    nickname: "나연",
-    image: FAKE_ACTIVE_USERS[5].character_image,
-    todaySteps: 7200,
-    isActive: true,
-    isLeader: false,
-    inactive7: false,
-    title: "🌿 꾸준러",
-    bubble: { text: "산책 중 🌿", colorClass: "bg-emerald-400" },
-  },
-  {
-    id: "m4",
-    nickname: "준서",
-    image: FAKE_ACTIVE_USERS[4].character_image,
-    todaySteps: 5820,
-    isActive: true,
-    isLeader: false,
-    inactive7: false,
-    title: null,
-    bubble: { text: "달리는 중 🏃", colorClass: "bg-sky-400" },
-  },
-  {
-    id: "m5",
-    nickname: "희연",
-    image: FAKE_ACTIVE_USERS[0].character_image,
-    todaySteps: 6240,
-    isActive: false,
-    isLeader: false,
-    inactive7: false,
-    title: null,
-    bubble: null,
-  },
-  {
-    id: "m6",
-    nickname: "지안",
-    image: FAKE_ACTIVE_USERS[3].character_image,
-    todaySteps: 3940,
-    isActive: false,
-    isLeader: false,
-    inactive7: false,
-    title: null,
-    bubble: null,
-  },
-  {
-    id: "m7",
-    nickname: "소은",
-    image: FAKE_ACTIVE_USERS[2].character_image,
-    todaySteps: 2100,
-    isActive: false,
-    isLeader: false,
-    inactive7: false,
-    title: null,
-    bubble: null,
-  },
-  {
-    id: "m8",
-    nickname: "하늘",
-    image: c[1].image,
-    todaySteps: 4400,
-    isActive: false,
-    isLeader: false,
-    inactive7: false,
-    title: null,
-    bubble: null,
-  },
-  {
-    id: "m9",
-    nickname: "진우",
-    image: c[3].image,
-    todaySteps: 0,
-    isActive: false,
-    isLeader: false,
-    inactive7: true,
-    title: null,
-    bubble: null,
-  },
-];
-
-const TODAY_TOTAL_STEPS = FAKE_MEMBERS.filter((m) => !m.inactive7).reduce(
+const TODAY_TOTAL_STEPS = FAKE_PARTY_MEMBERS.filter((m) => !m.inactive7).reduce(
   (s, m) => s + m.todaySteps,
   0,
 );
-const TARGET_TOTAL = 10000 * 9;
+const MEMBER_COUNT = FAKE_PARTY_MEMBERS.length;
+const TARGET_TOTAL = 10000 * MEMBER_COUNT;
 const TODAY_PCT = Math.min(Math.round((TODAY_TOTAL_STEPS / TARGET_TOTAL) * 100), 100);
-
-const FAKE_CHEERS = [
-  { id: "c1", nickname: "민준", text: "오늘도 화이팅!! 💪" },
-  { id: "c2", nickname: "나연", text: "같이 달려요~🏃" },
-  { id: "c3", nickname: "태양", text: "목표 달성 가즈아!" },
-];
-
-const PREVIEW_MEMBER_IMAGES = FAKE_MEMBERS.slice(0, 3).map((m) => m.image);
+const ACTIVE_COUNT = FAKE_PARTY_MEMBERS.filter((m) => m.isActive).length;
+const PREVIEW_IMAGES = FAKE_PARTY_MEMBERS.slice(0, 3).map((m) => m.image);
 
 // ── 응원 티커 ─────────────────────────────────────────────
-function FakeCheerTicker({ messages }: { messages: typeof FAKE_CHEERS }) {
+function FakeCheerTicker({ messages }: { messages: typeof FAKE_PARTY_CHEERS }) {
   const [idx, setIdx] = useState(0);
   const [transitioning, setTransitioning] = useState(false);
   const idxRef = useRef(0);
@@ -157,10 +39,12 @@ function FakeCheerTicker({ messages }: { messages: typeof FAKE_CHEERS }) {
   const curr = messages[idx % messages.length];
   const next = messages[(idx + 1) % messages.length];
 
-  const renderMsg = (m: (typeof FAKE_CHEERS)[0]) => (
+  const renderMsg = (m: (typeof FAKE_PARTY_CHEERS)[0]) => (
     <>
-      <span className="font-extrabold shrink-0 px-1.5 py-0.5 rounded-full text-[9px] whitespace-nowrap"
-        style={{ color: "var(--color-primary)", background: "var(--color-primary-light)" }}>
+      <span
+        className="font-extrabold shrink-0 px-1.5 py-0.5 rounded-full text-[9px] whitespace-nowrap"
+        style={{ color: "var(--color-primary)", background: "var(--color-primary-light)" }}
+      >
         {m.nickname}
       </span>
       <span className="text-[11px] text-gray-500 truncate">{m.text}</span>
@@ -175,14 +59,20 @@ function FakeCheerTicker({ messages }: { messages: typeof FAKE_CHEERS }) {
         @keyframes fakeEnterBelow { from{transform:translateY(110%);opacity:0} to{transform:translateY(0);opacity:1} }
       `}</style>
       <div className="flex-1 relative h-5 overflow-hidden">
-        <div key={idx} className="absolute inset-0 flex items-center gap-1.5"
-          style={transitioning ? { animation: "fakeExitUp 0.38s ease-in-out forwards" } : undefined}>
+        <div
+          key={idx}
+          className="absolute inset-0 flex items-center gap-1.5"
+          style={transitioning ? { animation: "fakeExitUp 0.38s ease-in-out forwards" } : undefined}
+        >
           {renderMsg(curr)}
         </div>
         {transitioning && (
-          <div key="enter" className="absolute inset-0 flex items-center gap-1.5"
+          <div
+            key="enter"
+            className="absolute inset-0 flex items-center gap-1.5"
             style={{ animation: "fakeEnterBelow 0.38s ease-in-out forwards" }}
-            onAnimationEnd={handleEnterEnd}>
+            onAnimationEnd={handleEnterEnd}
+          >
             {renderMsg(next)}
           </div>
         )}
@@ -195,6 +85,7 @@ function FakeCheerTicker({ messages }: { messages: typeof FAKE_CHEERS }) {
 function FakeMemberCard({ m }: { m: FakeMember }) {
   return (
     <div className="flex flex-col items-center gap-1">
+      {/* 말풍선 / 상태 뱃지 */}
       <div className="h-5 flex items-end justify-center">
         {m.inactive7 ? (
           <p className="text-[7px] font-extrabold px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-300 whitespace-nowrap">
@@ -202,10 +93,14 @@ function FakeMemberCard({ m }: { m: FakeMember }) {
           </p>
         ) : m.isActive && m.bubble ? (
           <div className="flex flex-col items-center">
-            <span className={`${m.bubble.colorClass} ${m.bubble.darkText ? "text-stone-800" : "text-white"} text-[7px] font-extrabold px-1.5 py-0.5 rounded-full whitespace-nowrap`}>
+            <span
+              className={`${m.bubble.colorClass} ${
+                m.bubble.darkText ? "text-stone-800" : "text-white"
+              } text-[7px] font-extrabold px-1.5 py-0.5 rounded-full whitespace-nowrap`}
+            >
               {m.bubble.text}
             </span>
-            <div className={`w-1.5 h-1.5 ${m.bubble.colorClass} rotate-45 rounded-[1px] -mt-1`} />
+            <div className={`w-1.5 h-1.5 rotate-45 rounded-[1px] -mt-1 ${m.bubble.colorClass.split(" ")[0]}`} />
           </div>
         ) : (
           <p className="text-[7px] font-extrabold px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-400 whitespace-nowrap">
@@ -214,10 +109,17 @@ function FakeMemberCard({ m }: { m: FakeMember }) {
         )}
       </div>
 
+      {/* 아바타 */}
       <div className="relative">
-        <div className={`w-14 h-14 rounded-2xl flex items-center justify-center overflow-hidden ${
-          m.inactive7 ? "bg-gray-100" : m.isActive ? "bg-primary-light" : "bg-gray-100 grayscale opacity-40"
-        }`}>
+        <div
+          className={`w-14 h-14 rounded-2xl flex items-center justify-center overflow-hidden ${
+            m.inactive7
+              ? "bg-gray-100"
+              : m.isActive
+              ? "bg-primary-light"
+              : "bg-gray-100 grayscale opacity-40"
+          }`}
+        >
           {m.inactive7 ? (
             <span className="text-gray-300 text-2xl">👤</span>
           ) : (
@@ -229,14 +131,18 @@ function FakeMemberCard({ m }: { m: FakeMember }) {
         )}
       </div>
 
-      <p className={`text-[10px] font-bold text-center w-full truncate leading-tight ${
-        m.inactive7 ? "text-gray-300" : "text-gray-600"
-      }`}>
+      {/* 닉네임 */}
+      <p
+        className={`text-[10px] font-bold text-center w-full truncate leading-tight ${
+          m.inactive7 ? "text-gray-300" : "text-gray-600"
+        }`}
+      >
         {m.title ? `${m.title.split(" ")[0]} ` : ""}
-        {m.nickname.length > 5 ? `${m.nickname.slice(0, 5)}…` : m.nickname}
+        {m.nickname.length > 6 ? `${m.nickname.slice(0, 6)}…` : m.nickname}
         {m.isLeader ? "👑" : ""}
       </p>
 
+      {/* 걸음수 */}
       <div className="h-4 flex items-center justify-center">
         {!m.inactive7 && (
           <p className={`text-[9px] font-bold ${m.isActive ? "text-emerald-500" : "text-gray-400"}`}>
@@ -251,7 +157,7 @@ function FakeMemberCard({ m }: { m: FakeMember }) {
 // ── 파티 상세 오버레이 ─────────────────────────────────────
 function FakePartyDetailOverlay({ onClose }: { onClose: () => void }) {
   const [cheerInput, setCheerInput] = useState("");
-  const [cheers, setCheers] = useState(FAKE_CHEERS);
+  const [cheers, setCheers] = useState(FAKE_PARTY_CHEERS);
   const [toast, setToast] = useState<string | null>(null);
 
   const showToast = (msg: string) => {
@@ -266,11 +172,12 @@ function FakePartyDetailOverlay({ onClose }: { onClose: () => void }) {
     setCheerInput("");
   };
 
-  const mvp = FAKE_MEMBERS[0];
+  const mvp = [...FAKE_PARTY_MEMBERS]
+    .filter((m) => !m.inactive7)
+    .sort((a, b) => b.todaySteps - a.todaySteps)[0];
 
   return (
     <div className="fixed inset-0 z-50 bg-bg flex flex-col overflow-hidden">
-      {/* 헤더 - 실제 PartyDetail과 동일한 구조 */}
       <div className="flex items-center gap-3 px-5 pt-5 pb-3">
         <div className="flex-1 min-w-0">
           <FakeCheerTicker messages={cheers} />
@@ -305,7 +212,7 @@ function FakePartyDetailOverlay({ onClose }: { onClose: () => void }) {
             </div>
           </div>
           <div className="flex items-center gap-1.5 flex-wrap">
-            {["🌅 새벽", "👥 9/10명", "👟 10,000보"].map((tag) => (
+            {[`👥 ${MEMBER_COUNT}/${MEMBER_COUNT}명`, "👟 10,000보", "🌅 새벽"].map((tag) => (
               <span key={tag} className="text-[10px] text-gray-500 font-semibold bg-gray-50 px-2 py-1 rounded-full">
                 {tag}
               </span>
@@ -340,34 +247,38 @@ function FakePartyDetailOverlay({ onClose }: { onClose: () => void }) {
             <p className="text-xs font-extrabold text-orange-400">{TODAY_PCT}%</p>
           </div>
           <div className="w-full h-2 bg-orange-100 rounded-full overflow-hidden">
-            <div className="h-full bg-gradient-to-r from-orange-400 to-primary rounded-full transition-all duration-700"
-              style={{ width: `${TODAY_PCT}%` }} />
+            <div
+              className="h-full bg-gradient-to-r from-orange-400 to-primary rounded-full transition-all duration-700"
+              style={{ width: `${TODAY_PCT}%` }}
+            />
           </div>
-          <div className="flex items-center gap-3 bg-amber-50 rounded-2xl px-4 py-3">
-            <div className="relative flex-shrink-0">
-              <div className="w-12 h-12 rounded-2xl bg-amber-100 flex items-center justify-center overflow-hidden">
-                <img src={mvp.image} alt={mvp.nickname} className="w-full h-full object-contain" draggable={false} />
+          {mvp && (
+            <div className="flex items-center gap-3 bg-amber-50 rounded-2xl px-4 py-3">
+              <div className="relative flex-shrink-0">
+                <div className="w-12 h-12 rounded-2xl bg-amber-100 flex items-center justify-center overflow-hidden">
+                  <img src={mvp.image} alt={mvp.nickname} className="w-full h-full object-contain" draggable={false} />
+                </div>
+                <span className="absolute -top-1.5 -right-1.5 text-base leading-none">🥇</span>
               </div>
-              <span className="absolute -top-1.5 -right-1.5 text-base leading-none">🥇</span>
+              <div>
+                <p className="text-[10px] font-extrabold text-amber-500 uppercase tracking-wide">오늘의 MVP</p>
+                <p className="text-sm font-extrabold text-gray-800 leading-tight">{mvp.nickname}</p>
+                <p className="text-xs font-bold text-amber-500">{mvp.todaySteps.toLocaleString()}보</p>
+              </div>
             </div>
-            <div>
-              <p className="text-[10px] font-extrabold text-amber-500 uppercase tracking-wide">오늘의 MVP</p>
-              <p className="text-sm font-extrabold text-gray-800 leading-tight">{mvp.nickname}</p>
-              <p className="text-xs font-bold text-amber-500">{mvp.todaySteps.toLocaleString()}보</p>
-            </div>
-          </div>
+          )}
         </div>
 
         {/* 멤버 그리드 */}
         <div className="bg-white rounded-3xl shadow-sm p-5 flex flex-col gap-3">
           <div className="flex items-center justify-between">
             <p className="text-sm font-extrabold text-gray-700">👥 파티 멤버</p>
-            <p className="text-[10px] text-gray-400">
-              {FAKE_MEMBERS.filter((m) => m.isActive).length}명 운동 중
-            </p>
+            <p className="text-[10px] text-gray-400">{ACTIVE_COUNT}명 운동 중</p>
           </div>
           <div className="grid grid-cols-4 gap-x-2 gap-y-4">
-            {FAKE_MEMBERS.map((m) => <FakeMemberCard key={m.id} m={m} />)}
+            {FAKE_PARTY_MEMBERS.map((m) => (
+              <FakeMemberCard key={m.id} m={m} />
+            ))}
           </div>
         </div>
 
@@ -396,7 +307,7 @@ function FakePartyDetailOverlay({ onClose }: { onClose: () => void }) {
         </div>
       </div>
 
-      {/* 하단 버튼 - 방장 버전 */}
+      {/* 하단 버튼 */}
       <div className="bg-white rounded-3xl shadow-sm p-4 flex gap-2 mb-5">
         <button
           onClick={() => showToast("데모 파티예요! 실제 파티를 만들어보세요 🎉")}
@@ -415,7 +326,8 @@ function FakePartyDetailOverlay({ onClose }: { onClose: () => void }) {
       {toast && (
         <div className="fixed top-6 inset-x-0 flex justify-center z-50 pointer-events-none">
           <div className="bg-gray-800 text-white text-sm font-bold px-5 py-3 rounded-2xl shadow-xl flex items-center gap-2 whitespace-nowrap">
-            <span>✨</span><span>{toast}</span>
+            <span>✨</span>
+            <span>{toast}</span>
           </div>
         </div>
       )}
@@ -448,16 +360,16 @@ export default function FakePartyPreview() {
               🌅
             </div>
             <div className="flex-1 min-w-0">
-              <div className="flex items-center justify-between gap-2">
-                <p className="font-extrabold text-gray-800 truncate cursor-pointer active:opacity-70"
-                  onClick={() => setShowDetail(true)}>
-                  매일 새벽 6시, 러닝크루 모집
-                </p>
-              </div>
+              <p
+                className="font-extrabold text-gray-800 truncate cursor-pointer active:opacity-70"
+                onClick={() => setShowDetail(true)}
+              >
+                매일 새벽 6시, 러닝크루 모집
+              </p>
               <p className="text-xs text-gray-400 mt-0.5 line-clamp-2">
                 새벽 10,000보 함께 달려요!
                 <span className="ml-2 inline-flex items-center gap-0.5 text-[10px] font-bold text-emerald-500 bg-emerald-50 px-1.5 py-0.5 rounded-full whitespace-nowrap align-middle">
-                  <span className="text-[5px]">🟢</span>4명 운동 중
+                  <span className="text-[5px]">🟢</span>{ACTIVE_COUNT}명 운동 중
                 </span>
               </p>
               <div className="flex flex-wrap gap-1 mt-2">
@@ -471,19 +383,24 @@ export default function FakePartyPreview() {
           </div>
 
           <div className="grid grid-cols-2 gap-2">
-            <button onClick={() => setShowDetail(true)}
-              className="bg-gray-50 rounded-2xl px-3 py-2 flex items-center gap-2 text-left active:bg-gray-100 transition">
+            <button
+              onClick={() => setShowDetail(true)}
+              className="bg-gray-50 rounded-2xl px-3 py-2 flex items-center gap-2 text-left active:bg-gray-100 transition"
+            >
               <div className="flex items-center">
-                {PREVIEW_MEMBER_IMAGES.map((img, i) => (
-                  <span key={i} className="w-7 h-7 rounded-full bg-white border-2 border-gray-50 shadow-sm flex items-center justify-center overflow-hidden flex-shrink-0"
-                    style={{ marginLeft: i > 0 ? "-8px" : "0", zIndex: 10 - i }}>
+                {PREVIEW_IMAGES.map((img, i) => (
+                  <span
+                    key={i}
+                    className="w-7 h-7 rounded-full bg-white border-2 border-gray-50 shadow-sm flex items-center justify-center overflow-hidden flex-shrink-0"
+                    style={{ marginLeft: i > 0 ? "-8px" : "0", zIndex: 10 - i }}
+                  >
                     <img src={img} alt="" className="w-8 h-8 object-contain" draggable={false} />
                   </span>
                 ))}
               </div>
               <div>
                 <p className="text-[10px] text-gray-400">멤버</p>
-                <p className="text-xs font-bold text-gray-700">9 / 10명</p>
+                <p className="text-xs font-bold text-gray-700">{MEMBER_COUNT} / {MEMBER_COUNT}명</p>
               </div>
             </button>
             <div className="bg-gray-50 rounded-2xl px-3 py-2 flex items-center gap-2">
@@ -504,7 +421,7 @@ export default function FakePartyPreview() {
               <span className="text-base">👑</span>
               <div>
                 <p className="text-[10px] text-gray-400">파티장</p>
-                <p className="text-xs font-bold text-gray-700 truncate">민준</p>
+                <p className="text-xs font-bold text-gray-700 truncate">jjun_run</p>
               </div>
             </div>
           </div>
@@ -519,18 +436,24 @@ export default function FakePartyPreview() {
               <p className="text-[10px] font-bold text-orange-400">{TODAY_PCT}%</p>
             </div>
             <div className="w-full h-1.5 bg-orange-100 rounded-full overflow-hidden">
-              <div className="h-full bg-gradient-to-r from-orange-400 to-primary rounded-full transition-all duration-700"
-                style={{ width: `${TODAY_PCT}%` }} />
+              <div
+                className="h-full bg-gradient-to-r from-orange-400 to-primary rounded-full transition-all duration-700"
+                style={{ width: `${TODAY_PCT}%` }}
+              />
             </div>
           </div>
 
           <div className="flex gap-2">
-            <button onClick={() => setShowDetail(true)}
-              className="flex-1 py-2.5 rounded-xl border border-gray-200 text-xs font-bold text-gray-500 hover:bg-gray-50 transition">
+            <button
+              onClick={() => setShowDetail(true)}
+              className="flex-1 py-2.5 rounded-xl border border-gray-200 text-xs font-bold text-gray-500 hover:bg-gray-50 transition"
+            >
               🏆 랭킹 보기
             </button>
-            <button onClick={() => setShowDetail(true)}
-              className="flex-1 py-2.5 rounded-xl text-xs font-bold transition bg-primary text-white active:scale-95">
+            <button
+              onClick={() => setShowDetail(true)}
+              className="flex-1 py-2.5 rounded-xl text-xs font-bold transition bg-primary text-white active:scale-95"
+            >
               들어가보기 →
             </button>
           </div>

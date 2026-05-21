@@ -92,16 +92,27 @@ function mergePost(row: any, profileMap: ProfileMap, cheersMap: Record<string, n
   };
 }
 
+const PAGE_SIZE = 15;
+
 export async function getPosts(
   userId?: string,
-): Promise<{ posts: CommunityPost[]; cheeredIds: Set<string> }> {
-  const { data, error } = await supabase
+  cursor?: string,
+): Promise<{ posts: CommunityPost[]; cheeredIds: Set<string>; hasMore: boolean }> {
+  let query = supabase
     .from("community_posts")
     .select("*")
     .order("created_at", { ascending: false })
-    .limit(50);
+    .limit(PAGE_SIZE);
 
-  if (error || !data || data.length === 0) return { posts: [], cheeredIds: new Set() };
+  if (cursor) {
+    query = query.lt("created_at", cursor);
+  }
+
+  const { data, error } = await query;
+
+  if (error || !data || data.length === 0) {
+    return { posts: [], cheeredIds: new Set(), hasMore: false };
+  }
 
   const postIds = data.map((r: any) => r.id);
   const userIds = [...new Set(data.map((r: any) => r.user_id))];
@@ -109,7 +120,7 @@ export async function getPosts(
   const [profileMap, cheersMap, cheeredResult] = await Promise.all([
     fetchProfileMap(userIds),
     fetchCheersMap(postIds),
-    userId
+    userId && !cursor
       ? supabase.from("community_cheers").select("post_id").eq("user_id", userId)
       : Promise.resolve({ data: [] as { post_id: string }[], error: null }),
   ]);
@@ -117,6 +128,7 @@ export async function getPosts(
   return {
     posts: data.map((r: any) => mergePost(r, profileMap, cheersMap)),
     cheeredIds: new Set((cheeredResult.data ?? []).map((r) => r.post_id)),
+    hasMore: data.length === PAGE_SIZE,
   };
 }
 

@@ -116,7 +116,7 @@ function PostCard({
       {frame.premium && frame.bgPulseClass && (
         <div className={`absolute inset-0 rounded-2xl pointer-events-none animate-card-bg-pulse ${frame.bgPulseClass}`} />
       )}
-      <div className="relative flex items-center gap-2">
+      <div className="relative z-[1] flex items-center gap-2">
         {/* 걸음수 */}
         <div
           className="flex-shrink-0 flex items-center"
@@ -271,6 +271,9 @@ export default function CommunityPage() {
     removePost,
     thisWeekCount,
     totalCheersReceived,
+    hasMore,
+    isLoadingMore,
+    loadMore,
   } = useCommunity();
 
   // CommunityPost → Post (뷰 모델 변환)
@@ -394,12 +397,40 @@ export default function CommunityPage() {
             </div>
 
             {filteredPosts.length > 0 && (
-              <div className="flex items-center justify-center gap-2 mt-6 mb-2">
-                <FootprintIcon className="w-3 h-3 text-stone-300" />
-                <span className="text-[11px] text-stone-300 font-light">
-                  더 많은 기록 불러오기
-                </span>
-                <FootprintIcon className="w-3 h-3 text-stone-300" />
+              <div className="flex items-center justify-center mt-6 mb-2">
+                {hasMore ? (
+                  <button
+                    onClick={loadMore}
+                    disabled={isLoadingMore}
+                    className="flex items-center gap-2 px-4 py-2 rounded-full active:scale-95 transition-all duration-150 disabled:opacity-50"
+                  >
+                    {isLoadingMore ? (
+                      <span className="flex items-center gap-2 text-[11px] text-stone-400 font-light">
+                        <svg className="w-3 h-3 animate-spin" viewBox="0 0 24 24" fill="none">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+                        </svg>
+                        불러오는 중...
+                      </span>
+                    ) : (
+                      <>
+                        <FootprintIcon className="w-3 h-3 text-stone-300" />
+                        <span className="text-[11px] text-stone-400 font-semibold">
+                          더 많은 기록 불러오기
+                        </span>
+                        <FootprintIcon className="w-3 h-3 text-stone-300" />
+                      </>
+                    )}
+                  </button>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <FootprintIcon className="w-3 h-3 text-stone-200" />
+                    <span className="text-[11px] text-stone-300 font-light">
+                      모든 기록을 다 봤어요
+                    </span>
+                    <FootprintIcon className="w-3 h-3 text-stone-200" />
+                  </div>
+                )}
               </div>
             )}
           </>

@@ -11,14 +11,29 @@ import {
 } from "../lib/communityService";
 import { fetchTodayStats } from "../lib/workoutService";
 import { useUser } from "../context/UserContext";
+import { FAKE_COMMUNITY_POSTS } from "../data/fakeUsers";
+
+const FAKE_USER_IDS = new Set(FAKE_COMMUNITY_POSTS.map((p) => p.user_id));
 
 export type { CommunityPost };
 
+function mergeWithFakes(realPosts: CommunityPost[]): CommunityPost[] {
+  const realIds = new Set(realPosts.map((p) => p.id));
+  const fakesToAdd = FAKE_COMMUNITY_POSTS.filter((p) => !realIds.has(p.id));
+  return [...realPosts, ...fakesToAdd].sort(
+    (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+  );
+}
+
 export function useCommunity() {
   const { user } = useUser();
+  const [realPosts, setRealPosts] = useState<CommunityPost[]>([]);
   const [posts, setPosts] = useState<CommunityPost[]>([]);
   const [myPosts, setMyPosts] = useState<CommunityPost[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(false);
+  const [cursor, setCursor] = useState<string | null>(null);
   const [cheeredIds, setCheeredIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
@@ -27,13 +42,16 @@ export function useCommunity() {
     async function load() {
       setIsLoading(true);
       try {
-        const [{ posts: postsData, cheeredIds: fetchedCheeredIds }, myPostsData] =
+        const [{ posts: postsData, cheeredIds: fetchedCheeredIds, hasMore: more }, myPostsData] =
           await Promise.all([
             getPosts(user?.id),
             user ? getMyPosts(user.id) : Promise.resolve<CommunityPost[]>([]),
           ]);
         if (!cancelled) {
-          setPosts(postsData);
+          setRealPosts(postsData);
+          setPosts(mergeWithFakes(postsData));
+          setHasMore(more);
+          setCursor(postsData.length > 0 ? postsData[postsData.length - 1].created_at : null);
           setCheeredIds(fetchedCheeredIds);
           if (user) setMyPosts(myPostsData);
         }
@@ -45,6 +63,27 @@ export function useCommunity() {
     load();
     return () => { cancelled = true; };
   }, [user]);
+
+  const loadMore = async () => {
+    if (!cursor || isLoadingMore || !hasMore) return;
+    setIsLoadingMore(true);
+    try {
+      const { posts: newPosts, hasMore: more } = await getPosts(user?.id, cursor);
+      if (newPosts.length > 0) {
+        setRealPosts((prev) => {
+          const next = [...prev, ...newPosts];
+          setPosts(mergeWithFakes(next));
+          return next;
+        });
+        setCursor(newPosts[newPosts.length - 1].created_at);
+        setHasMore(more);
+      } else {
+        setHasMore(false);
+      }
+    } finally {
+      setIsLoadingMore(false);
+    }
+  };
 
   // 내 게시글 cheers 실시간 반영 (community_cheers INSERT/DELETE 감지)
   useEffect(() => {
@@ -109,6 +148,9 @@ export function useCommunity() {
       return next;
     });
 
+    // 페이크 게시글은 Supabase 호출 없이 로컬 상태만 반영
+    if (FAKE_USER_IDS.has(post.user_id)) return;
+
     const { error } = isAlreadyCheered
       ? await removeCheer(postId, user.id)
       : await addCheer(postId, user.id, post.user_id);
@@ -157,6 +199,9 @@ export function useCommunity() {
     posts,
     myPosts,
     isLoading,
+    isLoadingMore,
+    hasMore,
+    loadMore,
     cheeredIds,
     toggleCheer,
     submitPost,
