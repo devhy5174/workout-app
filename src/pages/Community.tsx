@@ -198,15 +198,14 @@ function PostCard({
   return (
     <div className="flex items-center gap-2.5">
       {/* 아바타 */}
-      <div className="flex-shrink-0 flex flex-col items-center gap-0.5">
-        <>
-          {" "}
+      <div className="w-14 flex-shrink-0 flex flex-col items-center gap-0.5">
+        <div className="h-4 flex items-center justify-center">
           {post.profileTitle && (
-            <span className="text-[9px] text-stone-400 font-semibold text-center leading-tight">
+            <span className="text-[9px] text-stone-400 font-semibold text-center leading-tight whitespace-nowrap">
               {post.profileTitle}
             </span>
           )}
-        </>
+        </div>
         {characterImage ? (
           <img
             src={characterImage}
@@ -222,7 +221,7 @@ function PostCard({
           </div>
         )}
 
-        <span className="text-[10px] text-stone-500 text-center font-semibold font-light">
+        <span className="text-[10px] text-stone-500 text-center font-semibold font-light w-full truncate">
           {post.nickname}
         </span>
       </div>
