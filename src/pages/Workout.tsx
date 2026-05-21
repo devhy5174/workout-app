@@ -337,12 +337,13 @@ export default function Workout() {
     }
   }, [state]);
 
-  // 네이티브: ForegroundService에서 elapsed만 수신 (steps는 JS 타이머로 계산)
+  // 네이티브: 앱이 백그라운드에서 복귀할 때만 elapsed 동기화 (화면 꺼졌다 켰을 때)
   useEffect(() => {
     if (!isNative()) return;
     let listener: { remove: () => void } | null = null;
     WorkoutNative.addListener("workoutUpdate", (data) => {
-      setElapsed(data.elapsed);
+      // JS 타이머가 느슨해진 경우에만 보정 (2초 이상 차이날 때)
+      setElapsed((prev) => Math.abs(data.elapsed - prev) > 2 ? data.elapsed : prev);
     }).then((l) => { listener = l; }).catch(() => {});
     return () => { listener?.remove(); };
   }, []);
@@ -370,10 +371,9 @@ export default function Workout() {
     return () => clearInterval(id);
   }, [state, selectedActivityType]);
 
-  // 타이머 (1초마다) — 네이티브에서는 ForegroundService가 elapsed 제공
+  // 타이머 (1초마다) — JS 타이머로 부드러운 UI 업데이트, native listener는 백그라운드 복구용
   useEffect(() => {
     if (state !== "running") return;
-    if (isNative()) return;
     const id = setInterval(() => setElapsed((prev) => prev + 1), 1000);
     return () => clearInterval(id);
   }, [state]);
