@@ -33,10 +33,8 @@ const DEFAULT_DIET: RecommendedDiet = {
 
 function loadMealIndices(
   selectedActivityType: ActivityType | null,
-  isPremium: boolean,
 ): MealMenuIndices {
   const type = selectedActivityType?.type ?? null;
-  if (!isPremium) return getInitialMealMenuIndices(type);
   return resolveMealMenuIndices(
     type,
     storage.getPremiumMealMenuIds(),
@@ -54,9 +52,16 @@ export function useDiet() {
 
   const [burnedKcal, setBurnedKcal] = useState(0);
   const [showDietInfo, setShowDietInfo] = useState(false);
-  const [dietGoal, setDietGoal] = useState<DietGoal>("loss");
+  const [dietGoal, setDietGoal] = useState<DietGoal>(
+    () => (localStorage.getItem("diet_goal") as DietGoal) ?? "loss",
+  );
+
+  function handleSetDietGoal(goal: DietGoal) {
+    localStorage.setItem("diet_goal", goal);
+    setDietGoal(goal);
+  }
   const [mealMenuIndices, setMealMenuIndices] = useState<MealMenuIndices>(() =>
-    loadMealIndices(selectedActivityType, isPremium),
+    loadMealIndices(selectedActivityType),
   );
 
   useEffect(() => {
@@ -64,13 +69,12 @@ export function useDiet() {
   }, [location]);
 
   useEffect(() => {
-    setMealMenuIndices(loadMealIndices(selectedActivityType, isPremium));
-  }, [activityType, isPremium]);
+    setMealMenuIndices(loadMealIndices(selectedActivityType));
+  }, [activityType]);
 
   useEffect(() => {
-    if (!isPremium) return;
     storage.setPremiumMealMenuIds(mealMenuIndicesToStoredIds(mealMenuIndices));
-  }, [mealMenuIndices, isPremium]);
+  }, [mealMenuIndices]);
 
   const savedDiet = storage.getRecommendedDiet();
   const hasWorkout = savedDiet !== null;
@@ -110,8 +114,6 @@ export function useDiet() {
 
   const rotateMealMenu = useCallback(
     (mealTime: MainMealTime) => {
-      if (!isPremium) return;
-
       setMealMenuIndices((prev) => {
         const candidateCount = getMealMenuCandidates(mealTime).length;
         if (candidateCount <= 1) return prev;
@@ -122,7 +124,7 @@ export function useDiet() {
         };
       });
     },
-    [isPremium],
+    [],
   );
 
   return {
@@ -142,7 +144,7 @@ export function useDiet() {
     showDietInfo,
     setShowDietInfo,
     dietGoal,
-    setDietGoal,
+    setDietGoal: handleSetDietGoal,
     userProfile,
     isPremium,
     rotateMealMenu,

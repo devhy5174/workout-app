@@ -1,11 +1,8 @@
-import { useState } from "react";
-import { HiLockClosed } from "react-icons/hi2";
 import { useDiet } from "../hooks/useDiet";
 import WorkoutGoalTracker from "../components/diet/WorkoutGoalTracker";
 import DietInfoModal from "../components/diet/DietInfoModal";
 import MealRecommendationCard from "../components/diet/MealRecommendationCard";
 import MealPremiumActions from "../components/diet/MealPremiumActions";
-import PremiumModal from "../components/ui/PremiumModal";
 import type { DietGoal } from "../utils/dietScaling";
 
 const GOAL_TABS: {
@@ -39,7 +36,6 @@ const GOAL_TABS: {
 ];
 
 export default function Diet() {
-  const [showPremiumModal, setShowPremiumModal] = useState(false);
   const {
     burnedKcal,
     workoutTargetKcal,
@@ -61,10 +57,6 @@ export default function Diet() {
   } = useDiet();
 
   function handleGoalSelect(goal: DietGoal) {
-    if (goal !== "loss" && !isPremium) {
-      setShowPremiumModal(true);
-      return;
-    }
     setDietGoal(goal);
   }
 
@@ -165,9 +157,6 @@ export default function Diet() {
           >
             <span>{tab.emoji}</span>
             <span>{tab.label}</span>
-            {tab.value !== "loss" && !isPremium && (
-              <HiLockClosed className="text-amber-500 text-xs" aria-hidden />
-            )}
           </button>
         ))}
       </div>
@@ -205,13 +194,6 @@ export default function Diet() {
         />
       )}
 
-      {showPremiumModal && (
-        <PremiumModal
-          onClose={() => setShowPremiumModal(false)}
-          title="프리미엄 전용 기능"
-          description="체중 유지·근육 증량 맞춤 식단은 프리미엄 구독자만 이용할 수 있어요. 구독하고 내 목표에 딱 맞는 식단을 받아보세요!"
-        />
-      )}
     </div>
   );
 }

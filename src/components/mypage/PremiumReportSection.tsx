@@ -35,7 +35,6 @@ interface PremiumSectionProps {
 
 const PremiumReportSection: React.FC<PremiumSectionProps> = ({
   isPremium,
-  onUpgrade,
   workouts,
 }) => {
   const [drillStyle, setDrillStyle] = useState<DrillStyle>(
