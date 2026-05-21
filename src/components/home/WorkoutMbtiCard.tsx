@@ -2,7 +2,8 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { MBTI_QUIZ_QUESTIONS } from "../../data/mbtiQuizData";
 import { WORKOUT_MBTI_DICTIONARY } from "../../data/premiumReportData";
-import { HiLockClosed } from "react-icons/hi";
+import { HiLockClosed, HiInformationCircle } from "react-icons/hi";
+import MbtiInfoModal from "../ui/MbtiInfoModal";
 
 const STORAGE_KEY = "self_mbti_code";
 
@@ -20,6 +21,7 @@ export default function WorkoutMbtiCard({ isPremium, premiumMbtiCode }: Props) {
   const [step, setStep] = useState(0);
   const [answers, setAnswers] = useState<string[]>([]);
   const [resultCode, setResultCode] = useState<string | null>(null);
+  const [showInfo, setShowInfo] = useState(false);
 
   const selfEntry = selfCode
     ? WORKOUT_MBTI_DICTIONARY[selfCode as keyof typeof WORKOUT_MBTI_DICTIONARY]
@@ -65,9 +67,14 @@ export default function WorkoutMbtiCard({ isPremium, premiumMbtiCode }: Props) {
       {/* 카드 */}
       <div className="mx-4 mt-3 rounded-2xl" style={{ background: "linear-gradient(135deg, var(--color-primary), var(--color-secondary))" }}>
         <div className="px-4 pt-3 pb-1 flex items-center justify-between">
-          <p className="text-white/60 text-[10px] font-bold tracking-wide">
-            유산소 MBTI
-          </p>
+          <div className="flex items-center gap-1">
+            <p className="text-white/60 text-[10px] font-bold tracking-wide">
+              유산소 MBTI
+            </p>
+            <button onClick={() => setShowInfo(true)} aria-label="유산소 MBTI 안내">
+              <HiInformationCircle className="text-white/50 text-sm" />
+            </button>
+          </div>
           {selfCode && (
             <button
               onClick={resetQuiz}
@@ -143,6 +150,8 @@ export default function WorkoutMbtiCard({ isPremium, premiumMbtiCode }: Props) {
           </div>
         )}
       </div>
+
+      {showInfo && <MbtiInfoModal onClose={() => setShowInfo(false)} />}
 
       {/* 퀴즈 모달 */}
       {quizOpen && (
