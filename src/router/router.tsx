@@ -23,6 +23,7 @@ import MyPage from "../pages/MyPage";
 import Admin from "../pages/Admin";
 import ResetPassword from "../pages/ResetPassword";
 import NotificationSettings from "../pages/NotificationSettings";
+import PrivacyPolicy from "../pages/PrivacyPolicy";
 import { useUser } from "../context/UserContext";
 import { EventsProvider } from "../context/EventsContext";
 import { NoticesProvider } from "../context/NoticesContext";
@@ -78,6 +79,7 @@ export default function AppRouter() {
         <Route path="/intro" element={<Intro />} />
         <Route path="/auth" element={<Auth />} />
         <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="/privacy" element={<PrivacyPolicy />} />
         <Route
           path="/onboarding"
           element={
