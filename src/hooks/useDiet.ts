@@ -9,7 +9,6 @@ import { storage, type RecommendedDiet } from "../utils/storage";
 import { calculateBMR } from "../utils/bmr";
 import {
   buildScaledMeals,
-  getInitialMealMenuIndices,
   getMealMenuCandidates,
   getNextMealMenuIndex,
   mealMenuIndicesToStoredIds,
@@ -35,11 +34,7 @@ function loadMealIndices(
   selectedActivityType: ActivityType | null,
 ): MealMenuIndices {
   const type = selectedActivityType?.type ?? null;
-  return resolveMealMenuIndices(
-    type,
-    storage.getPremiumMealMenuIds(),
-    true,
-  );
+  return resolveMealMenuIndices(type, storage.getPremiumMealMenuIds(), true);
 }
 
 export function useDiet() {
@@ -95,16 +90,10 @@ export function useDiet() {
       )
     : null;
 
-  const personalDailyKcalTarget = getPersonalDailyKcalTarget(
-    bmr,
-    activityType,
-  );
+  const personalDailyKcalTarget = getPersonalDailyKcalTarget(bmr, activityType);
 
   const workoutTargetKcal = getWorkoutTargetKcal(activityType);
-  const kcalProgress = Math.min(
-    (burnedKcal / workoutTargetKcal) * 100,
-    100,
-  );
+  const kcalProgress = Math.min((burnedKcal / workoutTargetKcal) * 100, 100);
   const kcalRemaining = Math.max(workoutTargetKcal - burnedKcal, 0);
 
   const scaledMeals = useMemo(
@@ -112,20 +101,17 @@ export function useDiet() {
     [personalDailyKcalTarget, mealMenuIndices, dietGoal],
   );
 
-  const rotateMealMenu = useCallback(
-    (mealTime: MainMealTime) => {
-      setMealMenuIndices((prev) => {
-        const candidateCount = getMealMenuCandidates(mealTime).length;
-        if (candidateCount <= 1) return prev;
+  const rotateMealMenu = useCallback((mealTime: MainMealTime) => {
+    setMealMenuIndices((prev) => {
+      const candidateCount = getMealMenuCandidates(mealTime).length;
+      if (candidateCount <= 1) return prev;
 
-        return {
-          ...prev,
-          [mealTime]: getNextMealMenuIndex(prev[mealTime], candidateCount),
-        };
-      });
-    },
-    [],
-  );
+      return {
+        ...prev,
+        [mealTime]: getNextMealMenuIndex(prev[mealTime], candidateCount),
+      };
+    });
+  }, []);
 
   return {
     burnedKcal,
