@@ -24,6 +24,7 @@ import { LanguageSheet } from "../components/settings/LanguageSheet";
 import { NicknameSheet } from "../components/settings/NicknameSheet";
 import { TextSheet } from "../components/settings/TextSheet";
 import { SectionLabel } from "../components/settings/SectionLabel";
+import { MdDirectionsRun } from "react-icons/md";
 
 type Theme = "energy" | "nature" | "cosmo";
 
@@ -270,13 +271,15 @@ export default function Settings() {
                     "linear-gradient(135deg, var(--color-primary), var(--color-secondary))",
                 }}
               >
-                🏃
+                <MdDirectionsRun size={30} color="white" />
               </div>
               <div>
-                <p className="font-extrabold text-gray-800 text-lg">
-                  WorkoutApp
+                <p className="font-extrabold text-gray-800 text-lg leading-tight">
+                  함께걸어요
                 </p>
-                <p className="text-sm text-gray-400">버전 1.0.0</p>
+                <p className="text-xs text-gray-400 mt-0.5">
+                  걷기 · 러닝 습관 형성 커뮤니티
+                </p>
               </div>
             </div>
             <div className="flex flex-col gap-2">

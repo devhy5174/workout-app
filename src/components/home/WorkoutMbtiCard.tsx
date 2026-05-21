@@ -65,13 +65,22 @@ export default function WorkoutMbtiCard({ isPremium, premiumMbtiCode }: Props) {
   return (
     <>
       {/* 카드 */}
-      <div className="mx-4 mt-3 rounded-2xl" style={{ background: "linear-gradient(135deg, var(--color-primary), var(--color-secondary))" }}>
+      <div
+        className="mx-4 mt-3 rounded-2xl"
+        style={{
+          background:
+            "linear-gradient(135deg, var(--color-primary), var(--color-secondary))",
+        }}
+      >
         <div className="px-4 pt-3 pb-1 flex items-center justify-between">
           <div className="flex items-center gap-1">
             <p className="text-white/60 text-[10px] font-bold tracking-wide">
               유산소 MBTI
             </p>
-            <button onClick={() => setShowInfo(true)} aria-label="유산소 MBTI 안내">
+            <button
+              onClick={() => setShowInfo(true)}
+              aria-label="유산소 MBTI 안내"
+            >
               <HiInformationCircle className="text-white/50 text-sm" />
             </button>
           </div>
@@ -104,7 +113,9 @@ export default function WorkoutMbtiCard({ isPremium, premiumMbtiCode }: Props) {
               className="flex-1 px-3 py-2 text-left active:opacity-70 transition"
               onClick={() => navigate("/mypage?tab=stats#mbti-report")}
             >
-              <p className="text-white/60 text-[9px] font-bold mb-1">실제 기록</p>
+              <p className="text-white/60 text-[9px] font-bold mb-1">
+                실제 기록
+              </p>
               {isPremium && premiumMbtiCode ? (
                 <>
                   <p className="text-white font-black text-lg leading-none">
@@ -158,7 +169,13 @@ export default function WorkoutMbtiCard({ isPremium, premiumMbtiCode }: Props) {
         <div
           className="fixed inset-0 z-50 flex items-end justify-center"
           style={{ background: "rgba(0,0,0,0.5)" }}
-          onClick={() => { if (!resultCode) { setQuizOpen(false); setStep(0); setAnswers([]); } }}
+          onClick={() => {
+            if (!resultCode) {
+              setQuizOpen(false);
+              setStep(0);
+              setAnswers([]);
+            }
+          }}
         >
           <div
             className="w-full bg-white rounded-t-3xl p-6 pb-10 shadow-2xl"
@@ -167,17 +184,21 @@ export default function WorkoutMbtiCard({ isPremium, premiumMbtiCode }: Props) {
             {resultCode ? (
               /* 결과 화면 */
               (() => {
-                const entry = WORKOUT_MBTI_DICTIONARY[resultCode as keyof typeof WORKOUT_MBTI_DICTIONARY];
+                const entry =
+                  WORKOUT_MBTI_DICTIONARY[
+                    resultCode as keyof typeof WORKOUT_MBTI_DICTIONARY
+                  ];
                 return (
                   <div className="flex flex-col items-center text-center">
-                    <div
-                      className="w-16 h-16 rounded-2xl flex items-center justify-center text-3xl mb-4"
-                      style={{ background: "var(--color-primary-light, #fff7ed)" }}
-                    >
-                      {entry?.adult.emoji ?? "🏃"}
-                    </div>
-                    <p className="text-white font-black text-2xl mb-1 px-4 py-1.5 rounded-xl"
-                      style={{ background: "linear-gradient(135deg, var(--color-primary), var(--color-secondary))" }}
+                    <p className="text-xs font-bold text-gray-400 mb-3 tracking-widest uppercase">
+                      나의 유산소 MBTI 결과
+                    </p>
+                    <p
+                      className="text-white font-black text-2xl mb-1 px-4 py-1.5 rounded-xl"
+                      style={{
+                        background:
+                          "linear-gradient(135deg, var(--color-primary), var(--color-secondary))",
+                      }}
                     >
                       {resultCode}
                     </p>
@@ -190,7 +211,10 @@ export default function WorkoutMbtiCard({ isPremium, premiumMbtiCode }: Props) {
                     <button
                       onClick={closeResult}
                       className="mt-6 w-full py-4 rounded-2xl text-white font-extrabold text-base active:scale-95 transition"
-                      style={{ background: "linear-gradient(135deg, var(--color-primary), var(--color-secondary))" }}
+                      style={{
+                        background:
+                          "linear-gradient(135deg, var(--color-primary), var(--color-secondary))",
+                      }}
                     >
                       확인
                     </button>
@@ -205,7 +229,10 @@ export default function WorkoutMbtiCard({ isPremium, premiumMbtiCode }: Props) {
                     <div
                       key={i}
                       className="flex-1 h-1 rounded-full"
-                      style={{ background: i <= step ? "var(--color-primary)" : "#e5e7eb" }}
+                      style={{
+                        background:
+                          i <= step ? "var(--color-primary)" : "#e5e7eb",
+                      }}
                     />
                   ))}
                 </div>
@@ -226,7 +253,9 @@ export default function WorkoutMbtiCard({ isPremium, premiumMbtiCode }: Props) {
                       <span className="font-extrabold text-gray-800 text-sm">
                         {opt.label}
                       </span>
-                      <span className="text-xs text-gray-400 mt-0.5">{opt.sub}</span>
+                      <span className="text-xs text-gray-400 mt-0.5">
+                        {opt.sub}
+                      </span>
                     </button>
                   ))}
                 </div>

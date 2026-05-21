@@ -79,7 +79,12 @@ public class WorkoutService extends Service implements SensorEventListener {
                     sensorManager.registerListener(this, stepSensor,
                         SensorManager.SENSOR_DELAY_NORMAL);
                 }
-                startForeground(NOTIF_ID, buildNotification());
+                try {
+                    startForeground(NOTIF_ID, buildNotification());
+                } catch (Exception e) {
+                    stopSelf();
+                    return START_NOT_STICKY;
+                }
                 startNotificationRefresh();
                 break;
 
