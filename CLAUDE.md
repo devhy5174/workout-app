@@ -7,6 +7,53 @@
 - React Router DOM
 - React Icons
 - react-i18next (한국어/영어)
+- Capacitor (Android 네이티브 앱 래퍼)
+
+## Android 빌드 및 테스트
+
+가상폰(Android Studio 에뮬레이터)에서 확인할 때는 반드시 아래 순서로 진행:
+
+```bash
+npm run build        # 1. 웹 빌드
+npx cap sync android # 2. Android 프로젝트에 웹 번들 복사
+# 3. Android Studio에서 Run (▶) 버튼으로 에뮬레이터 실행
+```
+
+한 줄로도 가능:
+```bash
+npm run build && npx cap sync android
+```
+
+## 네이티브 운동 트래커 (Android Foreground Service)
+
+운동 시작 시 Android 상시 알림(잠금화면 포함)으로 실시간 운동 현황을 표시하는 네이티브 기능.
+
+### 관련 파일
+| 파일 | 역할 |
+|------|------|
+| `src/lib/workoutNative.ts` | Capacitor 플러그인 인터페이스 (TS 쪽) |
+| `android/.../WorkoutPlugin.java` | Capacitor 플러그인 (웹 ↔ 네이티브 브릿지) |
+| `android/.../WorkoutService.java` | Android Foreground Service — 센서·알림·브로드캐스트 |
+
+### 동작 흐름
+```
+Workout.tsx → WorkoutNative.startWorkout()
+  → WorkoutPlugin.java → WorkoutService 시작
+  → 실제 만보기 센서(TYPE_STEP_COUNTER) 등록
+  → 1초마다 상시 알림 업데이트 (잠금화면 표시)
+  → broadcastUpdate() → WorkoutPlugin → workoutUpdate 이벤트
+  → Workout.tsx에서 steps/elapsed 실시간 반영
+```
+
+### 알림 표시 내용
+```
+🚶 산책 중  ·  닉네임
+⏱ 01:30   👣 200보   🔥 12kcal
+[⏸ 일시정지]  [■ 종료]
+```
+- 캐릭터 이미지 원형 크롭해서 큰 아이콘으로 표시
+- `VISIBILITY_PUBLIC` — 잠금화면에서도 내용 전체 노출
+- 거리는 걸음수로 유추 가능하므로 알림에서 제외 (3개만 표시)
 
 ## 테마 시스템
 

@@ -12,6 +12,7 @@ import { useActiveBubble } from "../context/ActiveBubbleContext";
 import { FAKE_ACTIVE_USERS } from "../data/fakeUsers";
 import { DIET_BY_CHARACTER } from "../data/characterWorkoutDiet";
 import { useTodayStats } from "../hooks/useTodayStats";
+import { useYesterdayPace } from "../hooks/useYesterdayPace";
 import { notifyGoalReached } from "../utils/notificationTriggers";
 import WorkoutNative, { isNative } from "../lib/workoutNative";
 
@@ -96,6 +97,7 @@ export default function Workout() {
   const [elapsed, setElapsed] = useState<number>(() =>
     Number(localStorage.getItem(WK_KEY.elapsed) ?? 0),
   );
+  const yesterdayPace = useYesterdayPace(user?.id ?? null, elapsed, steps);
   const [showStartModal, setShowStartModal] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [pendingId, setPendingId] = useState<number>(() => selectedId ?? 1);
@@ -712,6 +714,21 @@ export default function Workout() {
             )}
           </div>
         </div>
+
+        {/* 어제 기록 페이서 배너 */}
+        {(state === "running" || state === "paused") && yesterdayPace !== null && (
+          <div className="w-full bg-white rounded-2xl px-4 py-3 flex items-center justify-between shadow-sm">
+            <div className="flex flex-col">
+              <span className="text-[10px] text-gray-400">어제 이 시점</span>
+              <span className="text-xs font-bold text-gray-500">{yesterdayPace.expectedSteps.toLocaleString()}보</span>
+            </div>
+            <span className={`text-xs font-extrabold ${yesterdayPace.diff >= 0 ? "text-emerald-500" : "text-red-400"}`}>
+              {yesterdayPace.diff >= 0
+                ? `+${yesterdayPace.diff.toLocaleString()}보 앞서는 중 🔥`
+                : `${Math.abs(yesterdayPace.diff).toLocaleString()}보 뒤처지는 중 💪`}
+            </span>
+          </div>
+        )}
 
         {/* 스탯 카드 */}
         <div className="w-full grid grid-cols-4 gap-2">

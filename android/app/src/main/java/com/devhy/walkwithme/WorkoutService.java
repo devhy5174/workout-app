@@ -177,11 +177,9 @@ public class WorkoutService extends Service implements SensorEventListener {
 
         String titleText = emoji + " " + label + " 중" +
             (nickname.isEmpty() ? "" : "  ·  " + nickname);
-        // 4개 항목 한 줄로 항상 표시 (칼로리 먼저, 거리 마지막)
         String statsLine = "⏱ " + timeStr
-            + "   👟 " + currentSteps + "보"
-            + "   🔥 " + calories + "kcal"
-            + "   📍 " + String.format("%.2f", distance) + "km";
+            + "   👣 " + currentSteps + "보"
+            + "   🔥 " + calories + "kcal";
 
         Intent openIntent = new Intent(this, MainActivity.class);
         openIntent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);

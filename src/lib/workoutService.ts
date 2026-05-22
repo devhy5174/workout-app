@@ -117,6 +117,30 @@ export async function fetchTodayStats(userId: string): Promise<DayStats> {
   );
 }
 
+// [어제 기록 페이서] 어제 운동 총 걸음수·운동시간 조회 → useYesterdayPace 훅에서 사용
+export async function fetchYesterdayWorkout(
+  userId: string,
+): Promise<{ steps: number; duration: number } | null> {
+  const yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
+  const dateStr = localDateStr(yesterday);
+
+  const { data, error } = await supabase
+    .from("workout_history")
+    .select("steps, duration")
+    .eq("user_id", userId)
+    .eq("date", dateStr);
+
+  if (error || !data || data.length === 0) return null;
+
+  const totals = data.reduce(
+    (acc, r) => ({ steps: acc.steps + (r.steps ?? 0), duration: acc.duration + (r.duration ?? 0) }),
+    { steps: 0, duration: 0 },
+  );
+
+  return totals.duration > 0 ? totals : null;
+}
+
 export async function fetchWeeklyStats(userId: string): Promise<number[]> {
   const now = new Date();
   const dayOfWeek = now.getDay(); // 0=일 1=월 ... 6=토

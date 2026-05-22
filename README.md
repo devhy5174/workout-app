@@ -5,20 +5,28 @@
 
 ## 기술 스택
 
-| 분류       | 사용 기술                       |
-| ---------- | ------------------------------- |
-| 프레임워크 | React 18 + TypeScript           |
-| 빌드       | Vite                            |
-| 스타일     | Tailwind CSS v3                 |
-| 라우팅     | React Router DOM v6             |
-| 아이콘     | React Icons                     |
-| 다국어     | react-i18next (한국어 / 영어)   |
-| 백엔드     | Supabase (Auth · DB · Realtime) |
+| 분류          | 사용 기술                       |
+| ------------- | ------------------------------- |
+| 프레임워크    | React 18 + TypeScript           |
+| 빌드          | Vite                            |
+| 스타일        | Tailwind CSS v3                 |
+| 라우팅        | React Router DOM v6             |
+| 아이콘        | React Icons                     |
+| 다국어        | react-i18next (한국어 / 영어)   |
+| 백엔드        | Supabase (Auth · DB · Realtime) |
+| 네이티브 앱   | Capacitor (Android)             |
 
 ## 실행 방법
 
+**웹 개발 서버**
 ```bash
 npm run dev
+```
+
+**Android 에뮬레이터 테스트** (Android Studio 필요)
+```bash
+npm run build && npx cap sync android
+# 이후 Android Studio에서 Run (▶) 실행
 ```
 
 ---
@@ -143,6 +151,34 @@ npm run dev
 | `user_goals`      | 유저 목표                      |
 | `events`          | 이벤트 정의                    |
 | `event_grants`    | 이벤트 보상 지급 내역          |
+
+---
+
+## 📱 Android 네이티브 운동 트래커 (Foreground Service)
+
+운동 시작 시 잠금화면·알림창에 실시간 운동 현황을 표시하는 Android 네이티브 기능입니다.  
+Capacitor 커스텀 플러그인으로 웹 ↔ 네이티브를 연결합니다.
+
+### 관련 파일
+
+| 파일 | 역할 |
+|------|------|
+| `src/lib/workoutNative.ts` | Capacitor 플러그인 TS 인터페이스 |
+| `android/.../WorkoutPlugin.java` | 웹 ↔ 네이티브 브릿지 |
+| `android/.../WorkoutService.java` | Foreground Service — 만보기 센서 · 알림 · 브로드캐스트 |
+| `src/hooks/useYesterdayPace.ts` | 어제 기록 페이서 — 어제 이 시점 걸음수와 실시간 비교 |
+
+### 알림 표시 내용
+
+```
+🚶 산책 중  ·  닉네임       ← 캐릭터 이미지 원형 아이콘
+⏱ 01:30   👣 200보   🔥 12kcal
+[⏸ 일시정지]  [■ 종료]
+```
+
+- `VISIBILITY_PUBLIC` 설정으로 잠금화면에서도 전체 내용 노출
+- 실제 하드웨어 만보기 센서(`TYPE_STEP_COUNTER`) 사용
+- 앱 화면에서는 "어제 이 시점" 걸음수와 실시간 비교 배너 추가 표시
 
 ---
 
