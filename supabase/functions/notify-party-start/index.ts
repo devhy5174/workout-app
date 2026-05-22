@@ -105,6 +105,25 @@ Deno.serve(async (req) => {
     });
   }
 
+  // 웹 푸시 발송 (push_subscriptions 등록된 파티원에게만)
+  const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+  const cronSecret = Deno.env.get("CRON_SECRET");
+  fetch(`${supabaseUrl}/functions/v1/notify-push`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...(cronSecret ? { "x-cron-secret": cronSecret } : {}),
+    },
+    body: JSON.stringify({
+      userIds: member_ids,
+      notification: {
+        title: "파티 운동이 시작됐어요!",
+        body: `${leader_nickname}님이 "${party_name}" 운동을 시작했습니다. 같이 ${verb} ${emoji}`,
+        data: { type: "party_started", party_id },
+      },
+    }),
+  }).catch((e) => console.warn("[notify-party-start] push call failed:", e));
+
   return new Response(JSON.stringify({ sent: notifications.length }), {
     status: 200,
     headers: { ...corsHeaders, "Content-Type": "application/json" },

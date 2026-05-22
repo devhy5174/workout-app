@@ -646,7 +646,21 @@ export type PartyHighlight = {
   name: string;
   emoji: string;
   value: number;
+  leaderNickname: string | null;
 };
+
+async function resolveLeaderNicknames(
+  parties: { id: string; created_by?: string }[],
+): Promise<Map<string, string>> {
+  const creatorIds = [...new Set(parties.map((p) => p.created_by).filter((id): id is string => !!id))];
+  if (creatorIds.length === 0) return new Map();
+  const { data: profiles } = await supabase
+    .from("public_profiles")
+    .select("id, nickname")
+    .in("id", creatorIds);
+  const byUserId = new Map((profiles ?? []).map((p: any) => [p.id, p.nickname ?? "알 수 없음"]));
+  return new Map(parties.map((p) => [p.id, byUserId.get(p.created_by ?? "") ?? "알 수 없음"]));
+}
 
 export async function fetchTodayTopParties(): Promise<PartyHighlight[]> {
   const today = localDateStr(new Date());
@@ -685,10 +699,11 @@ export async function fetchTodayTopParties(): Promise<PartyHighlight[]> {
   const partyIds = top3.map(([id]) => id);
   const { data: parties } = await supabase
     .from("parties")
-    .select("id, name")
+    .select("id, name, created_by")
     .in("id", partyIds);
 
   const partyMap = new Map((parties ?? []).map((p: any) => [p.id, p]));
+  const nicknameMap = await resolveLeaderNicknames(parties ?? []);
 
   return top3.map(([partyId, steps]) => {
     const party = partyMap.get(partyId) as any;
@@ -697,8 +712,188 @@ export async function fetchTodayTopParties(): Promise<PartyHighlight[]> {
       name: party?.name ?? "알 수 없음",
       emoji: PARTY_EMOJIS[(party?.name?.length ?? 0) % PARTY_EMOJIS.length],
       value: steps,
+      leaderNickname: nicknameMap.get(partyId) ?? null,
     };
   });
+}
+
+// [홈 파티 랭킹] 오늘 전체 파티 중 내 파티가 몇 위인지 반환
+export async function fetchMyPartyRank(
+  userId: string,
+): Promise<{ rank: number; partyName: string; partyId: string; steps: number } | null> {
+  const today = localDateStr(new Date());
+
+  const [{ data: workouts }, { data: myMemberships }] = await Promise.all([
+    supabase.from("workout_history").select("user_id, steps").eq("date", today),
+    supabase.from("party_members").select("party_id").eq("user_id", userId),
+  ]);
+
+  if (!workouts || !myMemberships || myMemberships.length === 0) return null;
+
+  const myPartyIds = new Set(myMemberships.map((m: any) => m.party_id));
+
+  const stepsPerUser = new Map<string, number>();
+  for (const w of workouts) {
+    if (!w.user_id) continue;
+    stepsPerUser.set(w.user_id, (stepsPerUser.get(w.user_id) ?? 0) + (w.steps ?? 0));
+  }
+
+  const userIds = [...stepsPerUser.keys()];
+  const { data: memberships } = await supabase
+    .from("party_members")
+    .select("user_id, party_id")
+    .in("user_id", userIds);
+
+  if (!memberships) return null;
+
+  const stepsPerParty = new Map<string, number>();
+  for (const m of memberships) {
+    const steps = stepsPerUser.get(m.user_id) ?? 0;
+    stepsPerParty.set(m.party_id, (stepsPerParty.get(m.party_id) ?? 0) + steps);
+  }
+
+  const ranked = [...stepsPerParty.entries()].sort(([, a], [, b]) => b - a);
+  const myPartyId = [...myPartyIds][0];
+  const rankIndex = ranked.findIndex(([id]) => id === myPartyId);
+  if (rankIndex === -1) return null;
+
+  const [, steps] = ranked[rankIndex];
+  const { data: party } = await supabase
+    .from("parties")
+    .select("id, name")
+    .eq("id", myPartyId)
+    .single();
+
+  if (!party) return null;
+
+  return { rank: rankIndex + 1, partyName: (party as any).name, partyId: myPartyId, steps };
+}
+
+function getThisWeekRange() {
+  const now = new Date();
+  const monday = new Date(now);
+  monday.setDate(now.getDate() - ((now.getDay() + 6) % 7));
+  monday.setHours(0, 0, 0, 0);
+  const daysElapsed = Math.max(1, Math.ceil((now.getTime() - monday.getTime()) / 86400000));
+  return { startDate: localDateStr(monday), endDate: localDateStr(now), daysElapsed };
+}
+
+async function buildPartyStepsMap(startDate: string, endDate: string) {
+  const { data: workouts } = await supabase
+    .from("workout_history").select("user_id, steps")
+    .gte("date", startDate).lte("date", endDate);
+  if (!workouts || workouts.length === 0) return null;
+
+  const stepsPerUser = new Map<string, number>();
+  for (const w of workouts) {
+    if (!w.user_id) continue;
+    stepsPerUser.set(w.user_id, (stepsPerUser.get(w.user_id) ?? 0) + (w.steps ?? 0));
+  }
+
+  const { data: memberships } = await supabase
+    .from("party_members").select("user_id, party_id")
+    .in("user_id", [...stepsPerUser.keys()]);
+  if (!memberships) return null;
+
+  const stepsPerParty = new Map<string, number>();
+  for (const m of memberships) {
+    stepsPerParty.set(m.party_id, (stepsPerParty.get(m.party_id) ?? 0) + (stepsPerUser.get(m.user_id) ?? 0));
+  }
+  return stepsPerParty;
+}
+
+// [홈 주간탭] 이번 주 파티별 총 걸음수 TOP 3
+export async function fetchWeeklyTopParties(): Promise<PartyHighlight[]> {
+  const { startDate, endDate } = getThisWeekRange();
+  const stepsPerParty = await buildPartyStepsMap(startDate, endDate);
+  if (!stepsPerParty) return [];
+
+  const top3 = [...stepsPerParty.entries()].sort(([, a], [, b]) => b - a).slice(0, 3);
+  const { data: parties } = await supabase.from("parties").select("id, name, created_by").in("id", top3.map(([id]) => id));
+  const partyMap = new Map((parties ?? []).map((p: any) => [p.id, p]));
+  const nicknameMap = await resolveLeaderNicknames(parties ?? []);
+
+  return top3.map(([partyId, steps]) => ({
+    id: partyId,
+    name: (partyMap.get(partyId) as any)?.name ?? "알 수 없음",
+    emoji: "",
+    value: steps,
+    leaderNickname: nicknameMap.get(partyId) ?? null,
+  }));
+}
+
+// [홈 주간탭] 이번 주 파티별 일평균 걸음수 TOP 3
+export async function fetchWeeklyAvgTopParties(): Promise<PartyHighlight[]> {
+  const { startDate, endDate, daysElapsed } = getThisWeekRange();
+  const stepsPerParty = await buildPartyStepsMap(startDate, endDate);
+  if (!stepsPerParty) return [];
+
+  const top3 = [...stepsPerParty.entries()]
+    .map(([id, total]) => [id, Math.round(total / daysElapsed)] as [string, number])
+    .sort(([, a], [, b]) => b - a).slice(0, 3);
+  const { data: parties } = await supabase.from("parties").select("id, name, created_by").in("id", top3.map(([id]) => id));
+  const partyMap = new Map((parties ?? []).map((p: any) => [p.id, p]));
+  const nicknameMap = await resolveLeaderNicknames(parties ?? []);
+
+  return top3.map(([partyId, avg]) => ({
+    id: partyId,
+    name: (partyMap.get(partyId) as any)?.name ?? "알 수 없음",
+    emoji: "",
+    value: avg,
+    leaderNickname: nicknameMap.get(partyId) ?? null,
+  }));
+}
+
+// [홈 파티 랭킹] 이번 주(월~일) 전체 파티 중 내 파티 총 걸음수 순위
+export async function fetchMyPartyWeeklyRank(
+  userId: string,
+): Promise<{ rank: number; partyName: string; partyId: string; steps: number } | null> {
+  const now = new Date();
+  const dayOfWeek = now.getDay();
+  const monday = new Date(now);
+  monday.setDate(now.getDate() - ((dayOfWeek + 6) % 7));
+  monday.setHours(0, 0, 0, 0);
+  const startDate = localDateStr(monday);
+  const endDate = localDateStr(now);
+
+  const [{ data: workouts }, { data: myMemberships }] = await Promise.all([
+    supabase.from("workout_history").select("user_id, steps").gte("date", startDate).lte("date", endDate),
+    supabase.from("party_members").select("party_id").eq("user_id", userId),
+  ]);
+
+  if (!workouts || !myMemberships || myMemberships.length === 0) return null;
+
+  const myPartyId = (myMemberships[0] as any).party_id;
+
+  const stepsPerUser = new Map<string, number>();
+  for (const w of workouts) {
+    if (!w.user_id) continue;
+    stepsPerUser.set(w.user_id, (stepsPerUser.get(w.user_id) ?? 0) + (w.steps ?? 0));
+  }
+
+  const userIds = [...stepsPerUser.keys()];
+  const { data: memberships } = await supabase
+    .from("party_members")
+    .select("user_id, party_id")
+    .in("user_id", userIds);
+
+  if (!memberships) return null;
+
+  const stepsPerParty = new Map<string, number>();
+  for (const m of memberships) {
+    const steps = stepsPerUser.get(m.user_id) ?? 0;
+    stepsPerParty.set(m.party_id, (stepsPerParty.get(m.party_id) ?? 0) + steps);
+  }
+
+  const ranked = [...stepsPerParty.entries()].sort(([, a], [, b]) => b - a);
+  const rankIndex = ranked.findIndex(([id]) => id === myPartyId);
+  if (rankIndex === -1) return null;
+
+  const [, steps] = ranked[rankIndex];
+  const { data: party } = await supabase.from("parties").select("id, name").eq("id", myPartyId).single();
+  if (!party) return null;
+
+  return { rank: rankIndex + 1, partyName: (party as any).name, partyId: myPartyId, steps };
 }
 
 export async function fetchTrendingParties(): Promise<PartyHighlight[]> {
@@ -729,10 +924,11 @@ export async function fetchTrendingParties(): Promise<PartyHighlight[]> {
   const partyIds = top3.map(([id]) => id);
   const { data: parties } = await supabase
     .from("parties")
-    .select("id, name")
+    .select("id, name, created_by")
     .in("id", partyIds);
 
   const partyMap = new Map((parties ?? []).map((p: any) => [p.id, p]));
+  const nicknameMap = await resolveLeaderNicknames(parties ?? []);
 
   return top3.map(([partyId, count]) => {
     const party = partyMap.get(partyId) as any;
@@ -741,6 +937,7 @@ export async function fetchTrendingParties(): Promise<PartyHighlight[]> {
       name: party?.name ?? "알 수 없음",
       emoji: PARTY_EMOJIS[(party?.name?.length ?? 0) % PARTY_EMOJIS.length],
       value: count,
+      leaderNickname: nicknameMap.get(partyId) ?? null,
     };
   });
 }

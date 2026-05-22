@@ -239,32 +239,21 @@ export async function fetchTodayHourlyStats(userId: string): Promise<number[]> {
 
 export type WeeklyTopUser = {
   rank: number;
+  user_id: string;
   nickname: string;
   steps: number;
   character_id: string | null;
 };
 
-export async function fetchWeeklyTop3(): Promise<WeeklyTopUser[]> {
-  const now = new Date();
-  const dayOfWeek = now.getDay();
-  const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
-  const monday = new Date(now);
-  monday.setDate(now.getDate() + mondayOffset);
-  monday.setHours(0, 0, 0, 0);
-  const sunday = new Date(monday);
-  sunday.setDate(monday.getDate() + 6);
+export type MyRankResult = {
+  rank: number;
+  steps: number;
+  total: number;
+} | null;
 
-  const startDate = localDateStr(monday);
-  const endDate = localDateStr(sunday);
-
-  const { data: workouts, error } = await supabase
-    .from("workout_history")
-    .select("user_id, steps")
-    .gte("date", startDate)
-    .lte("date", endDate);
-
-  if (error || !workouts || workouts.length === 0) return [];
-
+async function buildTop3FromWorkouts(
+  workouts: { user_id: string | null; steps: number | null }[],
+): Promise<WeeklyTopUser[]> {
   const stepsByUser: Record<string, number> = {};
   for (const w of workouts) {
     if (!w.user_id) continue;
@@ -289,11 +278,71 @@ export async function fetchWeeklyTop3(): Promise<WeeklyTopUser[]> {
     const profile = profileMap.get(userId);
     return {
       rank: i + 1,
+      user_id: userId,
       nickname: profile?.nickname ?? "익명",
       steps,
       character_id: profile?.character_id ?? null,
     };
   });
+}
+
+export async function fetchWeeklyTop3(): Promise<WeeklyTopUser[]> {
+  const now = new Date();
+  const dayOfWeek = now.getDay();
+  const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+  const monday = new Date(now);
+  monday.setDate(now.getDate() + mondayOffset);
+  monday.setHours(0, 0, 0, 0);
+  const sunday = new Date(monday);
+  sunday.setDate(monday.getDate() + 6);
+
+  const { data: workouts, error } = await supabase
+    .from("workout_history")
+    .select("user_id, steps")
+    .gte("date", localDateStr(monday))
+    .lte("date", localDateStr(sunday));
+
+  if (error || !workouts || workouts.length === 0) return [];
+  return buildTop3FromWorkouts(workouts);
+}
+
+export async function fetchTodayTop3(): Promise<WeeklyTopUser[]> {
+  const today = localDateStr(new Date());
+  const { data: workouts, error } = await supabase
+    .from("workout_history")
+    .select("user_id, steps")
+    .eq("date", today);
+
+  if (error || !workouts || workouts.length === 0) return [];
+  return buildTop3FromWorkouts(workouts);
+}
+
+export async function fetchMyRankInPeriod(
+  userId: string,
+  startDate: string,
+  endDate: string,
+): Promise<MyRankResult> {
+  const { data: workouts, error } = await supabase
+    .from("workout_history")
+    .select("user_id, steps")
+    .gte("date", startDate)
+    .lte("date", endDate);
+
+  if (error || !workouts || workouts.length === 0) return null;
+
+  const stepsByUser = new Map<string, number>();
+  for (const w of workouts) {
+    if (!w.user_id) continue;
+    stepsByUser.set(w.user_id, (stepsByUser.get(w.user_id) ?? 0) + (w.steps ?? 0));
+  }
+
+  if (!stepsByUser.has(userId)) return null;
+
+  const ranked = [...stepsByUser.entries()].sort(([, a], [, b]) => b - a);
+  const rankIndex = ranked.findIndex(([id]) => id === userId);
+  if (rankIndex === -1) return null;
+
+  return { rank: rankIndex + 1, steps: stepsByUser.get(userId)!, total: ranked.length };
 }
 
 // 이번 달 일별 걸음수 (인덱스 0=1일, 1=2일, ...)

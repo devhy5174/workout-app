@@ -24,6 +24,7 @@ import { calculateWorkoutMBTI } from "../utils/premiumMonthlyReportUtils";
 import { WORKOUT_MBTI_DICTIONARY } from "../data/premiumReportData";
 import WorkoutMbtiCard from "../components/home/WorkoutMbtiCard";
 import { HiBell } from "react-icons/hi";
+import { IoFootsteps, IoFlash, IoPeople } from "react-icons/io5";
 import { useNotifications } from "../hooks/useNotifications";
 import { NotificationDrawer } from "../components/notifications/NotificationDrawer";
 import { useEvents } from "../hooks/useEvents";
@@ -116,8 +117,13 @@ export default function Home() {
   const {
     topParties,
     trendingParties,
+    weeklyTopParties,
+    weeklyAvgTopParties,
+    myPartyRank,
+    myPartyWeeklyRank,
     isLoading: highlightsLoading,
-  } = usePartyHighlights();
+  } = usePartyHighlights(user?.id);
+  const [partyTab, setPartyTab] = useState<"daily" | "weekly">("daily");
 
   const activityTypeName = selectedActivityType?.name ?? null;
 
@@ -184,7 +190,8 @@ export default function Home() {
   const displayedText = useTypingEffect(bubbleMsg);
 
 const [activeUsers, setActiveUsers] = useState<DisplayUser[]>([]);
-  const { top3, isLoading: top3Loading } = useWeeklyTop3();
+  const [top3Tab, setTop3Tab] = useState<"daily" | "weekly">("daily");
+  const { top3, todayTop3, myWeeklyRank, myDailyRank, isLoading: top3Loading } = useWeeklyTop3(user?.id);
 
   useEffect(() => {
     async function buildActiveUsers() {
@@ -659,9 +666,19 @@ const [activeUsers, setActiveUsers] = useState<DisplayUser[]>([]);
       <div className="mx-4 mt-4 bg-white rounded-3xl shadow-sm">
         <div className="px-5 py-3 flex items-center justify-between border-b border-gray-50">
           <div className="flex items-center gap-2">
-            <span className="font-extrabold text-gray-700 text-sm">
-              파티 현황
-            </span>
+            <span className="font-extrabold text-gray-700 text-sm">파티 현황</span>
+            <div className="flex gap-1">
+              {(["daily", "weekly"] as const).map((t) => (
+                <button
+                  key={t}
+                  onClick={() => setPartyTab(t)}
+                  className={`text-[10px] font-bold px-2 py-0.5 rounded-full transition ${partyTab === t ? "text-white" : "text-gray-400"}`}
+                  style={partyTab === t ? { background: "var(--color-primary)" } : undefined}
+                >
+                  {t === "daily" ? "오늘" : "주간"}
+                </button>
+              ))}
+            </div>
           </div>
           <button
             onClick={() => navigate("/party")}
@@ -673,115 +690,210 @@ const [activeUsers, setActiveUsers] = useState<DisplayUser[]>([]);
         </div>
         <div className="px-4 py-3 flex flex-col gap-2">
           <PartyHighlightTicker
-            badge="오늘 최다 도보수"
-            badgeStyle={{ color: "#ea580c", background: "#fff7ed" }}
+            icon={<IoFootsteps className="text-sm text-orange-500" />}
+            iconBg="bg-orange-100"
+            label={partyTab === "daily" ? "오늘 최다 도보수" : "이번 주 최다 도보수"}
             items={
               highlightsLoading
                 ? []
-                : topParties.map((p, i) => ({
-                    text: `${["🥇", "🥈", "🥉"][i]} ${p.name} · ${p.value.toLocaleString()}보`,
-                    partyId: p.id,
-                  }))
+                : (partyTab === "daily" ? topParties : weeklyTopParties).map((p, i) => {
+                    const medal = MEDAL_CONFIG[i]?.medal ?? `${i + 1}위`;
+                    return {
+                      text: `${medal} ${p.name} · ${p.value.toLocaleString()}보`,
+                      partyId: p.id,
+                      content: (
+                        <>
+                          <span className="text-gray-600">{medal}&nbsp;&nbsp;</span>
+                          {p.leaderNickname && <span className="text-gray-500">{p.leaderNickname}의 파티&nbsp;</span>}
+                          <span className="font-bold" style={{ color: "var(--color-primary)" }}>{p.name}</span>
+                          <span className="text-gray-500">&nbsp;·&nbsp;{p.value.toLocaleString()}보</span>
+                        </>
+                      ),
+                    };
+                  })
             }
-            emptyText={
-              highlightsLoading
-                ? "불러오는 중..."
-                : "오늘 운동 기록이 아직 없어요"
-            }
+            emptyText={highlightsLoading ? "불러오는 중..." : "데이터가 없어요"}
             onTap={() => navigate("/party")}
           />
           <PartyHighlightTicker
-            badge="실시간 활동 멤버수"
-            badgeStyle={{ color: "#059669", background: "#ecfdf5" }}
+            icon={<IoFlash className="text-sm text-emerald-500" />}
+            iconBg="bg-emerald-100"
+            label={partyTab === "daily" ? "실시간 활동 멤버" : "이번 주 일평균 도보수"}
             items={
               highlightsLoading
                 ? []
-                : trendingParties.map((p) => ({
-                    text: `👥 ${p.name} · ${p.value}명 운동 중`,
-                    partyId: p.id,
-                  }))
+                : partyTab === "daily"
+                  ? trendingParties.map((p) => ({
+                      text: `${p.name} · ${p.value}명 운동 중`,
+                      partyId: p.id,
+                      content: (
+                        <>
+                          {p.leaderNickname && <span className="text-gray-500">{p.leaderNickname}의 파티&nbsp;</span>}
+                          <span className="font-bold" style={{ color: "var(--color-primary)" }}>{p.name}</span>
+                          <span className="text-gray-500">&nbsp;·&nbsp;{p.value}명 운동 중</span>
+                        </>
+                      ),
+                    }))
+                  : weeklyAvgTopParties.map((p, i) => {
+                      const medal = MEDAL_CONFIG[i]?.medal ?? `${i + 1}위`;
+                      return {
+                        text: `${medal} ${p.name} · ${p.value.toLocaleString()}보`,
+                        partyId: p.id,
+                        content: (
+                          <>
+                            <span className="text-gray-600">{medal}&nbsp;&nbsp;</span>
+                            {p.leaderNickname && <span className="text-gray-500">{p.leaderNickname}의 파티&nbsp;</span>}
+                            <span className="font-bold" style={{ color: "var(--color-primary)" }}>{p.name}</span>
+                            <span className="text-gray-500">&nbsp;·&nbsp;{p.value.toLocaleString()}보</span>
+                          </>
+                        ),
+                      };
+                    })
             }
-            emptyText={
-              highlightsLoading
-                ? "불러오는 중..."
-                : "현재 운동 중인 파티가 없어요"
-            }
+            emptyText={highlightsLoading ? "불러오는 중..." : partyTab === "daily" ? "현재 운동 중인 파티가 없어요" : "데이터가 없어요"}
             onTap={() => navigate("/party")}
           />
-        </div>
-      </div>
-
-      {/* 이번주 TOP 3 */}
-      <div className="mx-4 mt-3 bg-white rounded-3xl shadow-sm">
-        <div className="px-5 py-3 flex items-center gap-2 border-b border-gray-50">
-          <span className="text-lg">🏆</span>
-          <span className="font-extrabold text-gray-700 text-sm">
-            이번주 TOP 3
-          </span>
-        </div>
-        <div className="flex flex-col">
-          {top3Loading ? (
-            Array.from({ length: 3 }).map((_, i) => (
-              <div
-                key={i}
-                className="flex items-center gap-4 px-5 py-3.5 animate-pulse"
-              >
-                <div className="w-8 h-8 rounded-full bg-gray-100" />
-                <div className="flex-1 flex flex-col gap-1.5">
-                  <div className="h-3 bg-gray-100 rounded w-24" />
-                  <div className="h-2.5 bg-gray-100 rounded w-16" />
-                </div>
-              </div>
-            ))
-          ) : top3.length === 0 ? (
-            <div className="px-5 py-6 text-center text-xs text-gray-400 font-semibold">
-              이번주 아직 운동 기록이 없어요
-            </div>
-          ) : (
-            top3.map((entry) => {
-              const config = MEDAL_CONFIG[entry.rank - 1];
-              const charImage =
-                getAvatarCharacterById(entry.character_id)?.image ?? null;
-              return (
-                <div
-                  key={entry.rank}
-                  className="flex items-center gap-4 px-5 py-3.5"
-                  style={{ backgroundColor: config.bgColor }}
-                >
-                  <span className="text-2xl w-8 text-center">
-                    {config.medal}
-                  </span>
-                  <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center overflow-hidden flex-shrink-0 shadow-sm">
-                    {charImage ? (
-                      <img
-                        src={charImage}
-                        alt=""
-                        className="w-full h-full object-contain"
-                      />
-                    ) : (
-                      <span className="text-base">🏃</span>
-                    )}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-bold text-gray-800 text-sm truncate">
-                      {entry.nickname}
-                    </p>
-                    <p
-                      className="text-xs font-semibold"
-                      style={{ color: config.textColor }}
-                    >
-                      {entry.steps.toLocaleString()} 걸음
-                    </p>
-                  </div>
-                  <span className="text-xs font-extrabold text-gray-300">
-                    #{entry.rank}
-                  </span>
-                </div>
-              );
-            })
+          {user && (
+            <PartyHighlightTicker
+              icon={<IoPeople className="text-sm text-violet-500" />}
+              iconBg="bg-violet-100"
+              label="우리 파티 순위"
+              cardBg="bg-violet-50"
+              items={
+                highlightsLoading
+                  ? []
+                  : (() => {
+                      const r = partyTab === "daily" ? myPartyRank : myPartyWeeklyRank;
+                      if (!r) return [];
+                      const medal = MEDAL_CONFIG[r.rank - 1]?.medal ?? `${r.rank}위`;
+                      return [{ text: `${medal}  ${r.partyName} · ${r.steps.toLocaleString()}보`, partyId: r.partyId }];
+                    })()
+              }
+              emptyText={highlightsLoading ? "불러오는 중..." : "파티에 참가하면 순위를 볼 수 있어요"}
+              onTap={(partyId) => navigate(`/party/${partyId}`)}
+            />
           )}
         </div>
       </div>
+
+      {/* TOP 3 */}
+      {(() => {
+        const activeTop3 = top3Tab === "weekly" ? top3 : todayTop3;
+        const activeMyRank = top3Tab === "weekly" ? myWeeklyRank : myDailyRank;
+        const myCharImage = getAvatarCharacterById(userProfile?.character_id ?? "")?.image ?? null;
+        const isInTop3 = user && activeTop3.some((e) => e.user_id === user.id);
+
+        return (
+          <div className="mx-4 mt-3 bg-white rounded-3xl shadow-sm">
+            <div className="px-5 py-3 flex items-center gap-2 border-b border-gray-50">
+              <span className="text-lg">🏆</span>
+              <span className="font-extrabold text-gray-700 text-sm">TOP 3</span>
+              <div className="flex gap-1">
+                {(["daily", "weekly"] as const).map((t) => (
+                  <button
+                    key={t}
+                    onClick={() => setTop3Tab(t)}
+                    className={`text-[10px] font-bold px-2 py-0.5 rounded-full transition ${top3Tab === t ? "text-white" : "text-gray-400"}`}
+                    style={top3Tab === t ? { background: "var(--color-primary)" } : undefined}
+                  >
+                    {t === "daily" ? "오늘" : "이번 주"}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="flex flex-col">
+              {top3Loading ? (
+                Array.from({ length: 3 }).map((_, i) => (
+                  <div key={i} className="flex items-center gap-4 px-5 py-3.5 animate-pulse">
+                    <div className="w-8 h-8 rounded-full bg-gray-100" />
+                    <div className="flex-1 flex flex-col gap-1.5">
+                      <div className="h-3 bg-gray-100 rounded w-24" />
+                      <div className="h-2.5 bg-gray-100 rounded w-16" />
+                    </div>
+                  </div>
+                ))
+              ) : activeTop3.length === 0 ? (
+                <div className="px-5 py-6 text-center text-xs text-gray-400 font-semibold">
+                  {top3Tab === "weekly" ? "이번 주 아직 운동 기록이 없어요" : "오늘 아직 운동 기록이 없어요"}
+                </div>
+              ) : (
+                <>
+                  {activeTop3.map((entry) => {
+                    const config = MEDAL_CONFIG[entry.rank - 1];
+                    const charImage = getAvatarCharacterById(entry.character_id)?.image ?? null;
+                    const isMe = user?.id === entry.user_id;
+                    return (
+                      <div
+                        key={entry.rank}
+                        className="flex items-center gap-4 px-5 py-3.5"
+                        style={isMe ? { background: "var(--color-primary-light)" } : undefined}
+                      >
+                        <span className="text-2xl w-8 text-center">{config.medal}</span>
+                        <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center overflow-hidden flex-shrink-0 shadow-sm">
+                          {charImage ? (
+                            <img src={charImage} alt="" className="w-full h-full object-contain" />
+                          ) : (
+                            <span className="text-base">🏃</span>
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-bold text-gray-800 text-sm truncate">
+                            {entry.nickname}
+                            {isMe && (
+                              <span className="ml-1.5 text-[9px] font-extrabold px-1.5 py-0.5 rounded-full text-white" style={{ background: "var(--color-primary)" }}>나</span>
+                            )}
+                          </p>
+                          <p className="text-xs font-semibold" style={{ color: isMe ? "var(--color-primary)" : config.textColor }}>
+                            {entry.steps.toLocaleString()} 걸음
+                          </p>
+                        </div>
+                        <span className="text-xs font-extrabold text-gray-300">#{entry.rank}</span>
+                      </div>
+                    );
+                  })}
+
+                  {/* 내 순위 (TOP 3 밖일 때) */}
+                  {user && !isInTop3 && (
+                    <>
+                      <div className="flex items-center justify-center py-0.5">
+                        <span className="text-[11px] text-gray-300 font-bold tracking-widest">···</span>
+                      </div>
+                      {activeMyRank ? (
+                        <div className="flex items-center gap-4 px-5 py-3.5 rounded-b-3xl" style={{ background: "var(--color-primary-light)" }}>
+                          <span className="text-sm font-extrabold w-8 text-center" style={{ color: "var(--color-primary)" }}>
+                            #{activeMyRank.rank}
+                          </span>
+                          <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center overflow-hidden flex-shrink-0 shadow-sm">
+                            {myCharImage ? (
+                              <img src={myCharImage} alt="" className="w-full h-full object-contain" />
+                            ) : (
+                              <span className="text-base">🏃</span>
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-bold text-gray-800 text-sm truncate">
+                              {userProfile?.nickname ?? "나"}
+                              <span className="ml-1.5 text-[9px] font-extrabold px-1.5 py-0.5 rounded-full text-white" style={{ background: "var(--color-primary)" }}>나</span>
+                            </p>
+                            <p className="text-xs font-semibold" style={{ color: "var(--color-primary)" }}>
+                              {activeMyRank.steps.toLocaleString()} 걸음
+                            </p>
+                          </div>
+                          <span className="text-xs text-gray-400 font-semibold">전체 {activeMyRank.total}명</span>
+                        </div>
+                      ) : (
+                        <div className="px-5 py-3.5 text-center rounded-b-3xl bg-gray-50">
+                          <p className="text-xs text-gray-400 font-semibold">아직 기록이 없어요. 지금 운동해보세요! 🏃</p>
+                        </div>
+                      )}
+                    </>
+                  )}
+                </>
+              )}
+            </div>
+          </div>
+        );
+      })()}
 
       {/* 오늘의 한마디 */}
       <div className="mx-4 mt-4 mb-6 rounded-2xl bg-gradient-to-r from-primary to-secondary p-4 flex items-center gap-3">

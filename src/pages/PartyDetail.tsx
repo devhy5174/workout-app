@@ -603,7 +603,6 @@ export default function PartyDetail() {
     if (!party || !user || alertSending) return;
     setShowAlertConfirmModal(false);
     const memberIds = members
-      .filter((m) => m.user_id !== user.id)
       .map((m) => m.user_id);
     if (memberIds.length === 0) {
       setShowAlertSentModal(true);
