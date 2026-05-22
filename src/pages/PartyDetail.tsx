@@ -145,7 +145,7 @@ function MemberActivityCard({
           isMe ? "text-primary" : inactive7 ? "text-gray-300" : "text-gray-600"
         }`}
       >
-        {title ? `${title.split(" ")[0]} ` : ""}
+        {title ? `${[...title][0]} ` : ""}
         {nickname.length > 5 ? `${nickname.slice(0, 5)}…` : nickname}
         {isPartyLeader ? "👑" : ""}
       </p>
