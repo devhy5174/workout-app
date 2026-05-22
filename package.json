@@ -7,12 +7,14 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "postinstall": "bash scripts/patch-capacitor-health.sh"
   },
   "dependencies": {
     "@capacitor/android": "^8.3.4",
     "@capacitor/cli": "^8.3.4",
     "@capacitor/core": "^8.3.4",
+    "@capgo/capacitor-health": "^8.5.1",
     "@supabase/supabase-js": "^2.105.3",
     "i18next": "^26.0.9",
     "react": "^19.2.5",

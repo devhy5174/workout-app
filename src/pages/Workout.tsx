@@ -19,6 +19,7 @@ import { useTodayStats } from "../hooks/useTodayStats";
 import { useYesterdayPace } from "../hooks/useYesterdayPace";
 import { notifyGoalReached } from "../utils/notificationTriggers";
 import WorkoutNative, { isNative } from "../lib/workoutNative";
+import { initHealthConnect, readTodayStepsHC, getHCState, resetHCState } from "../lib/healthConnectService";
 
 const WK_KEY = {
   state: "wk_state",
@@ -111,6 +112,11 @@ export default function Workout() {
   const isSaved = useRef(false);
   const wakeLockRef = useRef<WakeLockSentinel | null>(null);
   const stepsRef = useRef(steps);
+  // Health Connect: 운동 시작 시점의 오늘 누적 걸음수 기준점
+  const hcStartStepsRef = useRef<number | null>(null);
+  // HC가 걸음수를 직접 제공 중인지 (state로 폴링 이펙트 트리거, ref로 콜백 내 동기 접근)
+  const [hcActive, setHcActive] = useState(false);
+  const hcActiveRef = useRef(false);
   useEffect(() => {
     stepsRef.current = steps;
   }, [steps]);
@@ -148,7 +154,9 @@ export default function Workout() {
   const characterImage =
     getAvatarCharacterById(userProfile?.character_id ?? null)?.image ?? null;
   const kcalPerMin = selectedActivityType?.kcalPerMin ?? 4;
-  const distance = parseFloat((steps * 0.0008).toFixed(2));
+  // stride: 키 있으면 신체 기반(height × 0.415 / 100 m), 없으면 기본 0.7m
+  const stride = userProfile?.height ? (userProfile.height * 0.415) / 100 : 0.7;
+  const distance = parseFloat((steps * stride / 1000).toFixed(2));
   const calories = Math.floor(kcalPerMin * (elapsed / 60));
   const elapsedMin = Math.floor(elapsed / 60);
   const elapsedSec = elapsed % 60;
@@ -221,7 +229,21 @@ export default function Workout() {
     if (isSaved.current) return;
     isSaved.current = true;
 
-    if (elapsed < 30 || steps < 50) {
+    // Health Connect로 실제 걸음수 확인 (가능한 경우)
+    let finalSteps = steps;
+    let finalDistance = distance;
+
+    if (getHCState() === "available" && hcStartStepsRef.current !== null) {
+      const endSteps = await readTodayStepsHC();
+      if (endSteps !== null) {
+        const sessionSteps = Math.max(0, endSteps - hcStartStepsRef.current);
+        finalSteps = sessionSteps;
+        const stride = userProfile?.height ? (userProfile.height * 0.415) / 100 : 0.7;
+        finalDistance = parseFloat((sessionSteps * stride / 1000).toFixed(2));
+      }
+    }
+
+    if (elapsed < 30 || finalSteps < 50) {
       setTooShort(true);
       clearWorkoutSession();
       if (user) endSession(user.id);
@@ -255,8 +277,8 @@ export default function Workout() {
     const saveResult = await saveWorkout({
       date: todayIso,
       duration: currentElapsed,
-      distance,
-      steps,
+      distance: finalDistance,
+      steps: finalSteps,
       calories: currentCalories,
       workout_type: selectedActivityType?.type ?? "walker",
       goal_achieved: goalProgress >= 100,
@@ -333,6 +355,65 @@ export default function Workout() {
     return () => document.removeEventListener("visibilitychange", onVisible);
   }, [state]);
 
+  // Health Connect: 운동 시작 시 권한 요청 + 기준 걸음수 저장 → hcActive 활성화
+  useEffect(() => {
+    if (state !== "running") return;
+    if (hcStartStepsRef.current !== null) return; // 일시정지 후 재개 시 재초기화 방지
+    (async () => {
+      try {
+        const hcState = await initHealthConnect();
+        if (hcState !== "available") return; // 거부/불가 → 타이머 fallback 유지
+        const todaySteps = await readTodayStepsHC();
+        // readTodayStepsHC 실패(null) 시에도 0으로 기준점 설정 후 활성화
+        hcStartStepsRef.current = todaySteps ?? 0;
+        hcActiveRef.current = true;
+        setHcActive(true);
+      } catch (e) {
+        // 예상치 못한 오류 → HC 비활성, 타이머 방식으로 계속 진행
+        console.warn("[Workout] HC 초기화 실패, fallback:", e);
+        hcStartStepsRef.current = null;
+        hcActiveRef.current = false;
+        setHcActive(false);
+      }
+    })();
+  }, [state === "running"]);
+
+  // Health Connect: 5초마다 오늘 누적 걸음수 읽어 세션 걸음수(시작 이후 증가분)로 업데이트
+  useEffect(() => {
+    if (state !== "running" || !hcActive) return;
+
+    const pollHC = async () => {
+      try {
+        const todaySteps = await readTodayStepsHC();
+        if (todaySteps === null) return; // 일시 오류 → 이번 poll만 건너뜀
+        if (hcStartStepsRef.current === null) return;
+        const sessionSteps = Math.max(0, todaySteps - hcStartStepsRef.current);
+        setSteps(sessionSteps);
+        stepsRef.current = sessionSteps;
+      } catch (e) {
+        // poll 중 오류 → HC 비활성, 이후 타이머 방식으로 전환
+        console.warn("[Workout] HC poll 오류, fallback:", e);
+        hcActiveRef.current = false;
+        setHcActive(false);
+      }
+    };
+
+    // 즉시 첫 읽기 — unhandled rejection 방지를 위해 .catch() 체이닝
+    pollHC().catch(() => {
+      hcActiveRef.current = false;
+      setHcActive(false);
+    });
+
+    const id = setInterval(() => {
+      pollHC().catch(() => {
+        hcActiveRef.current = false;
+        setHcActive(false);
+      });
+    }, 5_000);
+
+    return () => clearInterval(id);
+  }, [state, hcActive]);
+
   // 세션 시작/종료
   useEffect(() => {
     if (state === "running" && user) {
@@ -398,9 +479,9 @@ export default function Workout() {
     };
   }, []);
 
-  // 걸음 수 증가 (유형별 페이스)
+  // 걸음 수 증가 (유형별 페이스) — HC가 활성화된 경우 타이머 시뮬레이션 비활성
   useEffect(() => {
-    if (state !== "running") return;
+    if (state !== "running" || hcActive) return;
     const intervalMap: Record<string, number> = {
       walker: 600, // 분당 100보
       power_walker: 500, // 분당 120보
@@ -419,7 +500,7 @@ export default function Workout() {
       });
     }, ms);
     return () => clearInterval(id);
-  }, [state, selectedActivityType]);
+  }, [state, selectedActivityType, hcActive]);
 
   // 타이머 (1초마다) — JS 타이머로 부드러운 UI 업데이트, native listener는 백그라운드 복구용
   useEffect(() => {
@@ -831,6 +912,10 @@ export default function Workout() {
                   setSteps(0);
                   setElapsed(0);
                   isSaved.current = false;
+                  hcStartStepsRef.current = null;
+                  hcActiveRef.current = false;
+                  setHcActive(false);
+                  resetHCState();
                   setTooShort(false);
                   setState("idle");
                   clearWorkoutSession();
@@ -1097,6 +1182,10 @@ export default function Workout() {
                     setSteps(0);
                     setElapsed(0);
                     isSaved.current = false;
+                    hcStartStepsRef.current = null;
+                    hcActiveRef.current = false;
+                    setHcActive(false);
+                    resetHCState();
                     setTooShort(false);
                     setShowModal(false);
                     setState("idle");
