@@ -13,9 +13,9 @@ import {
 } from "../utils/streak";
 import { getRandomMessage, getWeatherMessage } from "../data/characterMessages";
 import { useWeather } from "../hooks/useWeather";
-import { getLiveFakeUsers } from "../data/fakeUsers";
 import { getActiveSessions } from "../lib/sessionService";
 import { getAvatarCharacterById } from "../data/avatarCharacters";
+import { getLiveFakeUsers } from "../data/fakeUsers";
 import { useWeeklyTop3 } from "../hooks/useWeeklyTop3";
 import { usePartyHighlights } from "../hooks/usePartyHighlights";
 import { PartyHighlightTicker } from "../components/ui/PartyHighlightTicker";
@@ -201,8 +201,7 @@ const [activeUsers, setActiveUsers] = useState<DisplayUser[]>([]);
         const shuffled = [...sessions].sort(() => Math.random() - 0.5);
         realUsers = shuffled.map((s) => ({
           nickname: s.nickname,
-          character_image:
-            getAvatarCharacterById(s.character_id)?.image ?? null,
+          character_image: getAvatarCharacterById(s.character_id)?.image ?? null,
           activity: s.exercise_type,
           steps: Math.floor(Math.random() * 5000) + 3000,
           isReal: true,

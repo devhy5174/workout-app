@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { FaPlay, FaPause, FaStop, FaUsers } from "react-icons/fa";
 import { IoTime, IoFootsteps, IoLocationSharp, IoFlame } from "react-icons/io5";
@@ -7,9 +7,13 @@ import { useUser } from "../context/UserContext";
 import { getAvatarCharacterById } from "../data/avatarCharacters";
 import { activityTypes } from "../data/activityTypes";
 import { storage } from "../utils/storage";
-import { startSession, updateSession, endSession } from "../lib/sessionService";
+import {
+  startSession,
+  updateSession,
+  endSession,
+  getActiveSessions,
+} from "../lib/sessionService";
 import { useActiveBubble } from "../context/ActiveBubbleContext";
-import { FAKE_ACTIVE_USERS } from "../data/fakeUsers";
 import { DIET_BY_CHARACTER } from "../data/characterWorkoutDiet";
 import { useTodayStats } from "../hooks/useTodayStats";
 import { useYesterdayPace } from "../hooks/useYesterdayPace";
@@ -111,11 +115,27 @@ export default function Workout() {
     stepsRef.current = steps;
   }, [steps]);
 
-  // 링 주변 공전할 친구 2명
-  const buddies = useMemo(() => {
-    const shuffled = [...FAKE_ACTIVE_USERS].sort(() => Math.random() - 0.5);
-    return shuffled.slice(0, 2);
-  }, []);
+  // 링 주변 공전할 실유저 (최대 2명)
+  const [buddies, setBuddies] = useState<
+    { nickname: string; activity: string; character_image: string }[]
+  >([]);
+  useEffect(() => {
+    getActiveSessions()
+      .then((sessions) => {
+        const real = sessions
+          .filter((s) => s.user_id !== user?.id)
+          .sort(() => Math.random() - 0.5)
+          .slice(0, 2)
+          .map((s) => ({
+            nickname: s.nickname,
+            activity: s.exercise_type,
+            character_image:
+              getAvatarCharacterById(s.character_id)?.image ?? "",
+          }));
+        setBuddies(real);
+      })
+      .catch(() => {});
+  }, [user?.id]);
 
   // 상태 localStorage 동기화
   useEffect(() => {
@@ -602,7 +622,7 @@ export default function Workout() {
                 const delay = -(duration / buddies.length) * i;
                 return (
                   <div
-                    key={buddy.nickname}
+                    key={i}
                     className="absolute z-10"
                     style={{
                       left: 0,
@@ -716,19 +736,24 @@ export default function Workout() {
         </div>
 
         {/* 어제 기록 페이서 배너 */}
-        {(state === "running" || state === "paused") && yesterdayPace !== null && (
-          <div className="w-full bg-white rounded-2xl px-4 py-3 flex items-center justify-between shadow-sm">
-            <div className="flex flex-col">
-              <span className="text-[10px] text-gray-400">어제 이 시점</span>
-              <span className="text-xs font-bold text-gray-500">{yesterdayPace.expectedSteps.toLocaleString()}보</span>
+        {(state === "running" || state === "paused") &&
+          yesterdayPace !== null && (
+            <div className="w-full bg-white rounded-2xl px-4 py-3 flex items-center justify-between shadow-sm">
+              <div className="flex flex-col">
+                <span className="text-[10px] text-gray-400">어제 이 시점</span>
+                <span className="text-xs font-bold text-gray-500">
+                  {yesterdayPace.expectedSteps.toLocaleString()}보
+                </span>
+              </div>
+              <span
+                className={`text-xs font-extrabold ${yesterdayPace.diff >= 0 ? "text-emerald-500" : "text-red-400"}`}
+              >
+                {yesterdayPace.diff >= 0
+                  ? `+${yesterdayPace.diff.toLocaleString()}보 앞서는 중 🔥`
+                  : `${Math.abs(yesterdayPace.diff).toLocaleString()}보 뒤처지는 중 💪`}
+              </span>
             </div>
-            <span className={`text-xs font-extrabold ${yesterdayPace.diff >= 0 ? "text-emerald-500" : "text-red-400"}`}>
-              {yesterdayPace.diff >= 0
-                ? `+${yesterdayPace.diff.toLocaleString()}보 앞서는 중 🔥`
-                : `${Math.abs(yesterdayPace.diff).toLocaleString()}보 뒤처지는 중 💪`}
-            </span>
-          </div>
-        )}
+          )}
 
         {/* 스탯 카드 */}
         <div className="w-full grid grid-cols-4 gap-2">
@@ -974,12 +999,16 @@ export default function Workout() {
                       value: durationLabel,
                     },
                     {
-                      icon: <IoLocationSharp className="text-xl text-blue-500" />,
+                      icon: (
+                        <IoLocationSharp className="text-xl text-blue-500" />
+                      ),
                       label: "거리",
                       value: `${distance.toFixed(2)} km`,
                     },
                     {
-                      icon: <IoFootsteps className="text-xl text-emerald-500" />,
+                      icon: (
+                        <IoFootsteps className="text-xl text-emerald-500" />
+                      ),
                       label: "걸음 수",
                       value: `${steps.toLocaleString()} 보`,
                     },

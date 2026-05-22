@@ -84,19 +84,14 @@ async function fetchProfile(userId: string): Promise<AppUser | null> {
     .eq("id", userId)
     .single();
 
-  console.log("fetchProfile 결과", { data, error });
   if (error) return null;
   return data as AppUser;
 }
 
 async function loadUserData(userId: string) {
-  console.log("1. loadUserData 시작");
   const profile = await fetchProfile(userId);
-  console.log("2. fetchProfile 완료", profile);
   const workouts = await fetchWorkoutHistory(userId);
-  console.log("3. fetchWorkoutHistory 완료", workouts);
   const goal = await fetchActiveGoal(userId);
-  console.log("4. fetchActiveGoal 완료", goal);
   return { profile, workouts, goal };
 }
 
@@ -118,8 +113,6 @@ export function UserProvider({ children }: { children: ReactNode }) {
 
     // 초기 세션 확인 함수
     async function initSession() {
-      console.log("0. 초기 세션 확인");
-
       // localStorage에 저장된 세션 가져오기
       const {
         data: { session },
@@ -134,12 +127,9 @@ export function UserProvider({ children }: { children: ReactNode }) {
 
       // 로그인 안된 상태면 로딩 종료
       if (!currentUser) {
-        console.log("유저 없음");
         setIsLoading(false);
         return;
       }
-
-      console.log("1. loadUserData 시작");
 
       // 유저 데이터 불러오는 동안 로딩 표시
       setIsLoading(true);
@@ -160,7 +150,6 @@ export function UserProvider({ children }: { children: ReactNode }) {
       } finally {
         // 항상 로딩 종료
         if (mounted) {
-          console.log("5. isLoading false 설정");
           setIsLoading(false);
         }
       }
@@ -173,7 +162,6 @@ export function UserProvider({ children }: { children: ReactNode }) {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event, session) => {
-      console.log("Auth event:", event);
 
       // 로그아웃 시 상태 초기화
       if (event === "SIGNED_OUT") {
