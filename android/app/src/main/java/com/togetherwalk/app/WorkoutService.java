@@ -1,4 +1,4 @@
-package com.devhy.walkwithme;
+package com.togetherwalk.app;
 
 import android.app.Notification;
 import android.app.NotificationChannel;
@@ -34,7 +34,7 @@ public class WorkoutService extends Service implements SensorEventListener {
     static final String EXTRA_ACTIVITY  = "activity_type";
     static final String EXTRA_NICKNAME  = "nickname";
     static final String EXTRA_CHARACTER = "character_id";
-    static final String BROADCAST_UPDATE = "com.devhy.walkwithme.WORKOUT_UPDATE";
+    static final String BROADCAST_UPDATE = "com.togetherwalk.app.WORKOUT_UPDATE";
 
     private SensorManager sensorManager;
     private Sensor stepSensor;
@@ -45,6 +45,7 @@ public class WorkoutService extends Service implements SensorEventListener {
     private long   pausedMs      = 0;
     private long   pauseStartMs  = 0;
     private boolean isPaused     = false;
+    private volatile boolean isRunning = false;
     private String activityType  = "walker";
     private String nickname      = "";
     private String characterId   = "";
@@ -84,6 +85,7 @@ public class WorkoutService extends Service implements SensorEventListener {
                 startTimeMs   = System.currentTimeMillis();
                 pausedMs      = 0;
                 isPaused      = false;
+                isRunning     = true;
                 if (stepSensor != null) {
                     sensorManager.registerListener(this, stepSensor,
                         SensorManager.SENSOR_DELAY_NORMAL);
@@ -112,6 +114,7 @@ public class WorkoutService extends Service implements SensorEventListener {
                 break;
 
             case ACTION_STOP:
+                isRunning = false;
                 sensorManager.unregisterListener(this);
                 stopForeground(true);
                 stopSelf();
@@ -122,11 +125,11 @@ public class WorkoutService extends Service implements SensorEventListener {
 
     private void startNotificationRefresh() {
         new Thread(() -> {
-            while (!isPaused) {
+            while (isRunning) {
                 try { Thread.sleep(1000); } catch (InterruptedException e) { break; }
-                if (startTimeMs == 0) break;
+                if (!isRunning) break;
                 updateNotification();
-                broadcastUpdate();
+                if (!isPaused) broadcastUpdate();
             }
         }).start();
     }
@@ -173,7 +176,7 @@ public class WorkoutService extends Service implements SensorEventListener {
         String timeStr = String.format("%02d:%02d", min, sec);
 
         double distance = currentSteps * 0.0008;
-        int    calories = (int)(kcalPerMin(activityType) * elapsed / 60.0);
+        int    calories = (int)(currentSteps * kcalPerMin(activityType) / stepsPerMin(activityType));
 
         String titleText = emoji + " " + label + " 중" +
             (nickname.isEmpty() ? "" : "  ·  " + nickname);
@@ -281,10 +284,19 @@ public class WorkoutService extends Service implements SensorEventListener {
 
     private double kcalPerMin(String t) {
         switch (t) {
-            case "runner":       return 10.0;
-            case "power_walker": return 6.0;
-            case "hiker":        return 7.0;
-            default:             return 4.0;
+            case "runner":       return 8.0;
+            case "power_walker": return 5.0;
+            case "hiker":        return 6.0;
+            default:             return 3.0;
+        }
+    }
+
+    private double stepsPerMin(String t) {
+        switch (t) {
+            case "runner":       return 150.0;
+            case "power_walker": return 120.0;
+            case "hiker":        return 90.0;
+            default:             return 100.0;
         }
     }
 }

@@ -1,4 +1,4 @@
-package com.devhy.walkwithme;
+package com.togetherwalk.app;
 
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -15,12 +15,14 @@ import com.getcapacitor.annotation.CapacitorPlugin;
 public class WorkoutPlugin extends Plugin {
 
     private BroadcastReceiver updateReceiver;
+    private String currentActivityType = "walker";
 
     @PluginMethod
     public void startWorkout(PluginCall call) {
         String activityType = call.getString("activityType", "walker");
         String nickname     = call.getString("nickname", "");
         String characterId  = call.getString("characterId", "");
+        currentActivityType = activityType;
 
         Intent intent = new Intent(getContext(), WorkoutService.class);
         intent.setAction(WorkoutService.ACTION_START);
@@ -65,8 +67,7 @@ public class WorkoutPlugin extends Plugin {
                 int steps   = intent.getIntExtra("steps", 0);
                 int elapsed = intent.getIntExtra("elapsed", 0);
                 double distance = steps * 0.0008;
-                // kcal 계산 (기본 walker 기준, 추후 확장 가능)
-                int calories = (int)(4.0 * elapsed / 60.0);
+                int calories = (int)(steps * kcalPerStep(currentActivityType));
 
                 JSObject data = new JSObject();
                 data.put("steps",    steps);
@@ -97,5 +98,14 @@ public class WorkoutPlugin extends Plugin {
         Intent intent = new Intent(getContext(), WorkoutService.class);
         intent.setAction(action);
         getContext().startService(intent);
+    }
+
+    private double kcalPerStep(String t) {
+        switch (t) {
+            case "runner":       return 8.0 / 150.0;
+            case "power_walker": return 5.0 / 120.0;
+            case "hiker":        return 6.0 / 90.0;
+            default:             return 3.0 / 100.0;
+        }
     }
 }

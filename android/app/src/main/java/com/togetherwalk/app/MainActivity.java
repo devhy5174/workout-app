@@ -1,4 +1,4 @@
-package com.devhy.walkwithme;
+package com.togetherwalk.app;
 
 import android.Manifest;
 import android.content.pm.PackageManager;

@@ -2,6 +2,8 @@ import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { FaPlay, FaPause, FaStop, FaUsers } from "react-icons/fa";
 import { IoTime, IoFootsteps, IoLocationSharp, IoFlame } from "react-icons/io5";
+import { MdOutlineMonitorHeart } from "react-icons/md";
+import AlertModal from "../components/ui/AlertModal";
 import { useActivityType } from "../context/ActivityTypeContext";
 import { useUser } from "../context/UserContext";
 import { getAvatarCharacterById } from "../data/avatarCharacters";
@@ -105,6 +107,7 @@ export default function Workout() {
   const yesterdayPace = useYesterdayPace(user?.id ?? null, elapsed, steps);
   const [showStartModal, setShowStartModal] = useState(false);
   const [showModal, setShowModal] = useState(false);
+  const [showHCGuide, setShowHCGuide] = useState(false);
   const [pendingId, setPendingId] = useState<number>(() => selectedId ?? 1);
 
   const [showBuddies, setShowBuddies] = useState(true);
@@ -117,6 +120,11 @@ export default function Workout() {
   // HC가 걸음수를 직접 제공 중인지 (state로 폴링 이펙트 트리거, ref로 콜백 내 동기 접근)
   const [hcActive, setHcActive] = useState(false);
   const hcActiveRef = useRef(false);
+  // HC 자동 일시정지: 걸음수 변화 없을 때 타이머만 멈춤 (state는 "running" 유지)
+  const [isAutoPaused, setIsAutoPaused] = useState(false);
+  const isAutoPausedRef = useRef(false);
+  const lastHCStepsRef = useRef<number>(0);
+  const lastHCStepTimeRef = useRef<number>(0);
   useEffect(() => {
     stepsRef.current = steps;
   }, [steps]);
@@ -154,10 +162,12 @@ export default function Workout() {
   const characterImage =
     getAvatarCharacterById(userProfile?.character_id ?? null)?.image ?? null;
   const kcalPerMin = selectedActivityType?.kcalPerMin ?? 4;
+  const actType = selectedActivityType?.type ?? "walker";
+  const stepsPerMin = (STEPS_PER_SEC[actType] ?? STEPS_PER_SEC.walker) * 60;
   // stride: 키 있으면 신체 기반(height × 0.415 / 100 m), 없으면 기본 0.7m
   const stride = userProfile?.height ? (userProfile.height * 0.415) / 100 : 0.7;
   const distance = parseFloat((steps * stride / 1000).toFixed(2));
-  const calories = Math.floor(kcalPerMin * (elapsed / 60));
+  const calories = Math.floor(steps * kcalPerMin / stepsPerMin);
   const elapsedMin = Math.floor(elapsed / 60);
   const elapsedSec = elapsed % 60;
   const durationLabel =
@@ -366,6 +376,8 @@ export default function Workout() {
         const todaySteps = await readTodayStepsHC();
         // readTodayStepsHC 실패(null) 시에도 0으로 기준점 설정 후 활성화
         hcStartStepsRef.current = todaySteps ?? 0;
+        lastHCStepsRef.current = 0;
+        lastHCStepTimeRef.current = Date.now();
         hcActiveRef.current = true;
         setHcActive(true);
       } catch (e) {
@@ -379,26 +391,44 @@ export default function Workout() {
   }, [state === "running"]);
 
   // Health Connect: 5초마다 오늘 누적 걸음수 읽어 세션 걸음수(시작 이후 증가분)로 업데이트
+  // 자동 일시정지: 30초간 걸음수 변화 없으면 타이머 멈춤, 재개되면 자동 복귀
   useEffect(() => {
     if (state !== "running" || !hcActive) return;
 
     const pollHC = async () => {
       try {
         const todaySteps = await readTodayStepsHC();
-        if (todaySteps === null) return; // 일시 오류 → 이번 poll만 건너뜀
+        if (todaySteps === null) return;
         if (hcStartStepsRef.current === null) return;
         const sessionSteps = Math.max(0, todaySteps - hcStartStepsRef.current);
+
+        if (sessionSteps > lastHCStepsRef.current) {
+          lastHCStepsRef.current = sessionSteps;
+          lastHCStepTimeRef.current = Date.now();
+          if (isAutoPausedRef.current) {
+            isAutoPausedRef.current = false;
+            setIsAutoPaused(false);
+            if (isNative()) WorkoutNative.resumeWorkout().catch(() => {});
+          }
+        } else if (
+          lastHCStepTimeRef.current > 0 &&
+          !isAutoPausedRef.current &&
+          Date.now() - lastHCStepTimeRef.current > 30_000
+        ) {
+          isAutoPausedRef.current = true;
+          setIsAutoPaused(true);
+          if (isNative()) WorkoutNative.pauseWorkout().catch(() => {});
+        }
+
         setSteps(sessionSteps);
         stepsRef.current = sessionSteps;
       } catch (e) {
-        // poll 중 오류 → HC 비활성, 이후 타이머 방식으로 전환
         console.warn("[Workout] HC poll 오류, fallback:", e);
         hcActiveRef.current = false;
         setHcActive(false);
       }
     };
 
-    // 즉시 첫 읽기 — unhandled rejection 방지를 위해 .catch() 체이닝
     pollHC().catch(() => {
       hcActiveRef.current = false;
       setHcActive(false);
@@ -502,12 +532,12 @@ export default function Workout() {
     return () => clearInterval(id);
   }, [state, selectedActivityType, hcActive]);
 
-  // 타이머 (1초마다) — JS 타이머로 부드러운 UI 업데이트, native listener는 백그라운드 복구용
+  // 타이머 (1초마다) — HC 자동 일시정지 중에는 멈춤
   useEffect(() => {
-    if (state !== "running") return;
+    if (state !== "running" || isAutoPaused) return;
     const id = setInterval(() => setElapsed((prev) => prev + 1), 1000);
     return () => clearInterval(id);
-  }, [state]);
+  }, [state, isAutoPaused]);
 
   const statIcon = (
     Icon: React.ComponentType<{ className?: string }>,
@@ -609,7 +639,12 @@ export default function Workout() {
         style={{ color: "var(--color-primary)" }}
       >
         {state === "idle" && "시작 버튼을 눌러보세요!"}
-        {state === "running" && "🔥 운동 중이에요!"}
+        {state === "running" && !isAutoPaused && "🔥 운동 중이에요!"}
+        {state === "running" && isAutoPaused && (
+          <span className="inline-flex items-center justify-center gap-1">
+            ⏸ 걸음 감지 안됨 — 자동 일시정지
+          </span>
+        )}
         {state === "paused" && (
           <span className="inline-flex items-center justify-center gap-1">
             <FaPause /> 일시정지됨
@@ -888,7 +923,12 @@ export default function Workout() {
           {state === "paused" && (
             <>
               <button
-                onClick={() => setState("running")}
+                onClick={() => {
+                  isAutoPausedRef.current = false;
+                  setIsAutoPaused(false);
+                  lastHCStepTimeRef.current = Date.now();
+                  setState("running");
+                }}
                 className="flex-1 py-4 rounded-2xl text-white font-extrabold shadow-md active:scale-95 transition flex items-center justify-center gap-2"
                 style={{
                   background:
@@ -1007,8 +1047,13 @@ export default function Workout() {
               onClick={() => {
                 selectActivityType(pendingId);
                 setShowStartModal(false);
-                setState("running");
+                if (!localStorage.getItem("hc_guide_seen")) {
+                  setShowHCGuide(true);
+                } else {
+                  setState("running");
+                }
               }}
+
               className="w-full py-4 rounded-2xl text-white font-extrabold text-base active:scale-95 transition shadow-md"
               style={{
                 background:
@@ -1019,6 +1064,43 @@ export default function Workout() {
             </button>
           </div>
         </div>
+      )}
+
+      {/* 헬스커넥트 안내 (첫 운동 시작 시 1회) */}
+      {showHCGuide && (
+        <AlertModal
+          icon={MdOutlineMonitorHeart}
+          iconClass="text-primary"
+          title="더 정확한 운동 기록"
+          message={
+            <div className="text-left space-y-2 w-full">
+              <p className="text-center text-gray-400 mb-3">
+                헬스커넥트를 연결하면 실제 걸음수로 기록돼요
+              </p>
+              <div className="bg-gray-50 rounded-2xl p-3 space-y-2">
+                {[
+                  { Icon: IoFootsteps, text: "실제 걸음수 측정 (폰 센서 직접 연동)" },
+                  { Icon: FaPause,     text: "안 걸으면 타이머 자동 일시정지" },
+                  { Icon: IoFlame,     text: "실제 걸음 기반 칼로리 계산" },
+                ].map(({ Icon, text }) => (
+                  <div key={text} className="flex items-center gap-2">
+                    <Icon className="text-primary shrink-0" />
+                    <span className="text-xs font-bold text-gray-700">{text}</span>
+                  </div>
+                ))}
+                <p className="text-[10px] text-gray-400 pt-1 border-t border-gray-200">
+                  미연결 시 활동 유형별 예상값으로 기록돼요
+                </p>
+              </div>
+            </div>
+          }
+          confirmLabel="확인"
+          onConfirm={() => {
+            localStorage.setItem("hc_guide_seen", "1");
+            setShowHCGuide(false);
+            setState("running");
+          }}
+        />
       )}
 
       {/* 완료 팝업 */}
