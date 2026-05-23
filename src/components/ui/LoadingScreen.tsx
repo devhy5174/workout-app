@@ -34,8 +34,8 @@ export default function LoadingScreen() {
       <div
         className="animate-bounce"
         style={{
-          width: 72,
-          height: 72,
+          width: 150,
+          height: 150,
           backgroundColor: "var(--color-primary)",
           maskImage: `url(${loadingLogo})`,
           maskSize: "contain",
