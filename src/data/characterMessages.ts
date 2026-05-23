@@ -56,12 +56,42 @@ export const WEATHER_MESSAGES: CharacterMessage[] = [
     weatherCondition: "snow",
   },
   {
-    text: "더운 날엔 아침 일찍이 최고예요 🌅",
+    text: "오늘 너무 더워요, 아침 일찍이나 실내 운동 어때요? 🌅",
     type: "weather",
     weatherCondition: "hot",
   },
   {
-    text: "쌀쌀한 날 걷고 나면 얼굴이 빨개져요 🥶",
+    text: "30도 넘는 날엔 야외 운동 강도를 줄여주세요. 오늘은 헬스장 어떠세요? 💪",
+    type: "weather",
+    weatherCondition: "hot",
+  },
+  {
+    text: "이 더위엔 물 충분히 마시고, 무리하지 마세요 💧",
+    type: "weather",
+    weatherCondition: "hot",
+  },
+  {
+    text: "꼭 나가야 한다면 그늘길 + 수분 보충은 필수예요 ☀️",
+    type: "weather",
+    weatherCondition: "hot",
+  },
+  {
+    text: "오늘은 많이 춥네요. 준비운동 꼭 하고 나가세요 🧥",
+    type: "weather",
+    weatherCondition: "cold",
+  },
+  {
+    text: "영하권엔 무릎이 다칠 수 있어요. 실내 운동도 좋아요 🏋️",
+    type: "weather",
+    weatherCondition: "cold",
+  },
+  {
+    text: "쌀쌀한 날엔 마스크 쓰고 걸으면 훨씬 따뜻해요 🥶",
+    type: "weather",
+    weatherCondition: "cold",
+  },
+  {
+    text: "추운 날 걸을 거라면 손발 먼저 따뜻하게 해주세요 🧤",
     type: "weather",
     weatherCondition: "cold",
   },
