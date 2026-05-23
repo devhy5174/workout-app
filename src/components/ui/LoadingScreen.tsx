@@ -1,4 +1,4 @@
-import { MdDirectionsRun } from "react-icons/md";
+import loadingLogo from "../../assets/images/loadingLogo.png";
 
 export default function LoadingScreen() {
   return (
@@ -30,10 +30,23 @@ export default function LoadingScreen() {
         />
       </div>
 
-      {/* 캐릭터 아이콘 */}
-      <div className="animate-bounce" style={{ color: "var(--color-primary)" }}>
-        <MdDirectionsRun size={52} />
-      </div>
+      {/* 로고 아이콘 — 흰색 PNG를 마스크로 써서 테마색으로 채움 */}
+      <div
+        className="animate-bounce"
+        style={{
+          width: 72,
+          height: 72,
+          backgroundColor: "var(--color-primary)",
+          maskImage: `url(${loadingLogo})`,
+          maskSize: "contain",
+          maskRepeat: "no-repeat",
+          maskPosition: "center",
+          WebkitMaskImage: `url(${loadingLogo})`,
+          WebkitMaskSize: "contain",
+          WebkitMaskRepeat: "no-repeat",
+          WebkitMaskPosition: "center",
+        }}
+      />
 
       {/* 점 3개 */}
       <div className="flex gap-2 items-center mt-1">
