@@ -2,10 +2,10 @@ import loadingLogo from "../../assets/images/loadingLogo.png";
 
 export default function LoadingScreen() {
   return (
-    <div className="h-screen flex flex-col items-center justify-center bg-bg gap-4">
+    <div className="h-screen flex flex-col items-center justify-center bg-bg gap-6">
       {/* 말풍선 */}
       <div
-        className="relative mb-3 mr-2"
+        className="relative"
         style={{
           filter: "drop-shadow(0 2px 10px rgba(0,0,0,0.12))",
           animation: "bubble-fade 2.8s ease-in-out infinite",
@@ -32,8 +32,8 @@ export default function LoadingScreen() {
 
       {/* 로고 아이콘 — 흰색 PNG를 마스크로 써서 테마색으로 채움 */}
       <div
-        className="animate-bounce"
         style={{
+          animation: "gentle-bounce 1.6s ease-in-out infinite",
           width: 150,
           height: 150,
           backgroundColor: "var(--color-primary)",
@@ -49,7 +49,7 @@ export default function LoadingScreen() {
       />
 
       {/* 점 3개 */}
-      <div className="flex gap-2 items-center mt-1">
+      <div className="flex gap-2 items-center">
         {[0, 1, 2].map((i) => (
           <span
             key={i}
