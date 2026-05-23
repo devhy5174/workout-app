@@ -5,12 +5,7 @@ import { useActivityType } from "../context/ActivityTypeContext";
 import { useCharacter } from "../context/CharacterContext";
 import { useUser } from "../context/UserContext";
 import { usePremium } from "../context/PremiumContext";
-import { storage } from "../utils/storage";
-import {
-  calculateStreak,
-  getThisWeekWorkouts,
-  localDateStr,
-} from "../utils/streak";
+import { localDateStr } from "../utils/streak";
 import { getRandomMessage, getWeatherMessage } from "../data/characterMessages";
 import { useWeather } from "../hooks/useWeather";
 import { getActiveSessions } from "../lib/sessionService";
@@ -24,7 +19,8 @@ import { calculateWorkoutMBTI } from "../utils/premiumMonthlyReportUtils";
 import { WORKOUT_MBTI_DICTIONARY } from "../data/premiumReportData";
 import WorkoutMbtiCard from "../components/home/WorkoutMbtiCard";
 import { HiBell } from "react-icons/hi";
-import { IoFootsteps, IoFlash, IoPeople } from "react-icons/io5";
+import { IoFootsteps, IoFlash, IoPeople, IoInformationCircle } from "react-icons/io5";
+import AlertModal from "../components/ui/AlertModal";
 import { useNotifications } from "../hooks/useNotifications";
 import { NotificationDrawer } from "../components/notifications/NotificationDrawer";
 import { useEvents } from "../hooks/useEvents";
@@ -127,10 +123,27 @@ export default function Home() {
 
   const activityTypeName = selectedActivityType?.name ?? null;
 
-  const history = storage.getWorkoutHistory();
-  const streak = calculateStreak(history);
-  const weekWorkouts = getThisWeekWorkouts(history);
+  const streak = userProfile?.streak ?? 0;
+
+  // 이번주 월~일 각 날짜의 steps 합산, 1,000보 이상인 날만 운동한 날로 카운트
+  const weekWorkouts = useMemo(() => {
+    const stepsByDate: Record<string, number> = {};
+    for (const r of workoutRecords) {
+      stepsByDate[r.date] = (stepsByDate[r.date] ?? 0) + r.steps;
+    }
+    const today = new Date();
+    const dayOfWeek = today.getDay();
+    const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+    const monday = new Date(today);
+    monday.setDate(today.getDate() + mondayOffset);
+    return Array.from({ length: 7 }, (_, i) => {
+      const d = new Date(monday);
+      d.setDate(monday.getDate() + i);
+      return (stepsByDate[localDateStr(d)] ?? 0) >= 1000;
+    });
+  }, [workoutRecords]);
   const workoutDays = weekWorkouts.filter(Boolean).length;
+  const [showStreakInfo, setShowStreakInfo] = useState(false);
 
   // 페이지 로드마다 캐릭터에 맞는 랜덤 메시지
   const activityType = selectedActivityType?.type ?? "walker";
@@ -317,6 +330,23 @@ const [activeUsers, setActiveUsers] = useState<DisplayUser[]>([]);
 
   return (
     <div className="flex flex-col h-full overflow-y-auto pb-20 bg-bg">
+      {showStreakInfo && (
+        <AlertModal
+          icon={IoFootsteps}
+          iconClass="text-primary"
+          title="스트릭 & 이번주 운동 기준"
+          message={
+            <span>
+              하루 총 걸음수가 <strong className="text-gray-700">1,000보 이상</strong>이어야
+              {" "}스트릭이 쌓이고 이번주 운동에 카운트돼요.{"\n\n"}
+              짧은 산책을 여러 번 나눠 기록해도{" "}
+              <strong className="text-gray-700">합산 1,000보</strong>면 OK!
+            </span>
+          }
+          confirmLabel="확인"
+          onConfirm={() => setShowStreakInfo(false)}
+        />
+      )}
       {/* 공지 배너 */}
       {activeNotice && (
         <div className="flex items-center gap-2.5 px-4 py-2.5 bg-amber-50/90 border-b border-amber-100">
@@ -341,6 +371,13 @@ const [activeUsers, setActiveUsers] = useState<DisplayUser[]>([]);
           <span className="font-extrabold text-primary text-sm">
             {streak}일 연속 운동 중!
           </span>
+          <button
+            onClick={() => setShowStreakInfo(true)}
+            aria-label="스트릭 안내"
+            className="flex items-center text-primary opacity-50 active:scale-90 transition -ml-0.5"
+          >
+            <IoInformationCircle size={14} />
+          </button>
         </div>
         <div className="flex items-center gap-2">
           <WeatherWidget weather={weather} />
@@ -537,8 +574,15 @@ const [activeUsers, setActiveUsers] = useState<DisplayUser[]>([]);
         {/* 이번주 운동 */}
         <div className="bg-white rounded-3xl shadow-sm p-6 flex flex-col gap-3">
           <div className="flex justify-between items-center">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5">
               <span className="font-bold text-gray-700">이번주 운동</span>
+              <button
+                onClick={() => setShowStreakInfo(true)}
+                aria-label="이번주 운동 안내"
+                className="text-gray-400 active:scale-90 transition"
+              >
+                <IoInformationCircle size={16} />
+              </button>
             </div>
             <span className="font-extrabold text-primary">
               {workoutDays}일

@@ -716,90 +716,44 @@ export default function Workout() {
             </div>
           )}
 
-          {/* 친구 아바타 - 캐릭터 중심 공전 */}
+          {/* 친구 아바타 - 링 3시/9시 고정 + float */}
           <style>{`
-            @keyframes orbit-rotate {
-              from { transform: rotate(0deg); }
-              to   { transform: rotate(360deg); }
-            }
-            @keyframes counter-rotate {
-              from { transform: rotate(0deg); }
-              to   { transform: rotate(-360deg); }
+            @keyframes buddy-float {
+              0%, 100% { transform: translateY(0px); }
+              50%       { transform: translateY(-6px); }
             }
           `}</style>
-          {showBuddies && (
-            <div
-              className="absolute pointer-events-none"
-              style={{ left: CX, top: CY }}
-            >
-              {buddies.map((buddy, i) => {
-                const duration = 120;
-
-                const delay = -(duration / buddies.length) * i;
-                return (
-                  <div
-                    key={i}
-                    className="absolute z-10"
-                    style={{
-                      left: 0,
-
-                      top: 0,
-
-                      transformOrigin: "0 0",
-
-                      animation: `orbit-rotate ${duration}s linear infinite`,
-
-                      animationDelay: `${delay}s`,
-                    }}
-                    title={`${buddy.nickname}님 ${buddy.activity}`}
-                  >
-                    <div
-                      className="absolute flex flex-col items-center"
-                      style={{
-                        left: 112,
-
-                        top: -18,
-
-                        width: 36,
-
-                        height: 36,
-
-                        transformOrigin: "18px 18px",
-
-                        animation: `counter-rotate ${duration}s linear infinite`,
-
-                        animationDelay: `${delay}s`,
-                      }}
-                    >
-                      {/* 말풍선 - 아바타 위에 따라다님 */}
-                      <div
-                        className="absolute bg-white shadow-sm rounded-full px-2 py-0.5 flex items-center gap-1 whitespace-nowrap"
-                        style={{
-                          bottom: "calc(100% + 4px)",
-                          left: "50%",
-                          transform: "translateX(-50%)",
-                        }}
-                      >
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse flex-shrink-0" />
-                        <span className="text-[8px] font-bold text-gray-600">
-                          {buddy.nickname}{" "}
-                          {ACTIVITY_LABEL[buddy.activity] ?? "운동 중"}
-                        </span>
-                      </div>
-                      {/* 아바타 */}
-                      <div className="w-9 h-9 rounded-full bg-white shadow-md border-2 border-white overflow-hidden">
-                        <img
-                          src={buddy.character_image}
-                          alt={buddy.nickname}
-                          className="w-full h-full object-contain"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
+          {showBuddies && buddies.map((buddy, i) => {
+            const isRight = i === 0;
+            return (
+              <div
+                key={i}
+                className="absolute flex flex-col items-center pointer-events-none"
+                style={{
+                  top: CY - 18,
+                  ...(isRight
+                    ? { left: CX + RADIUS + STROKE_W + 6 }
+                    : { right: SVG_SIZE - (CX - RADIUS - STROKE_W - 6) }),
+                  animation: `buddy-float ${3 + i * 0.7}s ease-in-out infinite`,
+                  animationDelay: `${i * 0.4}s`,
+                }}
+              >
+                <div className="bg-white shadow-sm rounded-full px-2 py-0.5 flex items-center gap-1 whitespace-nowrap mb-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse flex-shrink-0" />
+                  <span className="text-[8px] font-bold text-gray-600">
+                    {buddy.nickname} {ACTIVITY_LABEL[buddy.activity] ?? "운동 중"}
+                  </span>
+                </div>
+                <div className="w-9 h-9 rounded-full bg-white shadow-md border-2 border-white overflow-hidden">
+                  <img
+                    src={buddy.character_image}
+                    alt={buddy.nickname}
+                    className="w-full h-full object-contain"
+                  />
+                </div>
+              </div>
+            );
+          })}
 
           <div className="absolute inset-0 flex flex-col items-center justify-center select-none">
             {state === "idle" && (
@@ -1201,6 +1155,35 @@ export default function Workout() {
                     </div>
                   ))}
                 </div>
+
+                {yesterdayPace && (
+                  <div className="px-6 pb-2">
+                    <div
+                      className="rounded-2xl px-4 py-3 flex items-center gap-3"
+                      style={{ background: "var(--color-primary-light)" }}
+                    >
+                      <IoFootsteps
+                        className="text-xl shrink-0"
+                        style={{ color: "var(--color-primary)" }}
+                      />
+                      <div>
+                        <p
+                          className="text-xs font-bold"
+                          style={{ color: "var(--color-primary)" }}
+                        >
+                          어제의 나와 비교
+                        </p>
+                        <p className="text-sm font-extrabold text-gray-800 mt-0.5">
+                          {yesterdayPace.diff > 0
+                            ? `어제보다 ${yesterdayPace.diff.toLocaleString()}보 앞섰어요 🏆`
+                            : yesterdayPace.diff < 0
+                              ? `어제보다 ${Math.abs(yesterdayPace.diff).toLocaleString()}보 부족했어요 💪`
+                              : "어제와 똑같은 페이스예요 👏"}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 <div className="px-6 pb-2">
                   <div

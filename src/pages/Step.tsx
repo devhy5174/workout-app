@@ -36,6 +36,8 @@ import {
 import { CATEGORY_META } from "../data/events";
 import type { AppEvent } from "../data/events";
 import { autoGrantFixedEvent } from "../lib/eventService";
+import AlertModal from "../components/ui/AlertModal";
+import { IoInformationCircle, IoFootsteps } from "react-icons/io5";
 
 type Tab = "step" | "premium" | "events";
 type PlanType = "monthly" | "annual";
@@ -135,6 +137,7 @@ function StreakChallengeCard({
 }) {
   const target = event.conditionValue;
   const isCompleted = streak >= target;
+  const [showInfo, setShowInfo] = useState(false);
 
   // 최대 30개 dot으로 시각화, 초과분은 비율로 매핑
   const DOT_COUNT = Math.min(target, 30);
@@ -147,9 +150,35 @@ function StreakChallengeCard({
 
   return (
     <div className="rounded-2xl bg-white shadow-sm p-5">
+      {showInfo && (
+        <AlertModal
+          icon={IoFootsteps}
+          iconClass="text-primary"
+          title="연속 챌린지 기준"
+          message={
+            <span>
+              하루 총 걸음수가 <strong className="text-gray-700">1,000보 이상</strong>이어야
+              {" "}연속 일수에 카운트돼요.{"\n\n"}
+              하루라도 빠지면 처음부터 다시 시작되니 매일 꾸준히 걸어보세요!
+            </span>
+          }
+          confirmLabel="확인"
+          onConfirm={() => setShowInfo(false)}
+          zClass="z-[60]"
+        />
+      )}
       <div className="flex items-start justify-between mb-3">
-        <div>
-          <p className="font-extrabold text-gray-800 text-sm">{event.title}</p>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-1">
+            <p className="font-extrabold text-gray-800 text-sm">{event.title}</p>
+            <button
+              onClick={() => setShowInfo(true)}
+              aria-label="챌린지 기준 안내"
+              className="text-gray-400 flex-shrink-0 active:scale-90 transition"
+            >
+              <IoInformationCircle size={15} />
+            </button>
+          </div>
           <p className="text-[11px] text-gray-400 mt-0.5">
             {event.description || "하루라도 빠지면 처음부터 다시 시작돼요"}
           </p>

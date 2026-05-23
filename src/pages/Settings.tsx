@@ -24,7 +24,7 @@ import { LanguageSheet } from "../components/settings/LanguageSheet";
 import { NicknameSheet } from "../components/settings/NicknameSheet";
 import { TextSheet } from "../components/settings/TextSheet";
 import { SectionLabel } from "../components/settings/SectionLabel";
-import { MdDirectionsRun } from "react-icons/md";
+import appIcon from "../assets/images/icon.png";
 
 type Theme = "energy" | "nature" | "cosmo";
 
@@ -264,15 +264,11 @@ export default function Settings() {
         <TextSheet title="앱 정보" onClose={() => setSheet(null)}>
           <div className="flex flex-col gap-4">
             <div className="flex items-center gap-4 py-2">
-              <div
-                className="w-16 h-16 rounded-2xl flex items-center justify-center text-3xl shadow-sm flex-shrink-0"
-                style={{
-                  background:
-                    "linear-gradient(135deg, var(--color-primary), var(--color-secondary))",
-                }}
-              >
-                <MdDirectionsRun size={30} color="white" />
-              </div>
+              <img
+                src={appIcon}
+                alt="앱 아이콘"
+                className="w-16 h-16 rounded-2xl shadow-sm flex-shrink-0 object-cover"
+              />
               <div>
                 <p className="font-extrabold text-gray-800 text-lg leading-tight">
                   함께걸어요
@@ -286,8 +282,8 @@ export default function Settings() {
               {[
                 { label: "버전", value: "1.0.0" },
                 { label: "빌드", value: "2026.05" },
-                { label: "개발사", value: "WorkoutApp Team" },
-                { label: "지원 OS", value: "iOS 15+ / Android 10+" },
+                { label: "개발자", value: "devHy" },
+                { label: "지원 OS", value: " Android 10+ / iOS 지원 예정" },
               ].map(({ label, value }) => (
                 <div
                   key={label}

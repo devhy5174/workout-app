@@ -25,10 +25,16 @@ export function useUnlockItems(
     [workoutRecords]
   );
 
-  const consecutiveStreak = useMemo(
-    () => calcConsecutiveStreak(workoutRecords.map((r) => r.date)),
-    [workoutRecords]
-  );
+  const consecutiveStreak = useMemo(() => {
+    const stepsByDate: Record<string, number> = {};
+    for (const r of workoutRecords) {
+      stepsByDate[r.date] = (stepsByDate[r.date] ?? 0) + r.steps;
+    }
+    const qualifiedDates = Object.entries(stepsByDate)
+      .filter(([, steps]) => steps >= 1000)
+      .map(([date]) => date);
+    return calcConsecutiveStreak(qualifiedDates);
+  }, [workoutRecords]);
 
   const grantedSet = useMemo(
     () => new Set(grantedBubbleIds),

@@ -1,5 +1,35 @@
 import { supabase } from "./supabase";
-import { localDateStr } from "../utils/streak";
+import { localDateStr, calcConsecutiveStreak } from "../utils/streak";
+
+const MIN_STREAK_STEPS = 1000;
+
+// 하루 합산 1,000보 이상인 날짜 기준으로 연속 스트릭 계산 후 업데이트
+export async function recalcAndUpdateStreak(userId: string): Promise<void> {
+  const { data, error } = await supabase
+    .from("workout_history")
+    .select("date, steps")
+    .eq("user_id", userId);
+
+  if (error || !data) return;
+
+  // 날짜별 steps 합산
+  const stepsByDate: Record<string, number> = {};
+  for (const r of data) {
+    stepsByDate[r.date] = (stepsByDate[r.date] ?? 0) + (r.steps ?? 0);
+  }
+
+  // 1,000보 이상인 날짜만 추출
+  const qualifiedDates = Object.entries(stepsByDate)
+    .filter(([, steps]) => steps >= MIN_STREAK_STEPS)
+    .map(([date]) => date);
+
+  const newStreak = calcConsecutiveStreak(qualifiedDates);
+
+  await supabase
+    .from("app_users")
+    .update({ streak: newStreak })
+    .eq("id", userId);
+}
 
 export type WorkoutRecord = {
   id?: string;

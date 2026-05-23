@@ -17,6 +17,7 @@ import {
   saveUserGoal,
   deleteActiveGoal,
   deleteWorkoutRecord,
+  recalcAndUpdateStreak,
 } from "../lib/workoutService";
 
 export type { WorkoutRecord, UserGoal };
@@ -36,6 +37,7 @@ export type AppUser = {
   created_at: string;
   title: string | null;
   nickname_changed_at: string | null;
+  streak: number | null;
 };
 
 type UserContextValue = {
@@ -261,6 +263,9 @@ export function UserProvider({ children }: { children: ReactNode }) {
       user_id: user.id,
     };
     setWorkoutRecords((prev) => [newRecord, ...prev]);
+
+    // 하루 합산 1,000보 기준으로 streak 재계산 (fire-and-forget)
+    recalcAndUpdateStreak(user.id).catch(() => {});
 
     return { error: null };
   };
