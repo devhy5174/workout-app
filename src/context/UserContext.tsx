@@ -7,6 +7,8 @@ import {
   type ReactNode,
 } from "react";
 import type { User } from "@supabase/supabase-js";
+import { Capacitor } from "@capacitor/core";
+import { SplashScreen } from "@capacitor/splash-screen";
 import { supabase } from "../lib/supabase";
 import {
   type WorkoutRecord,
@@ -127,9 +129,12 @@ export function UserProvider({ children }: { children: ReactNode }) {
       const currentUser = session?.user ?? null;
       setUser(currentUser);
 
-      // 로그인 안된 상태면 로딩 종료
+      // 로그인 안된 상태면 로딩 종료 + 스플래시 숨김
       if (!currentUser) {
         setIsLoading(false);
+        if (Capacitor.isNativePlatform()) {
+          SplashScreen.hide({ fadeOutDuration: 200 });
+        }
         return;
       }
 
@@ -150,9 +155,11 @@ export function UserProvider({ children }: { children: ReactNode }) {
       } catch (e) {
         console.error("loadUserData 에러", e);
       } finally {
-        // 항상 로딩 종료
         if (mounted) {
           setIsLoading(false);
+          if (Capacitor.isNativePlatform()) {
+            SplashScreen.hide({ fadeOutDuration: 200 });
+          }
         }
       }
     }

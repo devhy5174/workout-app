@@ -1,18 +1,39 @@
 import { useEffect } from "react";
+import { Capacitor } from "@capacitor/core";
+import { App as CapApp } from "@capacitor/app";
+import { Browser } from "@capacitor/browser";
 import AppRouter from "./router/router";
+import { supabase } from "./lib/supabase";
 
 export default function App() {
   useEffect(() => {
-    // 1단계에서 타입을 선언했기 때문에 window.Kakao를 바로 써도 에러 안남
     const kakaoKey = import.meta.env.VITE_KAKAO_JAVASCRIPT_KEY;
     if (!kakaoKey) {
-      console.warn("VITE_KAKAO_JAVASCRIPT_KEY 가 설정되지 않았습니다. 카카오 로그인을 사용하려면 .env에 추가하세요.");
+      console.warn("VITE_KAKAO_JAVASCRIPT_KEY 가 설정되지 않았습니다.");
       return;
     }
     if (window.Kakao && !window.Kakao.isInitialized()) {
       window.Kakao.init(kakaoKey);
-      console.log("카카오 SDK 초기화 상태:", window.Kakao.isInitialized());
     }
   }, []);
+
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform()) return;
+
+    // 카카오/구글 OAuth 완료 후 com.togetherwalk.app://login-callback?code=... 로 돌아올 때 처리
+    const listener = CapApp.addListener("appUrlOpen", async ({ url }) => {
+      if (!url.startsWith("com.togetherwalk.app://login-callback")) return;
+      await Browser.close();
+      const code = new URL(url).searchParams.get("code");
+      if (code) {
+        await supabase.auth.exchangeCodeForSession(code);
+      }
+    });
+
+    return () => {
+      listener.then((l) => l.remove());
+    };
+  }, []);
+
   return <AppRouter />;
 }

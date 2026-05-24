@@ -6,7 +6,6 @@ import {
   Outlet,
 } from "react-router-dom";
 import BottomNav from "../components/layout/BottomNav";
-import Intro from "../pages/Intro";
 import Home from "../pages/Home";
 import Character from "../pages/onBoarding/ActivityTypePage";
 import Party from "../pages/Party";
@@ -41,14 +40,7 @@ function ProtectedLayout() {
   const { user, userProfile, isLoading } = useUser();
 
   if (isLoading) return <LoadingScreen />;
-  if (!user) {
-    const introShown = sessionStorage.getItem("intro_shown");
-    if (!introShown) {
-      sessionStorage.setItem("intro_shown", "1");
-      return <Navigate to="/intro" replace />;
-    }
-    return <Navigate to="/auth" replace />;
-  }
+  if (!user) return <Navigate to="/auth" replace />;
   if (!userProfile) return <LoadingScreen />;
   if (!userProfile.nickname) return <Navigate to="/onboarding" replace />;
 
@@ -62,14 +54,6 @@ function ProtectedLayout() {
   );
 }
 
-function IntroGuard() {
-  const shown = sessionStorage.getItem("intro_shown");
-  if (!shown) {
-    sessionStorage.setItem("intro_shown", "1");
-    return <Navigate to="/intro" replace />;
-  }
-  return <Navigate to="/auth" replace />;
-}
 
 export default function AppRouter() {
   return (
@@ -77,7 +61,6 @@ export default function AppRouter() {
     <EventsProvider>
     <BrowserRouter>
       <Routes>
-        <Route path="/intro" element={<Intro />} />
         <Route path="/auth" element={<Auth />} />
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/privacy" element={<PrivacyPolicy />} />
@@ -105,7 +88,7 @@ export default function AppRouter() {
           <Route path="/admin" element={<Admin />} />
           <Route path="/workout" element={<Workout />} />
         </Route>
-        <Route path="*" element={<IntroGuard />} />
+        <Route path="*" element={<Navigate to="/auth" replace />} />
       </Routes>
     </BrowserRouter>
     </EventsProvider>

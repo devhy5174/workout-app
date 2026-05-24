@@ -1,10 +1,29 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { MdDirectionsRun } from "react-icons/md";
+import { Capacitor } from "@capacitor/core";
+import { Browser } from "@capacitor/browser";
 import { FcGoogle } from "react-icons/fc";
 import { useUser } from "../context/UserContext";
 import { supabase } from "../lib/supabase";
 import { RiKakaoTalkFill } from "react-icons/ri";
+import loadingLogo from "../assets/images/loadingLogo.png";
+
+const OAUTH_REDIRECT = Capacitor.isNativePlatform()
+  ? "com.togetherwalk.app://login-callback"
+  : `${window.location.origin}/`;
+
+async function signInWithOAuthNative(provider: "kakao" | "google") {
+  const { data, error } = await supabase.auth.signInWithOAuth({
+    provider,
+    options: {
+      redirectTo: OAUTH_REDIRECT,
+      skipBrowserRedirect: true,
+    },
+  });
+  if (error || !data.url) return error;
+  await Browser.open({ url: data.url, windowName: "_self" });
+  return null;
+}
 
 type Mode = "login" | "signup" | "forgot";
 
@@ -12,8 +31,15 @@ const BG =
   "linear-gradient(150deg, #ffac60 0%, #ff7433 40%, #ff5733 75%, #e8401a 100%)";
 
 export default function Auth() {
-  const { login } = useUser();
+  const { login, user, isLoading } = useUser();
   const navigate = useNavigate();
+
+  // OAuth 완료 후 user가 생기면 홈으로 자동 이동 (Android 딥링크 복귀 포함)
+  useEffect(() => {
+    if (!isLoading && user) {
+      navigate("/", { replace: true });
+    }
+  }, [user, isLoading, navigate]);
 
   const [mode, setMode] = useState<Mode>("login");
   const [email, setEmail] = useState("");
@@ -93,20 +119,30 @@ export default function Auth() {
   // 카카오 디벨로퍼스(developers.kakao.com)에서 REST API 키 발급 필요
   const handleKakaoLogin = async () => {
     setError(null);
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: "kakao",
-      options: { redirectTo: `${window.location.origin}/` }, //로그인또는 회원가입후 되돌려지는 url주소
-    });
-    if (error) setError(toKorean(error.message));
+    if (Capacitor.isNativePlatform()) {
+      const err = await signInWithOAuthNative("kakao");
+      if (err) setError(toKorean(err.message));
+    } else {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "kakao",
+        options: { redirectTo: OAUTH_REDIRECT },
+      });
+      if (error) setError(toKorean(error.message));
+    }
   };
 
   const handleGoogleLogin = async () => {
     setError(null);
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: { redirectTo: `${window.location.origin}/` },
-    });
-    if (error) setError(toKorean(error.message));
+    if (Capacitor.isNativePlatform()) {
+      const err = await signInWithOAuthNative("google");
+      if (err) setError(toKorean(err.message));
+    } else {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: { redirectTo: OAUTH_REDIRECT },
+      });
+      if (error) setError(toKorean(error.message));
+    }
   };
 
   // TODO: 애플로그인 보류 진행시 활성화시켜 진행 Supabase 대시보드 → Authentication → Providers → Apple 활성화 후 동작
@@ -116,7 +152,7 @@ export default function Auth() {
   //   setError(null);
   //   const { error } = await supabase.auth.signInWithOAuth({
   //     provider: "apple",
-  //     options: { redirectTo: `${window.location.origin}/` },
+  //     options: { redirectTo: OAUTH_REDIRECT },
   //   });
   //   if (error) setError(toKorean(error.message));
   // };
@@ -195,12 +231,19 @@ export default function Auth() {
         {/* 헤더 */}
         <div className="text-center mb-10">
           <div
-            className="mb-4"
-            style={{ filter: "drop-shadow(0 4px 16px rgba(0,0,0,0.3))" }}
+            style={{
+              filter:
+                "brightness(0) invert(1) drop-shadow(0 4px 24px rgba(0,0,0,0.25))",
+              marginBottom: "-23px",
+              position: "relative",
+              zIndex: 1,
+            }}
           >
-            <MdDirectionsRun
-              className="text-white mx-auto"
-              style={{ fontSize: "6rem" }}
+            <img
+              src={loadingLogo}
+              alt="함께걸어요 로고"
+              className="mx-auto"
+              style={{ width: "200px", height: "200px", objectFit: "contain" }}
             />
           </div>
           <h1 className="text-3xl font-black text-white tracking-tight">

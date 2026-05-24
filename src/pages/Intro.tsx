@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { MdDirectionsRun } from "react-icons/md";
+import loadingLogo from "../assets/images/loadingLogo.png";
 
 const BG = "linear-gradient(150deg, #ffac60 0%, #ff7433 40%, #ff5733 75%, #e8401a 100%)";
 const GLOW = "radial-gradient(ellipse 60% 50% at 50% 40%, rgba(255,255,255,0.18) 0%, transparent 65%)";
@@ -43,12 +43,20 @@ export default function Intro() {
           animation: "introFadeUp 0.9s cubic-bezier(0.16,1,0.3,1) forwards",
         }}
       >
-        {/* 러닝 아이콘 */}
+        {/* 앱 로고 */}
         <div
-          className="mb-4"
-          style={{ filter: "drop-shadow(0 4px 16px rgba(0,0,0,0.3))" }}
+          style={{
+            filter: "brightness(0) invert(1) drop-shadow(0 4px 24px rgba(0,0,0,0.25))",
+            marginBottom: "-23px",
+            position: "relative",
+            zIndex: 1,
+          }}
         >
-          <MdDirectionsRun className="text-white" style={{ fontSize: "6rem" }} />
+          <img
+            src={loadingLogo}
+            alt="함께걸어요 로고"
+            style={{ width: "200px", height: "200px", objectFit: "contain" }}
+          />
         </div>
 
         {/* 메인 텍스트 */}
