@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "8125828361",
+    "project_id": "togetherwalk-a7db3",
+    "storage_bucket": "togetherwalk-a7db3.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:8125828361:android:86ddf37c476c4be03a57d8",
+        "android_client_info": {
+          "package_name": "com.togetherwalk.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDGySp32EZ8Q8hbzZ0ggF9fQujlGJZxh8M"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

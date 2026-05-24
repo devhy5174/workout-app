@@ -123,11 +123,15 @@ export default function Workout() {
   // HC 자동 일시정지: 걸음수 변화 없을 때 타이머만 멈춤 (state는 "running" 유지)
   const [isAutoPaused, setIsAutoPaused] = useState(false);
   const isAutoPausedRef = useRef(false);
+  const elapsedRef = useRef(elapsed);
   const lastHCStepsRef = useRef<number>(0);
   const lastHCStepTimeRef = useRef<number>(0);
   useEffect(() => {
     stepsRef.current = steps;
   }, [steps]);
+  useEffect(() => {
+    elapsedRef.current = elapsed;
+  }, [elapsed]);
 
   // 링 주변 공전할 실유저 (최대 2명)
   const [buddies, setBuddies] = useState<
@@ -239,21 +243,27 @@ export default function Workout() {
     if (isSaved.current) return;
     isSaved.current = true;
 
-    // Health Connect로 실제 걸음수 확인 (가능한 경우)
-    let finalSteps = steps;
-    let finalDistance = distance;
+    // ref 값을 기준으로 사용 (stale closure 방지)
+    let finalSteps = stepsRef.current;
+    const currentElapsedRef = elapsedRef.current;
+    const strideVal = userProfile?.height ? (userProfile.height * 0.415) / 100 : 0.7;
+    let finalDistance = parseFloat((finalSteps * strideVal / 1000).toFixed(2));
 
+    // Health Connect로 실제 걸음수 확인 (가능한 경우)
     if (getHCState() === "available" && hcStartStepsRef.current !== null) {
       const endSteps = await readTodayStepsHC();
       if (endSteps !== null) {
-        const sessionSteps = Math.max(0, endSteps - hcStartStepsRef.current);
-        finalSteps = sessionSteps;
-        const stride = userProfile?.height ? (userProfile.height * 0.415) / 100 : 0.7;
-        finalDistance = parseFloat((sessionSteps * stride / 1000).toFixed(2));
+        const hcSessionSteps = Math.max(0, endSteps - hcStartStepsRef.current);
+        // HC 동기화 지연 방지: HC 값이 폴링 누적값보다 낮으면 폴링값 유지
+        finalSteps = Math.max(stepsRef.current, hcSessionSteps);
+        finalDistance = parseFloat((finalSteps * strideVal / 1000).toFixed(2));
       }
     }
 
-    if (elapsed < 30 || finalSteps < 50) {
+    console.log("[performSave] finalSteps:", finalSteps, "displayedSteps:", steps, "stepsRef:", stepsRef.current, "elapsed(state):", elapsed, "elapsed(ref):", currentElapsedRef, "hcStartSteps:", hcStartStepsRef.current);
+
+    if (currentElapsedRef < 30 || finalSteps < 50) {
+      console.warn("[performSave] 너무 짧은 운동 — elapsed:", currentElapsedRef, "finalSteps:", finalSteps);
       setTooShort(true);
       clearWorkoutSession();
       if (user) endSession(user.id);
@@ -261,8 +271,8 @@ export default function Workout() {
     }
     setTooShort(false);
 
-    const currentCalories = calories;
-    const currentElapsed = elapsed;
+    const currentCalories = Math.floor(finalSteps * kcalPerMin / stepsPerMin);
+    const currentElapsed = currentElapsedRef;
 
     if (user) endSession(user.id);
 
@@ -490,15 +500,21 @@ export default function Workout() {
     }
   }, [state]);
 
-  // 네이티브: 앱이 백그라운드에서 복귀할 때만 elapsed 동기화 (화면 꺼졌다 켰을 때)
+  // 네이티브: WorkoutService(TYPE_STEP_COUNTER 센서) 이벤트 동기화
+  // HC 사용 중이면 elapsed만 보정, HC 없으면 steps도 네이티브 센서값으로 동기화
   useEffect(() => {
     if (!isNative()) return;
     let listener: { remove: () => void } | null = null;
     WorkoutNative.addListener("workoutUpdate", (data) => {
-      // JS 타이머가 느슨해진 경우에만 보정 (2초 이상 차이날 때)
+      // elapsed: JS 타이머가 느슨해진 경우에만 보정 (2초 이상 차이날 때)
       setElapsed((prev) =>
         Math.abs(data.elapsed - prev) > 2 ? data.elapsed : prev,
       );
+      // steps: HC 미사용 시 네이티브 TYPE_STEP_COUNTER 센서값으로 동기화
+      if (!hcActiveRef.current) {
+        setSteps(data.steps);
+        stepsRef.current = data.steps;
+      }
     })
       .then((l) => {
         listener = l;
@@ -509,9 +525,9 @@ export default function Workout() {
     };
   }, []);
 
-  // 걸음 수 증가 (유형별 페이스) — HC가 활성화된 경우 타이머 시뮬레이션 비활성
+  // 걸음 수 증가 (유형별 페이스) — HC 또는 네이티브 센서 활성 시 시뮬레이션 비활성
   useEffect(() => {
-    if (state !== "running" || hcActive) return;
+    if (state !== "running" || hcActive || isNative()) return;
     const intervalMap: Record<string, number> = {
       walker: 600, // 분당 100보
       power_walker: 500, // 분당 120보

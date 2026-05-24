@@ -81,6 +81,26 @@ Deno.serve(async (req) => {
     });
   }
 
+  // FCM 푸시 (파티장에게)
+  const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+  const cronSecret = Deno.env.get("CRON_SECRET");
+  await fetch(`${supabaseUrl}/functions/v1/notify-fcm`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
+      ...(cronSecret ? { "x-cron-secret": cronSecret } : {}),
+    },
+    body: JSON.stringify({
+      userIds: [leader_user_id],
+      notification: {
+        title: "새 파티원이 합류했어요!",
+        body: `${joiner_nickname}님이 "${party_name}" 파티에 참가했어요 🎉`,
+        data: { type: "party_joined", party_id },
+      },
+    }),
+  }).catch((e) => console.warn("[notify-party-joined] FCM call failed:", e));
+
   return new Response(JSON.stringify({ ok: true }), {
     status: 200,
     headers: { ...corsHeaders, "Content-Type": "application/json" },

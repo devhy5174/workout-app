@@ -10,6 +10,7 @@ import type { User } from "@supabase/supabase-js";
 import { Capacitor } from "@capacitor/core";
 import { SplashScreen } from "@capacitor/splash-screen";
 import { supabase } from "../lib/supabase";
+import { registerFCMToken } from "../lib/fcmService";
 import {
   type WorkoutRecord,
   type UserGoal,
@@ -159,6 +160,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
           setIsLoading(false);
           if (Capacitor.isNativePlatform()) {
             SplashScreen.hide({ fadeOutDuration: 200 });
+            if (currentUser) registerFCMToken(currentUser.id).catch(() => {});
           }
         }
       }
