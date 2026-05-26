@@ -1,7 +1,9 @@
 import { useParams, useNavigate } from "react-router-dom";
+import { lazy, Suspense } from "react";
 import { IoFootsteps, IoLocationSharp, IoFlame, IoSpeedometer, IoChevronBack } from "react-icons/io5";
 import { useUser } from "../../context/UserContext";
 import { getAvatarCharacterById } from "../../data/avatarCharacters";
+const RouteMap = lazy(() => import("../ui/RouteMap"));
 
 const WORKOUT_TYPE_META: Record<string, { label: string; emoji: string; title: string }> = {
   walker:       { label: "산책",       emoji: "🚶",   title: "산책 완료"       },
@@ -250,18 +252,41 @@ export default function WorkoutDetail() {
           </div>
         </div>
 
-        {/* ── 경로 지도 placeholder ─────────────────────────── */}
-        <div className="rounded-3xl border-2 border-dashed border-gray-200 bg-white/60 p-6 flex flex-col items-center gap-3">
-          <div className="w-12 h-12 rounded-2xl bg-gray-100 flex items-center justify-center text-2xl">
-            🗺️
+        {/* ── 경로 지도 ─────────────────────────────────────── */}
+        {record.route_points && record.route_points.length >= 2 ? (
+          <div className="bg-white rounded-3xl shadow-sm p-4 flex flex-col gap-3">
+            <div className="flex items-center justify-between">
+              <p className="font-extrabold text-gray-800 text-sm">🗺️ 운동 경로</p>
+              <div className="flex items-center gap-3">
+                <span className="flex items-center gap-1 text-[11px] text-gray-400 font-semibold">
+                  <span className="w-2 h-2 rounded-full bg-green-500 inline-block" /> 출발
+                </span>
+                <span className="flex items-center gap-1 text-[11px] text-gray-400 font-semibold">
+                  <span className="w-2 h-2 rounded-full inline-block" style={{ background: "var(--color-primary)" }} /> 도착
+                </span>
+              </div>
+            </div>
+            <Suspense fallback={
+              <div className="w-full h-[280px] bg-gray-100 rounded-2xl flex items-center justify-center">
+                <span className="text-gray-400 text-sm">🗺️ 지도 로딩 중...</span>
+              </div>
+            }>
+              <RouteMap points={record.route_points} />
+            </Suspense>
           </div>
-          <div className="text-center">
-            <p className="font-extrabold text-gray-700 text-sm">경로 지도</p>
-            <p className="text-xs text-gray-400 mt-1 leading-relaxed">
-              운동 경로 지도는 다음 업데이트에서<br />제공될 예정이에요
-            </p>
+        ) : (
+          <div className="rounded-3xl border-2 border-dashed border-gray-200 bg-white/60 p-6 flex flex-col items-center gap-3">
+            <div className="w-12 h-12 rounded-2xl bg-gray-100 flex items-center justify-center text-2xl">
+              🗺️
+            </div>
+            <div className="text-center">
+              <p className="font-extrabold text-gray-700 text-sm">경로 지도</p>
+              <p className="text-xs text-gray-400 mt-1 leading-relaxed">
+                이 기록에는 GPS 경로 데이터가 없어요
+              </p>
+            </div>
           </div>
-        </div>
+        )}
 
       </div>
     </div>

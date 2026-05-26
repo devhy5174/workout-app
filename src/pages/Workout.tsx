@@ -4,6 +4,8 @@ import { FaPlay, FaPause, FaStop, FaUsers } from "react-icons/fa";
 import { IoTime, IoFootsteps, IoLocationSharp, IoFlame, IoSpeedometer } from "react-icons/io5";
 import { MdBatteryAlert, MdDirectionsWalk } from "react-icons/md";
 import AlertModal from "../components/ui/AlertModal";
+import { lazy, Suspense } from "react";
+const RouteMap = lazy(() => import("../components/ui/RouteMap"));
 import { useActivityType } from "../context/ActivityTypeContext";
 import { useUser } from "../context/UserContext";
 import { useTheme } from "../context/ThemeContext";
@@ -141,6 +143,7 @@ export default function Workout() {
 
   const [showBuddies, setShowBuddies] = useState(true);
   const [tooShort, setTooShort] = useState(false);
+  const [savedRoutePoints, setSavedRoutePoints] = useState<{ lat: number; lng: number; timestamp: number }[]>([]);
   const [showPermissionModal, setShowPermissionModal] = useState(false);
   const [permissionDenied, setPermissionDenied] = useState(false);
   const [estimationMode, setEstimationMode] = useState(false);
@@ -336,7 +339,10 @@ export default function Workout() {
       try {
         const { json } = await WorkoutNative.getRoutePoints();
         const parsed = JSON.parse(json);
-        if (Array.isArray(parsed) && parsed.length > 0) routePoints = parsed;
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          routePoints = parsed;
+          setSavedRoutePoints(parsed);
+        }
       } catch {
         // 경로 수집 실패해도 운동 저장은 정상 진행
       }
@@ -1471,6 +1477,32 @@ export default function Workout() {
                     </div>
                   );
                 })()}
+
+                {/* GPS 경로 미리보기 */}
+                {savedRoutePoints.length >= 2 && (
+                  <div className="px-5 pb-2">
+                    <div className="rounded-2xl overflow-hidden relative">
+                      <Suspense fallback={
+                        <div className="w-full h-[180px] bg-gray-100 rounded-2xl flex items-center justify-center">
+                          <span className="text-gray-400 text-sm">🗺️ 지도 로딩 중...</span>
+                        </div>
+                      }>
+                        <RouteMap points={savedRoutePoints} small />
+                      </Suspense>
+                      <div className="flex items-center gap-3 mt-2 px-1">
+                        <span className="flex items-center gap-1 text-[11px] text-gray-400 font-semibold">
+                          <span className="w-2.5 h-2.5 rounded-full bg-green-500 inline-block" /> 출발
+                        </span>
+                        <span className="flex items-center gap-1 text-[11px] text-gray-400 font-semibold">
+                          <span className="w-2.5 h-2.5 rounded-full inline-block" style={{ background: "var(--color-primary)" }} /> 도착
+                        </span>
+                        <span className="ml-auto text-[11px] text-gray-400 font-semibold">
+                          {savedRoutePoints.length}개 좌표
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 {yesterdayPace && (
                   <div className="px-6 pb-2">
