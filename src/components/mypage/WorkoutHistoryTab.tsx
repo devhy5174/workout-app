@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import { useUser } from "../../context/UserContext";
 import { localDateStr } from "../../utils/streak";
 
@@ -32,6 +33,7 @@ function getDateLabel(dateStr: string): string {
 
 export default function WorkoutHistoryTab() {
   const { workoutRecords, deleteWorkout } = useUser();
+  const navigate = useNavigate();
   const [period, setPeriod] = useState<Period>("month");
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -153,7 +155,13 @@ export default function WorkoutHistoryTab() {
               const isPendingDelete = deletingId === id;
 
               return (
-                <div key={id} className="bg-white rounded-3xl shadow-sm p-4 flex items-center gap-4">
+                <div
+                  key={id}
+                  className="bg-white rounded-3xl shadow-sm p-4 flex items-center gap-4 active:opacity-75 transition-opacity"
+                  onClick={() => record.id && navigate(`/workout/${record.id}`)}
+                  role={record.id ? "button" : undefined}
+                  style={{ cursor: record.id ? "pointer" : "default" }}
+                >
                   <div
                     className="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 text-2xl"
                     style={{ background: "linear-gradient(135deg, var(--color-primary)22, var(--color-secondary)22)" }}
@@ -174,7 +182,7 @@ export default function WorkoutHistoryTab() {
                         )}
                       </div>
                       {isPendingDelete ? (
-                        <div className="flex items-center gap-1">
+                        <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
                           <button
                             onClick={() => handleDelete(id)}
                             disabled={isDeleting}
@@ -191,7 +199,7 @@ export default function WorkoutHistoryTab() {
                         </div>
                       ) : (
                         <button
-                          onClick={() => setDeletingId(id)}
+                          onClick={(e) => { e.stopPropagation(); setDeletingId(id); }}
                           className="w-7 h-7 rounded-full bg-gray-100 flex items-center justify-center text-gray-400 active:bg-red-50 active:text-red-400 transition-colors flex-shrink-0"
                           aria-label="기록 삭제"
                         >

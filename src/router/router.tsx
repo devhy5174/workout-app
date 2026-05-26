@@ -19,6 +19,7 @@ import Onboarding from "../pages/onBoarding/Onboarding";
 import Community from "../pages/Community";
 import PartyDetail from "../pages/PartyDetail";
 import MyPage from "../pages/MyPage";
+import WorkoutDetail from "../pages/WorkoutDetail";
 import Admin from "../pages/Admin";
 import ResetPassword from "../pages/ResetPassword";
 import NotificationSettings from "../pages/NotificationSettings";
@@ -83,6 +84,7 @@ export default function AppRouter() {
           <Route path="/diet" element={<Diet />} />
           <Route path="/steps" element={<Step />} />
           <Route path="/mypage" element={<MyPage />} />
+          <Route path="/workout/:id" element={<WorkoutDetail />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/settings/notifications" element={<NotificationSettings />} />
           <Route path="/admin" element={<Admin />} />
