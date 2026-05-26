@@ -76,6 +76,16 @@ npm run build && npx cap sync android
 - 이벤트 탭 (참가 중인 이벤트 현황)
 - 프리미엄 말풍선 아이템 탭
 
+### 📋 운동 상세 페이지 (`/workout/:id`)
+
+마이페이지 > 운동기록 탭에서 기록 카드 클릭 시 이동하는 상세 화면입니다.
+
+- 히어로 카드: 거리 크게 + GPS/추정 배지 + 페이스·시간·칼로리
+- 상세 그리드: 걸음수, 페이스, 시작시각, 거리 출처, 운동 유형 등
+- 캐릭터 이미지 + 응원 메시지 (걸음수·거리·목표 달성 기준)
+- GPS 경로 지도 카드 (route_points 있을 때) / placeholder (없을 때)
+- 뒤로가기 → 운동기록 탭으로 복귀
+
 ### 🎉 파티
 
 - 전체 파티 탐색 / 내 파티 탭
@@ -230,16 +240,52 @@ gpsDistance > 0 ? gpsDistance (GPS 실측)
               : steps × 보폭 / 1000 (추정)
 ```
 
-**DB 마이그레이션 (미적용 — 신규 컬럼)**
+**DB 마이그레이션**
 
 ```sql
-ALTER TABLE workout_history ADD COLUMN gps_distance numeric;
-ALTER TABLE workout_history ADD COLUMN distance_source text DEFAULT 'estimated';
+-- supabase/gps_columns.sql
+ALTER TABLE workout_history ADD COLUMN IF NOT EXISTS gps_distance numeric;
+ALTER TABLE workout_history ADD COLUMN IF NOT EXISTS distance_source text DEFAULT 'estimated';
+ALTER TABLE workout_history ADD COLUMN IF NOT EXISTS avg_pace numeric;
+
+-- supabase/route_points.sql
+ALTER TABLE workout_history ADD COLUMN IF NOT EXISTS route_points jsonb;
 ```
 
-마이그레이션 전까지 두 컬럼은 프론트에서 저장 시 생략(strip)되며, `RunnerStatsTab`은 `gps_distance` 유무로 GPS/추정 뱃지를 자동 구분합니다.
+마이그레이션 미실행 시 프론트에서 해당 컬럼 자동 strip 후 저장 (앱 크래시 없음).
+
+### GPS 경로(Route Points) 수집 — Phase 2
+
+운동 중 이동 경로를 `{lat, lng, timestamp}` 배열로 수집해 DB에 저장하고, 운동 완료 후 지도로 시각화합니다.
+
+| 항목 | 상세 |
+|------|------|
+| 수집 방식 | `WorkoutService`의 locationCallback — 정확도·점프 필터 통과 좌표만 누적 |
+| 저장 포맷 | `[{ lat, lng, timestamp }]` JSON 배열 |
+| 일시정지 처리 | pause 중 수집 중단 (재개 후 자동 복귀) |
+| 전달 방식 | STOP 시 JSON 직렬화 → `static lastRoutePointsJson` 보관 → `getRoutePoints()` 플러그인 메서드로 JS에 전달 |
+| 지도 렌더링 | Leaflet + OpenStreetMap, lazy load, max 300점 downsample |
+| 결과 팝업 | 경로 있을 때 180px 미리보기 지도 (출발·도착 마커) |
+| 운동 상세 | 280px 전체 지도 카드, 경로 없으면 placeholder 유지 |
 
 ---
+
+### 트래커 UI — 활동 유형별 레이아웃
+
+운동 중 메인 스탯 카드와 완료 결과 팝업이 활동 유형에 따라 다르게 표시됩니다.
+
+| 유형 | 메인 카드 | 보조 3칸 |
+|------|-----------|----------|
+| 🚶 산책러 | 걸음수 (크게) | 칼로리 · 거리 · 시간 |
+| 🚶‍♂️ 파워워커 | 거리 + 걸음수 (2열) | 페이스 · 시간 · 칼로리 |
+| 🏃 러너 | 거리 + 걸음수 (2열) | 페이스 · 시간 · 칼로리 |
+| 🏔️ 등산가 | 거리 + 걸음수 (2열) | 시간 · 페이스 · 칼로리 |
+
+거리형 유형(파워워커·러너·등산가)은 거리와 걸음수를 나란히 표시하며, GPS/추정 배지도 함께 노출됩니다.
+
+**완료 결과 팝업도 동일 로직으로 분기:**
+- 거리형: 히어로 카드에 거리+걸음수 2열, 보조에 페이스·시간·칼로리
+- 산책러: 히어로 카드에 걸음수 단독, 보조에 거리·시간·칼로리
 
 ### 권한 요청 흐름
 

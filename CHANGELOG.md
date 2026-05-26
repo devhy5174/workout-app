@@ -1,5 +1,66 @@
 # Changelog
 
+## [1.0.13] — 2026-05-27
+
+### GPS 경로 지도 + 트래커 UI 개선
+
+**GPS 경로(route_points) 수집 및 저장**
+
+- `WorkoutService.java`: 정확도·점프 필터 통과 좌표를 `{lat, lng, timestamp}`로 누적, pause 중 수집 중단, STOP 시 JSON 직렬화
+- `WorkoutPlugin.java`: `getRoutePoints()` 메서드 추가 — 직렬화된 경로 JSON을 JS로 전달
+- `workoutNative.ts`: `getRoutePoints()` 인터페이스 추가
+- `workoutService.ts`: `WorkoutRecord`에 `route_points` 타입 추가, fallback 저장 시 자동 제외
+- `Workout.tsx`: `performSave`에서 `getRoutePoints()` 호출 후 DB 저장에 포함
+- `supabase/route_points.sql`: `workout_history.route_points jsonb` 컬럼 마이그레이션
+
+**GPS 경로 지도 렌더링 (Leaflet + OpenStreetMap)**
+
+- `RouteMap` 컴포넌트 신규 추가 (`src/components/ui/RouteMap.tsx`)
+  - `small` prop: 결과 팝업용 180px / 상세 페이지용 280px
+  - 300점 downsample — 장거리 운동도 빠르게 렌더링
+  - 출발(초록) · 도착(테마색) 원형 마커
+  - 지도 로드 실패 시 null 반환 (앱 크래시 없음)
+  - lazy load + Suspense 적용
+- 완료 결과 팝업: `route_points` 있을 때 180px 미리보기 지도 표시
+- 운동 상세 페이지: `route_points` 있으면 280px 지도 카드, 없으면 기존 placeholder 유지
+
+**운동 상세 페이지 (`/workout/:id`) 신규**
+
+- 마이페이지 > 운동기록 탭 카드 클릭 시 이동
+- 히어로 카드 (GPS/추정 배지 + 거리·페이스·시간·칼로리)
+- 상세 그리드 (걸음수·페이스·운동 유형·거리 출처 등)
+- 캐릭터 이미지 + 응원 메시지
+- GPS 경로 지도 카드
+- 뒤로가기 → 마이페이지 운동기록 탭
+- 파일 위치: `src/components/mypage/WorkoutDetail.tsx`
+
+**트래커 UI — 활동 유형별 레이아웃**
+
+- 거리형(러너·파워워커·등산가) 메인 카드: 거리 + 걸음수 2열 나란히 (값·단위 `items-baseline`)
+- 산책러 메인 카드: 걸음수 단독 (기존 유지)
+- GPS/추정 배지 파워워커까지 확장
+- 완료 결과 팝업도 유형별 분기:
+  - 거리형: 히어로에 거리+걸음수 2열, 보조에 페이스·시간·칼로리
+  - 산책러: 히어로에 걸음수 단독, 보조에 거리·시간·칼로리
+
+**버그 수정**
+
+- 활동분석 탭 최근러닝 카드 `flex-shrink-0` 추가 → flex 환경에서 잘림 현상 해결
+
+---
+
+## [1.0.12] — 2026-05-27
+
+### GPS DB 저장 · 설정 버전 자동 연동
+
+- `supabase/gps_columns.sql`: `workout_history`에 `gps_distance`, `distance_source`, `avg_pace` 컬럼 추가
+- `workoutService.ts`: GPS 필드 저장 활성화, 컬럼 미존재 시 fallback 재시도 (코드 42703)
+- `Workout.tsx`: `avg_pace` 계산 후 저장
+- `vite.config.ts`: `__APP_VERSION__` 빌드 시 `package.json` 버전 주입
+- `Settings.tsx`: 앱 정보 버전 표시를 `__APP_VERSION__`으로 자동 연동
+
+---
+
 ## [1.0.11] — 2026-05-26
 
 ### GPS 거리 추적 + 권한 모달
