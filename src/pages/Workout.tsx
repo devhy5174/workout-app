@@ -73,9 +73,9 @@ const ACTIVITY_LABEL: Record<string, string> = {
 // 활동 유형별 스탯 레이아웃: primary = 크게 표시, secondary = 3개 소형 카드
 const STAT_LAYOUT = {
   walker:       { primary: "steps",    secondary: ["calories", "distance", "time"] },
-  power_walker: { primary: "steps",    secondary: ["calories", "distance", "time"] },
+  power_walker: { primary: "distance", secondary: ["pace",     "time",     "calories"] },
   runner:       { primary: "distance", secondary: ["pace",     "time",     "calories"] },
-  hiker:        { primary: "distance", secondary: ["time",     "steps",    "calories"] },
+  hiker:        { primary: "distance", secondary: ["time",     "pace",     "calories"] },
 } as const;
 
 type StatKey = "time" | "steps" | "distance" | "calories" | "pace";
@@ -922,35 +922,73 @@ export default function Workout() {
         {/* 스탯 카드 - 활동 유형별 레이아웃 */}
         <div className="w-full flex flex-col gap-2">
           {/* 메인 지표 — 활동 유형에 따라 걸음수 or 거리 크게 표시 */}
-          <div className="w-full bg-white rounded-2xl px-5 py-4 flex items-center gap-4 shadow-sm">
-            <div
-              className="w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0"
-              style={{ background: "var(--color-primary-light)" }}
-            >
-              {primaryStat.iconLg}
-            </div>
-            <div>
-              <p className="font-extrabold text-4xl text-gray-800 leading-none">
-                {primaryStat.value}
-              </p>
-              <div className="flex items-center gap-2 mt-1">
-                <p className="text-sm text-gray-400">{primaryStat.unit}</p>
-                {/* GPS indicator — only for distance-primary types (runner/hiker) while active */}
-                {(actType === "runner" || actType === "hiker") &&
-                  (state === "running" || state === "paused") && (
-                    <span
-                      className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
-                        distanceSource === "gps"
-                          ? "bg-emerald-100 text-emerald-600"
-                          : "bg-gray-100 text-gray-400"
-                      }`}
-                    >
-                      {distanceSource === "gps" ? "📍 GPS" : "📍 추정"}
-                    </span>
-                  )}
+          {statLayout.primary === "distance" ? (
+            /* 거리+걸음수 2열 메인 카드 (runner / power_walker / hiker) */
+            <div className="w-full bg-white rounded-2xl px-5 py-4 flex items-center shadow-sm">
+              {/* 거리 */}
+              <div className="flex-1 flex items-center gap-3">
+                <div
+                  className="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0"
+                  style={{ background: "var(--color-primary-light)" }}
+                >
+                  <IoLocationSharp className="text-2xl text-blue-500" />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <div className="flex items-baseline gap-1">
+                    <p className="font-extrabold text-3xl text-gray-800 leading-none">
+                      {primaryStat.value}
+                    </p>
+                    <p className="text-sm text-gray-400 font-semibold">{primaryStat.unit}</p>
+                  </div>
+                  {(actType === "runner" || actType === "hiker" || actType === "power_walker") &&
+                    (state === "running" || state === "paused") && (
+                      <span
+                        className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full self-start ${
+                          distanceSource === "gps"
+                            ? "bg-emerald-100 text-emerald-600"
+                            : "bg-gray-100 text-gray-400"
+                        }`}
+                      >
+                        {distanceSource === "gps" ? "📍 GPS" : "📍 추정"}
+                      </span>
+                    )}
+                </div>
+              </div>
+              {/* 구분선 */}
+              <div className="w-px h-12 bg-gray-100 mx-3 flex-shrink-0" />
+              {/* 걸음수 */}
+              <div className="flex-1 flex items-center gap-3">
+                <div
+                  className="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0"
+                  style={{ background: "var(--color-primary-light)" }}
+                >
+                  <IoFootsteps className="text-2xl text-emerald-500" />
+                </div>
+                <div className="flex items-baseline gap-1">
+                  <p className="font-extrabold text-3xl text-gray-800 leading-none">
+                    {steps.toLocaleString()}
+                  </p>
+                  <p className="text-sm text-gray-400 font-semibold">보</p>
+                </div>
               </div>
             </div>
-          </div>
+          ) : (
+            /* 단일 메인 카드 (walker — 걸음수만) */
+            <div className="w-full bg-white rounded-2xl px-5 py-4 flex items-center gap-4 shadow-sm">
+              <div
+                className="w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0"
+                style={{ background: "var(--color-primary-light)" }}
+              >
+                {primaryStat.iconLg}
+              </div>
+              <div className="flex items-baseline gap-1">
+                <p className="font-extrabold text-4xl text-gray-800 leading-none">
+                  {primaryStat.value}
+                </p>
+                <p className="text-sm text-gray-400 font-semibold">{primaryStat.unit}</p>
+              </div>
+            </div>
+          )}
           {/* 보조 지표 3개 */}
           <div className="w-full grid grid-cols-3 gap-2">
             {secondaryStats.map((s) => (
@@ -1312,64 +1350,114 @@ export default function Workout() {
               </div>
             ) : (
               <>
+                {/* 목표 달성 배너 */}
                 {goalProgress >= 100 && (
                   <div
                     className="mx-5 mt-4 px-4 py-3 rounded-2xl flex items-center gap-2"
                     style={{ background: "var(--color-primary-light)" }}
                   >
                     <span className="text-lg">🏆</span>
-                    <span
-                      className="text-sm font-bold"
-                      style={{ color: "var(--color-primary)" }}
-                    >
+                    <span className="text-sm font-bold" style={{ color: "var(--color-primary)" }}>
                       목표 달성 완료!
                     </span>
                   </div>
                 )}
 
-                <div className="px-6 py-5 flex flex-col gap-3">
-                  {[
-                    {
-                      icon: <IoTime className="text-xl text-violet-500" />,
-                      label: "운동 시간",
-                      value: durationLabel,
-                    },
-                    {
-                      icon: (
-                        <IoLocationSharp className="text-xl text-blue-500" />
-                      ),
-                      label: distanceSource === "gps" ? "거리 · GPS" : "거리 · 추정",
-                      value: `${effectiveDistance.toFixed(2)} km`,
-                    },
-                    {
-                      icon: (
-                        <IoFootsteps className="text-xl text-emerald-500" />
-                      ),
-                      label: "걸음 수",
-                      value: `${steps.toLocaleString()} 보`,
-                    },
-                    {
-                      icon: <IoFlame className="text-xl text-orange-500" />,
-                      label: "칼로리",
-                      value: `${calories} kcal`,
-                    },
-                  ].map((row) => (
+                {/* 히어로 지표 — 유형별 메인 수치 */}
+                <div className="px-5 pt-4">
+                  {statLayout.primary === "distance" ? (
+                    /* runner / power_walker / hiker — 거리 + 걸음수 2열 */
                     <div
-                      key={row.label}
-                      className="flex items-center justify-between py-2 border-b border-gray-50"
+                      className="rounded-2xl p-4 flex items-center"
+                      style={{ background: "var(--color-primary-light)" }}
                     >
-                      <div className="flex items-center gap-2">
-                        {row.icon}
-                        <span className="text-sm text-gray-500 font-semibold">
-                          {row.label}
-                        </span>
+                      <div className="flex-1 flex flex-col items-center gap-0.5">
+                        <div className="flex items-baseline gap-1">
+                          <span className="font-extrabold text-4xl text-gray-800 leading-none">
+                            {effectiveDistance.toFixed(2)}
+                          </span>
+                          <span className="text-sm text-gray-400 font-semibold">km</span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-xs text-gray-400 font-semibold">거리</span>
+                          {(state === "idle") && (
+                            <span
+                              className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
+                                distanceSource === "gps"
+                                  ? "bg-emerald-100 text-emerald-600"
+                                  : "bg-white/60 text-gray-400"
+                              }`}
+                            >
+                              {distanceSource === "gps" ? "📍 GPS" : "📍 추정"}
+                            </span>
+                          )}
+                        </div>
                       </div>
-                      <span className="font-extrabold text-gray-800">
-                        {row.value}
-                      </span>
+                      <div className="w-px h-10 bg-gray-200 mx-2 flex-shrink-0" />
+                      <div className="flex-1 flex flex-col items-center gap-0.5">
+                        <div className="flex items-baseline gap-1">
+                          <span className="font-extrabold text-4xl text-gray-800 leading-none">
+                            {steps.toLocaleString()}
+                          </span>
+                          <span className="text-sm text-gray-400 font-semibold">보</span>
+                        </div>
+                        <span className="text-xs text-gray-400 font-semibold">걸음수</span>
+                      </div>
                     </div>
-                  ))}
+                  ) : (
+                    /* walker — 걸음수 히어로 */
+                    <div
+                      className="rounded-2xl p-4 flex flex-col items-center gap-1"
+                      style={{ background: "var(--color-primary-light)" }}
+                    >
+                      <div className="flex items-baseline gap-1">
+                        <span className="font-extrabold text-5xl text-gray-800 leading-none">
+                          {steps.toLocaleString()}
+                        </span>
+                        <span className="text-base text-gray-400 font-semibold">보</span>
+                      </div>
+                      <span className="text-xs text-gray-400 font-semibold">총 걸음수</span>
+                    </div>
+                  )}
                 </div>
+
+                {/* 보조 스탯 그리드 */}
+                {(() => {
+                  const resultStats = statLayout.primary === "distance"
+                    ? [
+                        { icon: <IoSpeedometer className="text-lg text-indigo-500" />, label: "페이스",  value: paceStr,                      unit: "/km"  },
+                        { icon: <IoTime        className="text-lg text-violet-500"  />, label: "시간",    value: durationLabel,                 unit: ""     },
+                        { icon: <IoFlame       className="text-lg text-orange-500"  />, label: "칼로리",  value: `${calories}`,                 unit: "kcal" },
+                      ]
+                    : [
+                        { icon: <IoLocationSharp className="text-lg text-blue-500"   />, label: distanceSource === "gps" ? "거리 GPS" : "거리 추정", value: effectiveDistance.toFixed(2), unit: "km"   },
+                        { icon: <IoTime          className="text-lg text-violet-500" />, label: "시간",   value: durationLabel,                 unit: ""     },
+                        { icon: <IoFlame         className="text-lg text-orange-500" />, label: "칼로리", value: `${calories}`,                 unit: "kcal" },
+                      ];
+                  return (
+                    <div className="px-5 pt-3">
+                      <div className="grid grid-cols-3 gap-2">
+                        {resultStats.map((s) => (
+                          <div
+                            key={s.label}
+                            className="bg-gray-50 rounded-2xl p-3 flex flex-col items-center gap-1"
+                          >
+                            {s.icon}
+                            <div className="flex items-baseline gap-0.5">
+                              <span className="font-extrabold text-gray-800 text-sm leading-none">
+                                {s.value}
+                              </span>
+                              {s.unit && (
+                                <span className="text-[10px] text-gray-400 font-semibold">{s.unit}</span>
+                              )}
+                            </div>
+                            <span className="text-[10px] text-gray-400">{s.label}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })()}
 
                 {yesterdayPace && (
                   <div className="px-6 pb-2">

@@ -139,6 +139,13 @@ export default function WorkoutHistoryTab() {
         </div>
       )}
 
+      {/* 상세 페이지 안내 */}
+      {grouped.length > 0 && (
+        <p className="text-center text-xs text-gray-400 font-semibold">
+          운동 기록을 눌러 거리와 페이스를 확인해보세요 👀
+        </p>
+      )}
+
       {/* 날짜별 그루핑 */}
       {grouped.map(([date, records]) => (
         <div key={date}>

@@ -19,7 +19,7 @@ import Onboarding from "../pages/onBoarding/Onboarding";
 import Community from "../pages/Community";
 import PartyDetail from "../pages/PartyDetail";
 import MyPage from "../pages/MyPage";
-import WorkoutDetail from "../pages/WorkoutDetail";
+import WorkoutDetail from "../components/mypage/WorkoutDetail";
 import Admin from "../pages/Admin";
 import ResetPassword from "../pages/ResetPassword";
 import NotificationSettings from "../pages/NotificationSettings";

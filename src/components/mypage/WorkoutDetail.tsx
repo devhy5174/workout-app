@@ -1,7 +1,7 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { IoFootsteps, IoLocationSharp, IoFlame, IoSpeedometer, IoChevronBack } from "react-icons/io5";
-import { useUser } from "../context/UserContext";
-import { getAvatarCharacterById } from "../data/avatarCharacters";
+import { useUser } from "../../context/UserContext";
+import { getAvatarCharacterById } from "../../data/avatarCharacters";
 
 const WORKOUT_TYPE_META: Record<string, { label: string; emoji: string; title: string }> = {
   walker:       { label: "산책",       emoji: "🚶",   title: "산책 완료"       },
@@ -62,7 +62,7 @@ export default function WorkoutDetail() {
         <span className="text-5xl">🔍</span>
         <p className="font-extrabold text-gray-700">기록을 찾을 수 없어요</p>
         <button
-          onClick={() => navigate(-1)}
+          onClick={() => navigate("/mypage?tab=workout")}
           className="mt-2 px-6 py-3 rounded-2xl text-white font-bold text-sm"
           style={{ background: "linear-gradient(135deg, var(--color-primary), var(--color-secondary))" }}
         >
@@ -90,7 +90,7 @@ export default function WorkoutDetail() {
       {/* 헤더 */}
       <div className="flex items-center gap-3 px-4 pt-10 pb-4">
         <button
-          onClick={() => navigate(-1)}
+          onClick={() => navigate("/mypage?tab=workout")}
           aria-label="뒤로가기"
           className="w-10 h-10 rounded-full bg-white shadow-sm flex items-center justify-center active:scale-90 transition"
         >
