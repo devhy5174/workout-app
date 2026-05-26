@@ -14,11 +14,13 @@ import type { WorkoutRecord } from "../../lib/workoutService";
 // gps_distance 컬럼이 있는 레코드는 GPS 기반 거리를, 없으면 distance(추정값) 사용
 // DB 마이그레이션 후 gps_distance 컬럼이 채워지면 자동으로 GPS 값이 반영됨
 function getDistance(r: WorkoutRecord): number {
-  return (r.gps_distance ?? 0) > 0 ? (r.gps_distance as number) : (r.distance ?? 0);
+  return (r.gps_distance ?? 0) > 0
+    ? (r.gps_distance as number)
+    : (r.distance ?? 0);
 }
 
 function isGpsRecord(r: WorkoutRecord): boolean {
-  return (r.distance_source === "gps") || ((r.gps_distance ?? 0) > 0);
+  return r.distance_source === "gps" || (r.gps_distance ?? 0) > 0;
 }
 
 function formatPace(durationSec: number, distanceKm: number): string {
@@ -289,7 +291,7 @@ export default function RunnerStatsTab() {
       </div>
 
       {/* 최근 러닝 목록 */}
-      <div className="bg-white rounded-3xl shadow-sm overflow-hidden">
+      <div className="bg-white rounded-3xl shadow-sm overflow-hidden flex-shrink-0">
         <div
           className="px-5 py-4"
           style={{
@@ -306,7 +308,7 @@ export default function RunnerStatsTab() {
             .map((r, i) => {
               const dist = getDistance(r);
               const pace = formatPace(r.duration, dist);
-              const gps  = isGpsRecord(r);
+              const gps = isGpsRecord(r);
               return (
                 <div
                   key={r.id ?? i}
@@ -358,17 +360,20 @@ export default function RunnerStatsTab() {
       </div>
 
       {/* GPS 연동 안내 */}
-      <div className="rounded-2xl p-4 border border-dashed border-emerald-200 bg-emerald-50/50 flex items-start gap-3">
+      <div className="rounded-2xl p-4 border border-dashed border-emerald-200 bg-emerald-50/50 flex items-start gap-3 flex-shrink-0">
         <span className="text-base">📍</span>
         <div>
-          <p className="text-xs font-bold text-emerald-700">GPS 거리 추적 연동됨</p>
+          <p className="text-xs font-bold text-emerald-700">
+            GPS 거리 추적 연동됨
+          </p>
           <p className="text-[11px] text-gray-500 mt-0.5 leading-snug">
             위치 권한 허용 시 GPS 기반 실제 거리로 기록돼요.
             <br />
             권한 거절 시엔 걸음수 기반 추정 거리로 표시됩니다.
-            <br />
-            각 기록 옆 <span className="font-bold text-emerald-600">GPS</span> /
-            <span className="font-bold text-gray-400"> 추정</span> 배지로 구분할 수 있어요.
+            <br />각 기록 옆{" "}
+            <span className="font-bold text-emerald-600">GPS</span> /
+            <span className="font-bold text-gray-400"> 추정</span> 배지로 구분할
+            수 있어요.
           </p>
         </div>
       </div>
