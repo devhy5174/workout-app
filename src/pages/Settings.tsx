@@ -166,7 +166,7 @@ export default function Settings() {
         <SettingsRow
           icon={<HiInformationCircle size={20} />}
           label="앱 정보"
-          description="버전 1.0.0"
+          description={`버전 ${__APP_VERSION__}`}
           onClick={() => setSheet("appinfo")}
         />
         <SettingsRow
@@ -281,7 +281,7 @@ export default function Settings() {
             </div>
             <div className="flex flex-col gap-2">
               {[
-                { label: "버전", value: "1.0.0" },
+                { label: "버전", value: __APP_VERSION__ },
                 { label: "빌드", value: "2026.05" },
                 { label: "개발자", value: "devHy" },
                 { label: "지원 OS", value: " Android 10+ / iOS 지원 예정" },
