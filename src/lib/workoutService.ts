@@ -45,11 +45,10 @@ export type WorkoutRecord = {
   workout_type: string;
   goal_achieved: boolean;
   created_at?: string;
-  // GPS fields — require Supabase migration before saving:
-  // ALTER TABLE workout_history ADD COLUMN gps_distance numeric;
-  // ALTER TABLE workout_history ADD COLUMN distance_source text DEFAULT 'estimated';
-  gps_distance?: number;
+  // GPS fields (supabase/gps_columns.sql 마이그레이션 후 활성화)
+  gps_distance?: number;            // GPS 실측 거리 (km)
   distance_source?: "estimated" | "gps";
+  avg_pace?: number;                // 평균 페이스 (분/km, 소수)
 };
 
 export type UserGoal = {
@@ -65,24 +64,33 @@ export async function saveWorkoutRecord(
   record: Omit<WorkoutRecord, "id" | "user_id" | "created_at">,
   userId: string,
 ): Promise<{ data: WorkoutRecord | null; error: string | null }> {
-  // Strip GPS-only fields until Supabase migration adds those columns.
-  // To enable: run the ALTER TABLE migration in workoutService.ts comment,
-  // then remove this destructure and spread `record` directly.
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { gps_distance: _g, distance_source: _s, ...dbRecord } = record;
   const { data, error } = await supabase
     .from("workout_history")
-    .insert({ ...dbRecord, user_id: userId })
+    .insert({ ...record, user_id: userId })
     .select()
     .single();
 
   if (error) {
-    console.error(
-      "[workout_history] insert 실패:",
-      error.code,
-      error.message,
-      error.details,
-    );
+    // GPS 컬럼이 아직 없으면(마이그레이션 미실행) GPS 필드 제외 후 재시도
+    // PostgreSQL undefined_column = 42703, Supabase REST도 동일 code 반환
+    if (error.code === "42703" || error.message?.includes("column")) {
+      console.warn("[workout_history] GPS 컬럼 없음 — supabase/gps_columns.sql 실행 필요. GPS 필드 제외 후 재시도.");
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { gps_distance: _g, distance_source: _s, avg_pace: _p, ...fallback } = record;
+      const { data: fd, error: fe } = await supabase
+        .from("workout_history")
+        .insert({ ...fallback, user_id: userId })
+        .select()
+        .single();
+      if (fe) {
+        console.error("[workout_history] fallback insert 실패:", fe.code, fe.message);
+        return { data: null, error: fe.message };
+      }
+      console.log("[workout_history] fallback 저장 성공 (GPS 제외):", fd);
+      return { data: fd as WorkoutRecord, error: null };
+    }
+
+    console.error("[workout_history] insert 실패:", error.code, error.message, error.details);
     return { data: null, error: error.message };
   }
 

@@ -324,6 +324,12 @@ export default function Workout() {
     const pad = (n: number) => String(n).padStart(2, "0");
     const todayIso = `${today.getFullYear()}-${pad(today.getMonth() + 1)}-${pad(today.getDate())}`;
 
+    // 평균 페이스 (분/km) — GPS 거리 기준, 없으면 추정 거리 기준
+    const avgPace =
+      finalDistance > 0
+        ? parseFloat((currentElapsedRef / 60 / finalDistance).toFixed(2))
+        : undefined;
+
     const saveResult = await saveWorkout({
       date: todayIso,
       duration: currentElapsed,
@@ -334,6 +340,7 @@ export default function Workout() {
       goal_achieved: goalProgress >= 100,
       gps_distance: gpsKm > 0 ? parseFloat(gpsKm.toFixed(2)) : undefined,
       distance_source: finalDistanceSource,
+      avg_pace: avgPace,
     });
 
     if (saveResult.error) {
