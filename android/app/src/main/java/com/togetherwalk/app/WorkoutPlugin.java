@@ -178,6 +178,13 @@ public class WorkoutPlugin extends Plugin {
     }
 
     @PluginMethod
+    public void getRoutePoints(PluginCall call) {
+        JSObject result = new JSObject();
+        result.put("json", WorkoutService.getStaticRoutePointsJson());
+        call.resolve(result);
+    }
+
+    @PluginMethod
     public void getStatus(PluginCall call) {
         boolean running = WorkoutService.isServiceRunning();
         JSObject result = new JSObject();

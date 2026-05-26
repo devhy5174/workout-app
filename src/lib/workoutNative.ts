@@ -26,6 +26,7 @@ export interface WorkoutPlugin {
   pauseWorkout(): Promise<void>;
   resumeWorkout(): Promise<void>;
   stopWorkout(): Promise<void>;
+  getRoutePoints(): Promise<{ json: string }>;
   getStatus(): Promise<WorkoutStatus>;
   addListener(
     eventName: "workoutUpdate",

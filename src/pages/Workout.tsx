@@ -330,6 +330,18 @@ export default function Workout() {
         ? parseFloat((currentElapsedRef / 60 / finalDistance).toFixed(2))
         : undefined;
 
+    // GPS 경로 수집 — 네이티브에서 직렬화된 JSON 읽어옴
+    let routePoints: { lat: number; lng: number; timestamp: number }[] | undefined;
+    if (isNative()) {
+      try {
+        const { json } = await WorkoutNative.getRoutePoints();
+        const parsed = JSON.parse(json);
+        if (Array.isArray(parsed) && parsed.length > 0) routePoints = parsed;
+      } catch {
+        // 경로 수집 실패해도 운동 저장은 정상 진행
+      }
+    }
+
     const saveResult = await saveWorkout({
       date: todayIso,
       duration: currentElapsed,
@@ -341,6 +353,7 @@ export default function Workout() {
       gps_distance: gpsKm > 0 ? parseFloat(gpsKm.toFixed(2)) : undefined,
       distance_source: finalDistanceSource,
       avg_pace: avgPace,
+      route_points: routePoints,
     });
 
     if (saveResult.error) {

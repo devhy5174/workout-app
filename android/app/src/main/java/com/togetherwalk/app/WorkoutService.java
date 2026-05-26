@@ -35,7 +35,10 @@ import com.google.android.gms.location.LocationResult;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.location.Priority;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.Locale;
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 public class WorkoutService extends Service implements SensorEventListener {
 
@@ -73,6 +76,10 @@ public class WorkoutService extends Service implements SensorEventListener {
     private double gpsDistanceMeters = 0.0;
     private Location lastGpsLocation = null;
     private boolean gpsActive        = false;
+
+    // ── Route points — {lat, lng, timestamp} 배열, 운동 종료 시 JS로 전달 ──
+    private final ArrayList<JSONObject> routePoints = new ArrayList<>();
+    private static String lastRoutePointsJson = "[]";
 
     private static WorkoutService instance;
 
@@ -126,6 +133,9 @@ public class WorkoutService extends Service implements SensorEventListener {
     public static boolean getStaticGpsActive() {
         return instance != null && instance.gpsActive;
     }
+    public static String getStaticRoutePointsJson() {
+        return lastRoutePointsJson;
+    }
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
@@ -148,6 +158,8 @@ public class WorkoutService extends Service implements SensorEventListener {
                 gpsDistanceMeters = 0.0;
                 lastGpsLocation  = null;
                 gpsActive        = false;
+                routePoints.clear();
+                lastRoutePointsJson = "[]";
                 startTimeMs   = System.currentTimeMillis();
                 pausedMs      = 0;
                 isPaused      = false;
@@ -188,6 +200,12 @@ public class WorkoutService extends Service implements SensorEventListener {
                 isRunning = false;
                 sensorManager.unregisterListener(this);
                 stopGpsTracking();
+                // route_points 직렬화 — JS가 getRoutePoints()로 읽어감
+                try {
+                    lastRoutePointsJson = new JSONArray(routePoints).toString();
+                } catch (Exception ignored) {
+                    lastRoutePointsJson = "[]";
+                }
                 stopForeground(true);
                 stopSelf();
                 break;
@@ -215,9 +233,25 @@ public class WorkoutService extends Service implements SensorEventListener {
                     if (dist > 0f && dist <= 60f) {
                         gpsDistanceMeters += dist;
                         gpsActive = true;
+                        // route_point 저장 — 필터 통과한 좌표만
+                        try {
+                            JSONObject pt = new JSONObject();
+                            pt.put("lat", location.getLatitude());
+                            pt.put("lng", location.getLongitude());
+                            pt.put("timestamp", System.currentTimeMillis());
+                            routePoints.add(pt);
+                        } catch (Exception ignored) {}
                     }
                 } else {
                     gpsActive = true; // first valid fix acquired
+                    // 첫 번째 유효 위치도 시작점으로 저장
+                    try {
+                        JSONObject pt = new JSONObject();
+                        pt.put("lat", location.getLatitude());
+                        pt.put("lng", location.getLongitude());
+                        pt.put("timestamp", System.currentTimeMillis());
+                        routePoints.add(pt);
+                    } catch (Exception ignored) {}
                 }
                 lastGpsLocation = location;
             }
