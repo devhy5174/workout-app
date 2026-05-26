@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { Capacitor } from "@capacitor/core";
 import type { CharacterMessage } from "../data/characterMessages";
 
 const API_KEY = import.meta.env.VITE_WEATHER_API_KEY as string | undefined;
@@ -68,35 +67,15 @@ export function useWeather() {
       }
     };
 
-    const fetchWithGeolocation = () => {
-      navigator.geolocation.getCurrentPosition(
-        ({ coords: { latitude, longitude } }) =>
-          fetchWeather(latitude, longitude),
-        (err) => {
-          console.log("위치 실패", err);
-          fetchWeather(37.5665, 126.978);
-        },
-        { timeout: 5000 },
-      );
-    };
-
-    if (Capacitor.isNativePlatform()) {
-      // 네이티브에서는 navigator.geolocation을 직접 호출하면 Android 위치 권한 팝업이 뜸.
-      // 권한 요청은 운동 시작 플로우(Workout.tsx)에서만 진행하므로,
-      // 여기서는 이미 허용된 경우에만 실제 위치를 쓰고 아니면 서울 좌표로 fallback.
-      navigator.permissions
-        ?.query({ name: "geolocation" as PermissionName })
-        .then((result) => {
-          if (result.state === "granted") {
-            fetchWithGeolocation();
-          } else {
-            fetchWeather(37.5665, 126.978);
-          }
-        })
-        .catch(() => fetchWeather(37.5665, 126.978));
-    } else {
-      fetchWithGeolocation();
-    }
+    navigator.geolocation.getCurrentPosition(
+      ({ coords: { latitude, longitude } }) =>
+        fetchWeather(latitude, longitude),
+      (err) => {
+        console.log("위치 실패", err);
+        fetchWeather(37.5665, 126.978);
+      },
+      { timeout: 5000 },
+    );
   }, []);
 
   const condition = weather
