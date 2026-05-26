@@ -6,6 +6,8 @@ export interface WorkoutStatus {
   elapsed?: number;
   activityType?: string;
   isPaused?: boolean;
+  gpsDistanceKm?: number;
+  gpsActive?: boolean;
 }
 
 export interface WorkoutPlugin {
@@ -13,7 +15,14 @@ export interface WorkoutPlugin {
   requestBatteryOptimizationExclusion(): Promise<void>;
   checkActivityPermission(): Promise<{ granted: boolean }>;
   requestActivityPermission(): Promise<{ granted: boolean }>;
-  startWorkout(options: { activityType: string; nickname: string; characterId: string; theme?: string }): Promise<void>;
+  checkLocationPermission(): Promise<{ granted: boolean }>;
+  requestLocationPermission(): Promise<{ granted: boolean }>;
+  startWorkout(options: {
+    activityType: string;
+    nickname: string;
+    characterId: string;
+    theme?: string;
+  }): Promise<void>;
   pauseWorkout(): Promise<void>;
   resumeWorkout(): Promise<void>;
   stopWorkout(): Promise<void>;
@@ -27,8 +36,10 @@ export interface WorkoutPlugin {
 export interface WorkoutUpdate {
   steps: number;
   elapsed: number;
-  distance: number;
+  distance: number;     // steps-based estimated distance (km) — backward compat
   calories: number;
+  gpsDistance: number;  // GPS-based distance (km), 0 if GPS not yet active
+  distanceSource: "gps" | "estimated";
 }
 
 const WorkoutNative = registerPlugin<WorkoutPlugin>("Workout");

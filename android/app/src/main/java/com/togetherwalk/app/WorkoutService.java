@@ -1,5 +1,6 @@
 package com.togetherwalk.app;
 
+import android.Manifest;
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
@@ -7,6 +8,7 @@ import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
@@ -18,11 +20,20 @@ import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
+import android.location.Location;
 import android.os.Binder;
 import android.os.Build;
 import android.os.IBinder;
+import android.os.Looper;
 import android.widget.RemoteViews;
 import androidx.core.app.NotificationCompat;
+import androidx.core.content.ContextCompat;
+import com.google.android.gms.location.FusedLocationProviderClient;
+import com.google.android.gms.location.LocationCallback;
+import com.google.android.gms.location.LocationRequest;
+import com.google.android.gms.location.LocationResult;
+import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.location.Priority;
 import java.io.InputStream;
 import java.util.Locale;
 
@@ -40,6 +51,7 @@ public class WorkoutService extends Service implements SensorEventListener {
     static final String EXTRA_THEME     = "theme";
     static final String BROADCAST_UPDATE = "com.togetherwalk.app.WORKOUT_UPDATE";
 
+    // ── Step sensor (source of truth for steps) ─────────────────────────────
     private SensorManager sensorManager;
     private Sensor stepSensor;
 
@@ -54,6 +66,13 @@ public class WorkoutService extends Service implements SensorEventListener {
     private String nickname      = "";
     private String characterId   = "";
     private String theme         = "energy";
+
+    // ── GPS tracking (distance/pace only — steps remain step sensor based) ──
+    private FusedLocationProviderClient fusedLocationClient;
+    private LocationCallback locationCallback;
+    private double gpsDistanceMeters = 0.0;
+    private Location lastGpsLocation = null;
+    private boolean gpsActive        = false;
 
     private static WorkoutService instance;
 
@@ -71,6 +90,8 @@ public class WorkoutService extends Service implements SensorEventListener {
         instance = this;
         sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
         stepSensor    = sensorManager.getDefaultSensor(Sensor.TYPE_STEP_COUNTER);
+        fusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
+        setupLocationCallback();
         createNotificationChannel();
     }
 
@@ -78,10 +99,12 @@ public class WorkoutService extends Service implements SensorEventListener {
     public void onDestroy() {
         isRunning = false;
         try { sensorManager.unregisterListener(this); } catch (Exception ignored) {}
+        stopGpsTracking();
         instance = null;
         super.onDestroy();
     }
 
+    // ── Static accessors (WorkoutPlugin queries these) ───────────────────────
     public static boolean isServiceRunning() {
         return instance != null && instance.isRunning;
     }
@@ -96,6 +119,12 @@ public class WorkoutService extends Service implements SensorEventListener {
     }
     public static boolean getStaticIsPaused() {
         return instance != null && instance.isPaused;
+    }
+    public static double getStaticGpsDistanceKm() {
+        return instance != null ? instance.gpsDistanceMeters / 1000.0 : 0.0;
+    }
+    public static boolean getStaticGpsActive() {
+        return instance != null && instance.gpsActive;
     }
 
     @Override
@@ -114,8 +143,11 @@ public class WorkoutService extends Service implements SensorEventListener {
                                 ? intent.getStringExtra(EXTRA_CHARACTER) : "";
                 theme         = intent.getStringExtra(EXTRA_THEME) != null
                                 ? intent.getStringExtra(EXTRA_THEME) : "energy";
-                baselineSteps = -1;
-                currentSteps  = 0;
+                baselineSteps    = -1;
+                currentSteps     = 0;
+                gpsDistanceMeters = 0.0;
+                lastGpsLocation  = null;
+                gpsActive        = false;
                 startTimeMs   = System.currentTimeMillis();
                 pausedMs      = 0;
                 isPaused      = false;
@@ -124,6 +156,7 @@ public class WorkoutService extends Service implements SensorEventListener {
                     sensorManager.registerListener(this, stepSensor,
                         SensorManager.SENSOR_DELAY_NORMAL);
                 }
+                startGpsTracking();
                 try {
                     startForeground(NOTIF_ID, buildNotification());
                 } catch (Exception e) {
@@ -136,6 +169,7 @@ public class WorkoutService extends Service implements SensorEventListener {
             case ACTION_PAUSE:
                 isPaused     = true;
                 pauseStartMs = System.currentTimeMillis();
+                stopGpsTracking();
                 updateNotification();
                 break;
 
@@ -144,18 +178,81 @@ public class WorkoutService extends Service implements SensorEventListener {
                     pausedMs += System.currentTimeMillis() - pauseStartMs;
                     isPaused  = false;
                 }
+                // Reset last location so distance doesn't jump after pause
+                lastGpsLocation = null;
+                startGpsTracking();
                 updateNotification();
                 break;
 
             case ACTION_STOP:
                 isRunning = false;
                 sensorManager.unregisterListener(this);
+                stopGpsTracking();
                 stopForeground(true);
                 stopSelf();
                 break;
         }
         return START_NOT_STICKY;
     }
+
+    // ── GPS helpers ──────────────────────────────────────────────────────────
+
+    private void setupLocationCallback() {
+        locationCallback = new LocationCallback() {
+            @Override
+            public void onLocationResult(LocationResult result) {
+                if (result == null || isPaused || !isRunning) return;
+                Location location = result.getLastLocation();
+                if (location == null) return;
+
+                // Reject fixes with poor accuracy (radius > 30m is too noisy)
+                if (location.getAccuracy() > 30f) return;
+
+                if (lastGpsLocation != null) {
+                    float dist = lastGpsLocation.distanceTo(location);
+                    // Sanity: at 5s interval max realistic speed ~40 km/h ≈ 55m
+                    // Reject jumps > 60m to filter GPS glitches
+                    if (dist > 0f && dist <= 60f) {
+                        gpsDistanceMeters += dist;
+                        gpsActive = true;
+                    }
+                } else {
+                    gpsActive = true; // first valid fix acquired
+                }
+                lastGpsLocation = location;
+            }
+        };
+    }
+
+    private void startGpsTracking() {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
+                != PackageManager.PERMISSION_GRANTED) return;
+
+        // High accuracy for runner/hiker; balanced power for walker/power_walker
+        int priority = (activityType.equals("runner") || activityType.equals("hiker"))
+            ? Priority.PRIORITY_HIGH_ACCURACY
+            : Priority.PRIORITY_BALANCED_POWER_ACCURACY;
+
+        LocationRequest request = new LocationRequest.Builder(priority, 5000L)
+            .setMinUpdateIntervalMillis(3000L)
+            .setMinUpdateDistanceMeters(5f)
+            .build();
+
+        try {
+            fusedLocationClient.requestLocationUpdates(
+                request, locationCallback, Looper.getMainLooper());
+        } catch (Exception ignored) {}
+    }
+
+    private void stopGpsTracking() {
+        try {
+            if (fusedLocationClient != null && locationCallback != null) {
+                fusedLocationClient.removeLocationUpdates(locationCallback);
+            }
+        } catch (Exception ignored) {}
+    }
+
+    // ── Refresh loop & sensor ────────────────────────────────────────────────
 
     private void startNotificationRefresh() {
         new Thread(() -> {
@@ -181,8 +278,10 @@ public class WorkoutService extends Service implements SensorEventListener {
 
     private void broadcastUpdate() {
         Intent bc = new Intent(BROADCAST_UPDATE);
-        bc.putExtra("steps",   currentSteps);
-        bc.putExtra("elapsed", getElapsedSec());
+        bc.putExtra("steps",           currentSteps);
+        bc.putExtra("elapsed",         getElapsedSec());
+        bc.putExtra("gps_distance_m",  gpsDistanceMeters);
+        bc.putExtra("gps_active",      gpsActive);
         sendBroadcast(bc);
     }
 
@@ -194,6 +293,8 @@ public class WorkoutService extends Service implements SensorEventListener {
     }
 
     public int getCurrentSteps() { return currentSteps; }
+
+    // ── Notification ─────────────────────────────────────────────────────────
 
     private void updateNotification() {
         try {
@@ -209,16 +310,17 @@ public class WorkoutService extends Service implements SensorEventListener {
         int sec      = elapsed % 60;
         String timeStr = String.format(Locale.getDefault(), "%02d:%02d", min, sec);
 
-        double distance = currentSteps * 0.0008;
-        int    calories = (int)(currentSteps * kcalPerStep(activityType));
+        // GPS distance for runner/hiker when GPS active; otherwise steps-based estimate
+        boolean useGps = gpsActive && gpsDistanceMeters > 0;
+        boolean distancePrimary = activityType.equals("runner") || activityType.equals("hiker");
+        double distance = (useGps && distancePrimary)
+            ? gpsDistanceMeters / 1000.0
+            : currentSteps * 0.0008;
 
+        int    calories = (int)(currentSteps * kcalPerStep(activityType));
         String stepsStr = String.format(Locale.getDefault(), "%,d", currentSteps);
         String distStr  = String.format(Locale.getDefault(), "%.2f", distance);
         String statusLabel = activityLabel(activityType) + (isPaused ? " (정지)" : "중");
-
-        // 활동 유형별 메인 지표 분기 ─────────────────────────────────
-        // runner/hiker: 거리(km) 크게 표시   walker/power_walker: 걸음수 크게 표시
-        boolean distancePrimary = activityType.equals("runner") || activityType.equals("hiker");
 
         String primaryValue, primaryLabel, compactSecondary, bigSecondaryLine;
         if (distancePrimary) {
@@ -229,12 +331,10 @@ public class WorkoutService extends Service implements SensorEventListener {
                 compactSecondary  = pace + "  ·  " + calories + "kcal";
                 bigSecondaryLine  = pace;
             } else {
-                // hiker: 거리 크게, 걸음수를 보조 라인에
                 compactSecondary = stepsStr + "보  ·  " + calories + "kcal";
                 bigSecondaryLine = stepsStr + "보";
             }
         } else {
-            // walker, power_walker: 걸음수 크게
             primaryValue     = stepsStr;
             primaryLabel     = "걸음";
             compactSecondary = distStr + "km  ·  " + calories + "kcal";
@@ -255,29 +355,27 @@ public class WorkoutService extends Service implements SensorEventListener {
         PendingIntent piPause = PendingIntent.getService(this, 1, pauseIntent,
             PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
 
-        // --- RemoteViews: 접힌 뷰 ---
         RemoteViews compact = new RemoteViews(getPackageName(),
             R.layout.notification_workout_compact);
-        compact.setTextViewText(R.id.notif_steps,         primaryValue);
-        compact.setTextViewText(R.id.notif_steps_label,   primaryLabel);
-        compact.setTextViewText(R.id.notif_time_cal,      timeStr);
-        compact.setTextViewText(R.id.notif_dist_kcal,     compactSecondary);
+        compact.setTextViewText(R.id.notif_steps,          primaryValue);
+        compact.setTextViewText(R.id.notif_steps_label,    primaryLabel);
+        compact.setTextViewText(R.id.notif_time_cal,       timeStr);
+        compact.setTextViewText(R.id.notif_dist_kcal,      compactSecondary);
         compact.setTextViewText(R.id.notif_status_compact, statusLabel);
         compact.setImageViewBitmap(R.id.notif_character,   charBitmap);
         compact.setImageViewResource(R.id.notif_pause_btn, pauseIcon);
         compact.setOnClickPendingIntent(R.id.notif_pause_btn, piPause);
 
-        // --- RemoteViews: 펼친 뷰 ---
         RemoteViews big = new RemoteViews(getPackageName(),
             R.layout.notification_workout_big);
-        big.setTextViewText(R.id.notif_steps_big,        primaryValue);
-        big.setTextViewText(R.id.notif_steps_label_big,  primaryLabel);
-        big.setTextViewText(R.id.notif_time_big,         timeStr);
-        big.setTextViewText(R.id.notif_dist_big,         bigSecondaryLine);
-        big.setTextViewText(R.id.notif_cal_big,          calories + "kcal");
-        big.setTextViewText(R.id.notif_nickname_big,     nickname);
-        big.setTextViewText(R.id.notif_activity_big,     statusLabel);
-        big.setImageViewBitmap(R.id.notif_character_big, charBitmap);
+        big.setTextViewText(R.id.notif_steps_big,           primaryValue);
+        big.setTextViewText(R.id.notif_steps_label_big,     primaryLabel);
+        big.setTextViewText(R.id.notif_time_big,            timeStr);
+        big.setTextViewText(R.id.notif_dist_big,            bigSecondaryLine);
+        big.setTextViewText(R.id.notif_cal_big,             calories + "kcal");
+        big.setTextViewText(R.id.notif_nickname_big,        nickname);
+        big.setTextViewText(R.id.notif_activity_big,        statusLabel);
+        big.setImageViewBitmap(R.id.notif_character_big,    charBitmap);
         big.setImageViewResource(R.id.notif_pause_btn_big,  pauseIcon);
         big.setOnClickPendingIntent(R.id.notif_pause_btn_big, piPause);
 
@@ -309,6 +407,8 @@ public class WorkoutService extends Service implements SensorEventListener {
         if (s == 60) { m++; s = 0; }
         return m + "'" + String.format(Locale.getDefault(), "%02d", s) + "\"/km";
     }
+
+    // ── Helpers ───────────────────────────────────────────────────────────────
 
     private int getThemeColor(String t) {
         switch (t) {
@@ -359,15 +459,6 @@ public class WorkoutService extends Service implements SensorEventListener {
             ch.setShowBadge(false);
             ((NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE))
                 .createNotificationChannel(ch);
-        }
-    }
-
-    private String activityEmoji(String t) {
-        switch (t) {
-            case "runner":       return "🏃";
-            case "power_walker": return "💪";
-            case "hiker":        return "⛰️";
-            default:             return "🚶";
         }
     }
 

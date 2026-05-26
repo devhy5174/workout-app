@@ -145,6 +145,12 @@ export default function Workout() {
   const [permissionDenied, setPermissionDenied] = useState(false);
   const [estimationMode, setEstimationMode] = useState(false);
   const [showBatteryGuide, setShowBatteryGuide] = useState(false);
+
+  // GPS distance tracking (distance/pace only — steps source stays step sensor)
+  const [gpsDistance, setGpsDistance] = useState(0); // km
+  const [distanceSource, setDistanceSource] = useState<"gps" | "estimated">("estimated");
+  const gpsDistanceRef = useRef(0);
+
   const isSaved = useRef(false);
   const wakeLockRef = useRef<WakeLockSentinel | null>(null);
   const stepsRef = useRef(steps);
@@ -160,6 +166,9 @@ export default function Workout() {
   useEffect(() => {
     stateRef.current = state;
   }, [state]);
+  useEffect(() => {
+    gpsDistanceRef.current = gpsDistance;
+  }, [gpsDistance]);
 
   // 링 주변 공전할 실유저 (최대 2명)
   const [buddies, setBuddies] = useState<
@@ -275,7 +284,11 @@ export default function Workout() {
     const finalSteps = overrideSteps ?? stepsRef.current;
     const currentElapsedRef = overrideElapsed ?? elapsedRef.current;
     const strideVal = userProfile?.height ? (userProfile.height * 0.415) / 100 : 0.7;
-    const finalDistance = parseFloat((finalSteps * strideVal / 1000).toFixed(2));
+    const estimatedDistance = parseFloat((finalSteps * strideVal / 1000).toFixed(2));
+    // Prefer GPS distance when available — more accurate for runner/hiker
+    const gpsKm = gpsDistanceRef.current;
+    const finalDistance = gpsKm > 0 ? parseFloat(gpsKm.toFixed(2)) : estimatedDistance;
+    const finalDistanceSource: "gps" | "estimated" = gpsKm > 0 ? "gps" : "estimated";
 
     if (currentElapsedRef < 30 || finalSteps < 50) {
       console.warn("[performSave] 너무 짧은 운동 — elapsed:", currentElapsedRef, "finalSteps:", finalSteps);
@@ -317,6 +330,8 @@ export default function Workout() {
       calories: currentCalories,
       workout_type: selectedActivityType?.type ?? "walker",
       goal_achieved: goalProgress >= 100,
+      gps_distance: gpsKm > 0 ? parseFloat(gpsKm.toFixed(2)) : undefined,
+      distance_source: finalDistanceSource,
     });
 
     if (saveResult.error) {
@@ -346,6 +361,13 @@ export default function Workout() {
         setShowPermissionModal(true);
         return;
       }
+      // GPS permission: non-blocking — denial just falls back to estimated distance
+      try {
+        const { granted: gpsGranted } = await WorkoutNative.checkLocationPermission();
+        if (!gpsGranted) {
+          await WorkoutNative.requestLocationPermission();
+        }
+      } catch (_) {}
       // 삼성 배터리 최적화 제외 여부 확인 (최초 1회만 안내)
       const batteryGuideShown = localStorage.getItem("battery_guide_shown");
       if (!batteryGuideShown) {
@@ -546,9 +568,15 @@ export default function Workout() {
       setElapsed((prev) =>
         Math.abs(data.elapsed - prev) > 2 ? data.elapsed : prev,
       );
-      // steps: 항상 서비스 센서값으로 동기화 (단일 source of truth)
+      // steps: 항상 서비스 센서값으로 동기화 (single source of truth)
       setSteps(data.steps);
       stepsRef.current = data.steps;
+      // GPS distance: monotonically increasing, only update when GPS is active
+      if (data.distanceSource === "gps" && data.gpsDistance > 0) {
+        setGpsDistance((prev) => Math.max(prev, data.gpsDistance));
+        gpsDistanceRef.current = Math.max(gpsDistanceRef.current, data.gpsDistance);
+        setDistanceSource("gps");
+      }
     })
       .then((l) => {
         listener = l;
@@ -589,19 +617,22 @@ export default function Workout() {
     return () => clearInterval(id);
   }, [state]);
 
-  // 러너 페이스 계산 (elapsed/distance 파생값 — 센서 로직 변경 없음)
-  const paceMinPerKm = distance > 0 ? (elapsed / 60) / distance : 0;
-  const paceStr = distance > 0
+  // GPS 우선 거리 (steps 기반 추정의 fallback)
+  const effectiveDistance = distanceSource === "gps" && gpsDistance > 0 ? gpsDistance : distance;
+
+  // 러너 페이스 계산 — GPS 거리 기준 (없으면 추정 거리)
+  const paceMinPerKm = effectiveDistance > 0 ? (elapsed / 60) / effectiveDistance : 0;
+  const paceStr = effectiveDistance > 0
     ? `${Math.floor(paceMinPerKm)}'${String(Math.round((paceMinPerKm % 1) * 60)).padStart(2, "0")}"`
     : `--'--"`;
 
   // 활동 유형별 스탯 데이터
   const allStatItems: Record<StatKey, { label: string; value: string; unit: string }> = {
-    time:     { label: "시간",   value: formatTime(elapsed),    unit: "시간" },
-    steps:    { label: "걸음수", value: steps.toLocaleString(), unit: "보" },
-    distance: { label: "거리",   value: distance.toFixed(2),    unit: "km" },
-    calories: { label: "칼로리", value: String(calories),       unit: "kcal" },
-    pace:     { label: "페이스", value: paceStr,                unit: "/km" },
+    time:     { label: "시간",   value: formatTime(elapsed),           unit: "시간" },
+    steps:    { label: "걸음수", value: steps.toLocaleString(),        unit: "보" },
+    distance: { label: "거리",   value: effectiveDistance.toFixed(2),  unit: "km" },
+    calories: { label: "칼로리", value: String(calories),              unit: "kcal" },
+    pace:     { label: "페이스", value: paceStr,                       unit: "/km" },
   };
 
   const statLayout = STAT_LAYOUT[actType as keyof typeof STAT_LAYOUT] ?? STAT_LAYOUT.walker;
@@ -873,7 +904,22 @@ export default function Workout() {
               <p className="font-extrabold text-4xl text-gray-800 leading-none">
                 {primaryStat.value}
               </p>
-              <p className="text-sm text-gray-400 mt-1">{primaryStat.unit}</p>
+              <div className="flex items-center gap-2 mt-1">
+                <p className="text-sm text-gray-400">{primaryStat.unit}</p>
+                {/* GPS indicator — only for distance-primary types (runner/hiker) while active */}
+                {(actType === "runner" || actType === "hiker") &&
+                  (state === "running" || state === "paused") && (
+                    <span
+                      className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
+                        distanceSource === "gps"
+                          ? "bg-emerald-100 text-emerald-600"
+                          : "bg-gray-100 text-gray-400"
+                      }`}
+                    >
+                      {distanceSource === "gps" ? "📍 GPS" : "📍 추정"}
+                    </span>
+                  )}
+              </div>
             </div>
           </div>
           {/* 보조 지표 3개 */}
@@ -952,6 +998,9 @@ export default function Workout() {
                 onClick={() => {
                   setSteps(0);
                   setElapsed(0);
+                  setGpsDistance(0);
+                  gpsDistanceRef.current = 0;
+                  setDistanceSource("estimated");
                   isSaved.current = false;
                   setTooShort(false);
                   setEstimationMode(false);
@@ -1224,8 +1273,8 @@ export default function Workout() {
                       icon: (
                         <IoLocationSharp className="text-xl text-blue-500" />
                       ),
-                      label: "거리",
-                      value: `${distance.toFixed(2)} km`,
+                      label: distanceSource === "gps" ? "거리 · GPS" : "거리 · 추정",
+                      value: `${effectiveDistance.toFixed(2)} km`,
                     },
                     {
                       icon: (
@@ -1347,6 +1396,9 @@ export default function Workout() {
                   onClick={() => {
                     setSteps(0);
                     setElapsed(0);
+                    setGpsDistance(0);
+                    gpsDistanceRef.current = 0;
+                    setDistanceSource("estimated");
                     isSaved.current = false;
                     setTooShort(false);
                     setEstimationMode(false);

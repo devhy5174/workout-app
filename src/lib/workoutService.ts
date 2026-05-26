@@ -45,6 +45,11 @@ export type WorkoutRecord = {
   workout_type: string;
   goal_achieved: boolean;
   created_at?: string;
+  // GPS fields — require Supabase migration before saving:
+  // ALTER TABLE workout_history ADD COLUMN gps_distance numeric;
+  // ALTER TABLE workout_history ADD COLUMN distance_source text DEFAULT 'estimated';
+  gps_distance?: number;
+  distance_source?: "estimated" | "gps";
 };
 
 export type UserGoal = {
@@ -60,9 +65,14 @@ export async function saveWorkoutRecord(
   record: Omit<WorkoutRecord, "id" | "user_id" | "created_at">,
   userId: string,
 ): Promise<{ data: WorkoutRecord | null; error: string | null }> {
+  // Strip GPS-only fields until Supabase migration adds those columns.
+  // To enable: run the ALTER TABLE migration in workoutService.ts comment,
+  // then remove this destructure and spread `record` directly.
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { gps_distance: _g, distance_source: _s, ...dbRecord } = record;
   const { data, error } = await supabase
     .from("workout_history")
-    .insert({ ...record, user_id: userId })
+    .insert({ ...dbRecord, user_id: userId })
     .select()
     .single();
 

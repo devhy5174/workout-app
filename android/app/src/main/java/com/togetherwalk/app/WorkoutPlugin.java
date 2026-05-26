@@ -26,6 +26,13 @@ import com.getcapacitor.annotation.PermissionCallback;
         @Permission(
             strings = { Manifest.permission.ACTIVITY_RECOGNITION },
             alias = "activityRecognition"
+        ),
+        @Permission(
+            strings = {
+                Manifest.permission.ACCESS_FINE_LOCATION,
+                Manifest.permission.ACCESS_COARSE_LOCATION
+            },
+            alias = "location"
         )
     }
 )
@@ -54,6 +61,8 @@ public class WorkoutPlugin extends Plugin {
         call.resolve();
     }
 
+    // ── Activity recognition permission ──────────────────────────────────────
+
     @PluginMethod
     public void checkActivityPermission(PluginCall call) {
         boolean granted;
@@ -61,7 +70,7 @@ public class WorkoutPlugin extends Plugin {
             granted = ContextCompat.checkSelfPermission(getContext(),
                 Manifest.permission.ACTIVITY_RECOGNITION) == PackageManager.PERMISSION_GRANTED;
         } else {
-            granted = true; // Android 10 미만은 런타임 권한 불필요
+            granted = true;
         }
         JSObject result = new JSObject();
         result.put("granted", granted);
@@ -93,6 +102,39 @@ public class WorkoutPlugin extends Plugin {
         result.put("granted", granted);
         call.resolve(result);
     }
+
+    // ── Location permission (for GPS distance tracking) ───────────────────────
+
+    @PluginMethod
+    public void checkLocationPermission(PluginCall call) {
+        boolean granted = ContextCompat.checkSelfPermission(getContext(),
+            Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED;
+        JSObject result = new JSObject();
+        result.put("granted", granted);
+        call.resolve(result);
+    }
+
+    @PluginMethod
+    public void requestLocationPermission(PluginCall call) {
+        if (ContextCompat.checkSelfPermission(getContext(),
+                Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+            JSObject result = new JSObject();
+            result.put("granted", true);
+            call.resolve(result);
+            return;
+        }
+        requestPermissionForAlias("location", call, "locationPermissionCallback");
+    }
+
+    @PermissionCallback
+    private void locationPermissionCallback(PluginCall call) {
+        boolean granted = getPermissionState("location") == PermissionState.GRANTED;
+        JSObject result = new JSObject();
+        result.put("granted", granted);
+        call.resolve(result);
+    }
+
+    // ── Workout lifecycle ─────────────────────────────────────────────────────
 
     @PluginMethod
     public void startWorkout(PluginCall call) {
@@ -141,10 +183,12 @@ public class WorkoutPlugin extends Plugin {
         JSObject result = new JSObject();
         result.put("isRunning", running);
         if (running) {
-            result.put("steps",        WorkoutService.getStaticSteps());
-            result.put("elapsed",      WorkoutService.getStaticElapsedSec());
-            result.put("activityType", WorkoutService.getStaticActivityType());
-            result.put("isPaused",     WorkoutService.getStaticIsPaused());
+            result.put("steps",           WorkoutService.getStaticSteps());
+            result.put("elapsed",         WorkoutService.getStaticElapsedSec());
+            result.put("activityType",    WorkoutService.getStaticActivityType());
+            result.put("isPaused",        WorkoutService.getStaticIsPaused());
+            result.put("gpsDistanceKm",   WorkoutService.getStaticGpsDistanceKm());
+            result.put("gpsActive",       WorkoutService.getStaticGpsActive());
         }
         call.resolve(result);
     }
@@ -155,16 +199,22 @@ public class WorkoutPlugin extends Plugin {
         updateReceiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
-                int steps   = intent.getIntExtra("steps", 0);
-                int elapsed = intent.getIntExtra("elapsed", 0);
-                double distance = steps * 0.0008;
-                int calories = (int)(steps * kcalPerStep(currentActivityType));
+                int    steps          = intent.getIntExtra("steps", 0);
+                int    elapsed        = intent.getIntExtra("elapsed", 0);
+                double gpsDistanceM   = intent.getDoubleExtra("gps_distance_m", 0.0);
+                boolean gpsActive     = intent.getBooleanExtra("gps_active", false);
+
+                double estimatedDistKm = steps * 0.0008;
+                int    calories        = (int)(steps * kcalPerStep(currentActivityType));
+                boolean hasGps         = gpsActive && gpsDistanceM > 0;
 
                 JSObject data = new JSObject();
-                data.put("steps",    steps);
-                data.put("elapsed",  elapsed);
-                data.put("distance", distance);
-                data.put("calories", calories);
+                data.put("steps",          steps);
+                data.put("elapsed",        elapsed);
+                data.put("distance",       estimatedDistKm);  // backward-compat estimated value
+                data.put("calories",       calories);
+                data.put("gpsDistance",    gpsDistanceM / 1000.0);  // km
+                data.put("distanceSource", hasGps ? "gps" : "estimated");
                 notifyListeners("workoutUpdate", data);
             }
         };

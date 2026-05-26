@@ -11,10 +11,14 @@ import {
 import { useUser } from "../../context/UserContext";
 import type { WorkoutRecord } from "../../lib/workoutService";
 
-// distance_source: "estimated" (steps × stride) | "gps" (추후 교체 지점)
-// GPS 연동 시 이 함수만 교체하면 전체 탭에 반영됨
+// gps_distance 컬럼이 있는 레코드는 GPS 기반 거리를, 없으면 distance(추정값) 사용
+// DB 마이그레이션 후 gps_distance 컬럼이 채워지면 자동으로 GPS 값이 반영됨
 function getDistance(r: WorkoutRecord): number {
-  return r.distance ?? 0; // 현재는 저장 시 steps 기반 추정값
+  return (r.gps_distance ?? 0) > 0 ? (r.gps_distance as number) : (r.distance ?? 0);
+}
+
+function isGpsRecord(r: WorkoutRecord): boolean {
+  return (r.distance_source === "gps") || ((r.gps_distance ?? 0) > 0);
 }
 
 function formatPace(durationSec: number, distanceKm: number): string {
@@ -302,6 +306,7 @@ export default function RunnerStatsTab() {
             .map((r, i) => {
               const dist = getDistance(r);
               const pace = formatPace(r.duration, dist);
+              const gps  = isGpsRecord(r);
               return (
                 <div
                   key={r.id ?? i}
@@ -314,9 +319,20 @@ export default function RunnerStatsTab() {
                     🏃
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-[11px] text-gray-400 font-semibold">
-                      {r.date}
-                    </p>
+                    <div className="flex items-center gap-1.5">
+                      <p className="text-[11px] text-gray-400 font-semibold">
+                        {r.date}
+                      </p>
+                      <span
+                        className={`text-[9px] font-bold px-1 py-0.5 rounded-full ${
+                          gps
+                            ? "bg-emerald-100 text-emerald-600"
+                            : "bg-gray-100 text-gray-400"
+                        }`}
+                      >
+                        {gps ? "GPS" : "추정"}
+                      </span>
+                    </div>
                     <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                       <span className="text-sm font-extrabold text-gray-800">
                         {dist.toFixed(2)}km
@@ -341,15 +357,18 @@ export default function RunnerStatsTab() {
         </div>
       </div>
 
-      {/* GPS 미연동 안내 */}
-      <div className="rounded-2xl p-4 border border-dashed border-gray-200 flex items-start gap-3">
+      {/* GPS 연동 안내 */}
+      <div className="rounded-2xl p-4 border border-dashed border-emerald-200 bg-emerald-50/50 flex items-start gap-3">
         <span className="text-base">📍</span>
         <div>
-          <p className="text-xs font-bold text-gray-500">현재 GPS 미연동</p>
-          <p className="text-[11px] text-gray-400 mt-0.5 leading-snug">
-            거리와 페이스는 걸음수 기반 추정값이에요.
+          <p className="text-xs font-bold text-emerald-700">GPS 거리 추적 연동됨</p>
+          <p className="text-[11px] text-gray-500 mt-0.5 leading-snug">
+            위치 권한 허용 시 GPS 기반 실제 거리로 기록돼요.
             <br />
-            GPS 연동 시 더 정확한 페이스 분석이 가능해요.
+            권한 거절 시엔 걸음수 기반 추정 거리로 표시됩니다.
+            <br />
+            각 기록 옆 <span className="font-bold text-emerald-600">GPS</span> /
+            <span className="font-bold text-gray-400"> 추정</span> 배지로 구분할 수 있어요.
           </p>
         </div>
       </div>
