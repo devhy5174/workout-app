@@ -166,31 +166,66 @@ Capacitor 커스텀 플러그인으로 웹 ↔ 네이티브를 연결합니다.
 | 파일 | 역할 |
 |------|------|
 | `src/lib/workoutNative.ts` | Capacitor 플러그인 TS 인터페이스 |
-| `android/.../WorkoutPlugin.java` | 웹 ↔ 네이티브 브릿지 |
+| `android/.../WorkoutPlugin.java` | 웹 ↔ 네이티브 브릿지 + 권한 관리 |
 | `android/.../WorkoutService.java` | Foreground Service — 만보기 센서 · 알림 · 브로드캐스트 |
 | `src/hooks/useYesterdayPace.ts` | 어제 기록 페이서 — 어제 이 시점 걸음수와 실시간 비교 |
 
 ### 알림 표시 내용
 
 ```
-🚶 산책 중  ·  닉네임       ← 캐릭터 이미지 원형 아이콘
-⏱ 01:30   👣 200보   🔥 12kcal
-[⏸ 일시정지]  [■ 종료]
+🚶 산책 중  ·  닉네임           ← 캐릭터 이미지 원형 아이콘
+👣 342보   ⏱ 05:23             ← 컴팩트 뷰
+
+── 펼치면 ──────────────────────
+👣  걸음수  342보
+⏱  운동시간  05:23
+📍  0.27km   🔥  18kcal
+[⏸ 일시정지]                    ← 알림에서 바로 제어
 ```
 
-- `VISIBILITY_PUBLIC` 설정으로 잠금화면에서도 전체 내용 노출
-- 실제 하드웨어 만보기 센서(`TYPE_STEP_COUNTER`) 사용
-- 앱 화면에서는 "어제 이 시점" 걸음수와 실시간 비교 배너 추가 표시
+- `VISIBILITY_PUBLIC` — 잠금화면에서도 전체 내용 노출
+- `BigTextStyle` — 펼치면 걸음수·시간·거리·칼로리 상세 표시
+- 일시정지/재개 버튼 알림에서 직접 제어 가능
+
+### 걸음수 단일화 구조 (Source of Truth)
+
+| 단계 | 데이터 출처 |
+|------|------------|
+| 운동 중 알림 걸음수 | `WorkoutService` — `TYPE_STEP_COUNTER` 센서 직접 |
+| 앱 화면 걸음수 | `WorkoutPlugin.notifyListeners("workoutUpdate")` → React state |
+| 저장 걸음수 | 종료 직전 `getStatus()` 호출 → 서비스 최종 센서값 |
+
+**세 값이 항상 동일한 센서값을 사용합니다.**
 
 ### 걸음수 측정 우선순위
 
 ```
-1순위: Health Connect (설치+허용 시) — 정밀 측정, 자동 일시정지 지원
-2순위: TYPE_STEP_COUNTER 내장 센서 (HC 미설치/거부 시) — 권한 불필요, 모든 Android 지원
-3순위: 시뮬레이션 타이머 (웹 브라우저) — 활동 유형별 페이스 기반 추정
+1순위: TYPE_STEP_COUNTER 내장 센서 (ACTIVITY_RECOGNITION 권한 허용 시)
+       → 실제 하드웨어 만보기, WorkoutService에서 직접 읽음
+2순위: 활동 유형별 시뮬레이션 (권한 거절 또는 웹 브라우저)
+       → 산책 100보/분, 파워워킹 120보/분, 러닝 150보/분, 등산 90보/분 기준 추정
+       → 권한 거절 시 앱 내 안내 후 예상값으로 계속 진행 가능
 ```
 
-운동 종료 시 stepsRef / elapsedRef 기반으로 저장하여 React 클로저로 인한 stale value 버그 방지.
+### 권한 요청 흐름
+
+- 앱 시작 시 자동 권한 팝업 없음
+- 운동 시작 버튼 클릭 시에만 권한 확인
+- 권한 없으면 자체 안내 모달 표시 후 Android 권한 팝업 호출
+- 거절 시 예상값 모드로 운동 가능 (차이 있을 수 있음 안내)
+
+### 삼성 배터리 최적화 대응
+
+- 운동 최초 시작 시 배터리 최적화 제외 여부 확인
+- 미제외 상태이면 안내 모달 표시 (1회)
+- "배터리 제한 해제하기" → Android 시스템 설정으로 바로 이동
+
+### 백그라운드 복구
+
+- `visibilitychange` 이벤트로 포그라운드 복귀 감지
+- `WorkoutNative.getStatus()` 호출 → 서비스 상태 복구
+- 서비스가 살아있으면 steps/elapsed 그대로 UI에 반영
+- 서비스가 종료됐으면 idle 상태로 초기화
 
 ---
 

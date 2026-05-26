@@ -64,7 +64,11 @@ export default function RunnerStatsTab() {
     if (period === "all") return allRuns;
     const months = period === "month" ? 1 : 3;
     const now = new Date();
-    const cutoff = new Date(now.getFullYear(), now.getMonth() - months, now.getDate());
+    const cutoff = new Date(
+      now.getFullYear(),
+      now.getMonth() - months,
+      now.getDate(),
+    );
     const cutoffStr = [
       cutoff.getFullYear(),
       String(cutoff.getMonth() + 1).padStart(2, "0"),
@@ -128,7 +132,9 @@ export default function RunnerStatsTab() {
     return (
       <div className="flex flex-col items-center justify-center gap-4 py-16">
         <span className="text-6xl">🏃</span>
-        <p className="font-extrabold text-gray-700 text-lg">러닝 기록이 없어요</p>
+        <p className="font-extrabold text-gray-700 text-lg">
+          러닝 기록이 없어요
+        </p>
         <p className="text-sm text-gray-400 text-center leading-relaxed">
           러너 유형으로 운동을 완료하면
           <br />
@@ -143,7 +149,10 @@ export default function RunnerStatsTab() {
       {/* 전체 기간 요약 */}
       <div
         className="rounded-3xl p-5"
-        style={{ background: "linear-gradient(135deg, var(--color-primary), var(--color-secondary))" }}
+        style={{
+          background:
+            "linear-gradient(135deg, var(--color-primary), var(--color-secondary))",
+        }}
       >
         <p className="text-white/70 text-[11px] font-bold mb-3 tracking-wide">
           🏃 러닝 전체 기록
@@ -152,14 +161,21 @@ export default function RunnerStatsTab() {
           {[
             { label: "총 러닝", value: `${summary!.count}회` },
             { label: "총 거리", value: formatDist(summary!.totalDist) },
-            { label: "소모 칼로리", value: `${summary!.totalCal.toLocaleString()}kcal` },
+            {
+              label: "소모 칼로리",
+              value: `${summary!.totalCal.toLocaleString()}kcal`,
+            },
             { label: "평균 페이스", value: `${summary!.avgPace}/km` },
             { label: "최고 거리", value: formatDist(summary!.bestDist) },
             { label: "최고 페이스", value: `${summary!.bestPace}/km` },
           ].map(({ label, value }) => (
             <div key={label} className="flex flex-col gap-0.5">
-              <span className="text-white/60 text-[10px] font-semibold">{label}</span>
-              <span className="text-white font-extrabold text-sm leading-tight">{value}</span>
+              <span className="text-white/60 text-[10px] font-semibold">
+                {label}
+              </span>
+              <span className="text-white font-extrabold text-sm leading-tight">
+                {value}
+              </span>
             </div>
           ))}
         </div>
@@ -169,7 +185,10 @@ export default function RunnerStatsTab() {
       <div className="bg-white rounded-3xl shadow-sm">
         <div
           className="px-5 py-4 rounded-t-3xl"
-          style={{ background: "linear-gradient(135deg, var(--color-primary)18, var(--color-secondary)18)" }}
+          style={{
+            background:
+              "linear-gradient(135deg, var(--color-primary)18, var(--color-secondary)18)",
+          }}
         >
           <p className="font-extrabold text-gray-800">러닝 거리 차트</p>
         </div>
@@ -201,6 +220,27 @@ export default function RunnerStatsTab() {
                 data={chartData}
                 margin={{ top: 4, right: 4, left: -20, bottom: 0 }}
               >
+                <defs>
+                  <linearGradient
+                    id="runningBarGrad"
+                    x1="0"
+                    y1="0"
+                    x2="0"
+                    y2="1"
+                  >
+                    <stop
+                      offset="0%"
+                      stopColor="var(--color-secondary)"
+                      stopOpacity={1}
+                    />
+
+                    <stop
+                      offset="100%"
+                      stopColor="var(--color-primary)"
+                      stopOpacity={0.9}
+                    />
+                  </linearGradient>
+                </defs>
                 <CartesianGrid
                   vertical={false}
                   strokeDasharray="3 3"
@@ -234,7 +274,7 @@ export default function RunnerStatsTab() {
                 />
                 <Bar
                   dataKey="distance"
-                  fill="var(--color-primary)"
+                  fill="url(#runningBarGrad)"
                   radius={[4, 4, 0, 0]}
                   maxBarSize={36}
                 />
@@ -248,7 +288,10 @@ export default function RunnerStatsTab() {
       <div className="bg-white rounded-3xl shadow-sm overflow-hidden">
         <div
           className="px-5 py-4"
-          style={{ background: "linear-gradient(135deg, var(--color-primary)18, var(--color-secondary)18)" }}
+          style={{
+            background:
+              "linear-gradient(135deg, var(--color-primary)18, var(--color-secondary)18)",
+          }}
         >
           <p className="font-extrabold text-gray-800">최근 러닝</p>
         </div>
@@ -260,17 +303,28 @@ export default function RunnerStatsTab() {
               const dist = getDistance(r);
               const pace = formatPace(r.duration, dist);
               return (
-                <div key={r.id ?? i} className="flex items-center gap-3 px-5 py-3">
-                  <div className="w-9 h-9 rounded-xl flex items-center justify-center text-lg flex-shrink-0" style={{ background: "var(--color-primary-light)" }}>
+                <div
+                  key={r.id ?? i}
+                  className="flex items-center gap-3 px-5 py-3"
+                >
+                  <div
+                    className="w-9 h-9 rounded-xl flex items-center justify-center text-lg flex-shrink-0"
+                    style={{ background: "var(--color-primary-light)" }}
+                  >
                     🏃
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-[11px] text-gray-400 font-semibold">{r.date}</p>
+                    <p className="text-[11px] text-gray-400 font-semibold">
+                      {r.date}
+                    </p>
                     <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                       <span className="text-sm font-extrabold text-gray-800">
                         {dist.toFixed(2)}km
                       </span>
-                      <span className="text-xs font-bold" style={{ color: "var(--color-primary)" }}>
+                      <span
+                        className="text-xs font-bold"
+                        style={{ color: "var(--color-primary)" }}
+                      >
                         ⚡ {pace}/km
                       </span>
                       <span className="text-xs text-gray-400 font-semibold">

@@ -314,7 +314,7 @@ public class WorkoutService extends Service implements SensorEventListener {
         switch (t) {
             case "nature": return Color.parseColor("#2ECC71");
             case "cosmo":  return Color.parseColor("#5B6CF9");
-            case "mono":   return Color.parseColor("#39FF14");
+            case "mono":   return Color.parseColor("#0F172A");
             default:       return Color.parseColor("#FF5733"); // energy
         }
     }

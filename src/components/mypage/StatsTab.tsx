@@ -287,6 +287,26 @@ export default function StatsTab() {
                       data={data}
                       margin={{ top: 4, right: 4, left: -24, bottom: 0 }}
                     >
+                      <defs>
+                        <linearGradient
+                          id="stepsBarGrad"
+                          x1="0"
+                          y1="0"
+                          x2="0"
+                          y2="1"
+                        >
+                          <stop
+                            offset="0%"
+                            stopColor="var(--color-secondary)"
+                            stopOpacity={1}
+                          />
+                          <stop
+                            offset="100%"
+                            stopColor="var(--color-primary)"
+                            stopOpacity={0.9}
+                          />
+                        </linearGradient>
+                      </defs>
                       <CartesianGrid
                         vertical={false}
                         strokeDasharray="3 3"
@@ -330,7 +350,7 @@ export default function StatsTab() {
                       />
                       <Bar
                         dataKey="steps"
-                        fill="var(--color-primary)"
+                        fill="url(#stepsBarGrad)"
                         radius={[4, 4, 0, 0]}
                         maxBarSize={maxBarSize}
                       />

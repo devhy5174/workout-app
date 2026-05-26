@@ -143,57 +143,16 @@ html, body {
     --color-ring-track: #e8e8f0;
   }
 
-  /* 🌈 다크 네온 테마 */
+  /* 🌑 미드나잇 테마 */
   [data-theme="mono"] {
-    --color-primary: #39ff14;
-    --color-secondary: #ff00ff;
-    --color-accent: #00e5ff;
-    --color-bg: #0d0d1a;
-    --color-text: #eeeef2;
-    --color-primary-light: #0d2200;
-    --color-ring-track: #1e1e30;
+    --color-primary: #0f172a;
+    --color-secondary: #38bdf8;
+    --color-accent: #7dd3fc;
+    --color-bg: #f8fafc;
+    --color-text: #0f172a;
+    --color-primary-light: #e0f2fe;
+    --color-ring-track: #e2e8f0;
   }
 
 }
 
-/* 네온: Tailwind 하드코딩 클래스 오버라이드 */
-[data-theme="mono"] .bg-white          { background-color: #13131f !important; }
-[data-theme="mono"] .bg-gray-50        { background-color: #1a1a2e !important; }
-[data-theme="mono"] .bg-gray-100       { background-color: #1e1e32 !important; }
-
-[data-theme="mono"] .text-gray-800,
-[data-theme="mono"] .text-gray-700     { color: #eeeef2 !important; }
-[data-theme="mono"] .text-gray-600,
-[data-theme="mono"] .text-gray-500     { color: #8888a8 !important; }
-[data-theme="mono"] .text-gray-400,
-[data-theme="mono"] .text-gray-300     { color: #55556a !important; }
-
-[data-theme="mono"] .border-gray-50,
-[data-theme="mono"] .border-gray-100,
-[data-theme="mono"] .border-gray-200   { border-color: #252538 !important; }
-
-[data-theme="mono"] .divide-gray-50 > * + *,
-[data-theme="mono"] .divide-gray-100 > * + * { border-color: #252538 !important; }
-
-[data-theme="mono"] .shadow-sm {
-  box-shadow: 0 1px 4px rgba(57, 255, 20, 0.08) !important;
-}
-[data-theme="mono"] .shadow-md {
-  box-shadow: 0 4px 16px rgba(57, 255, 20, 0.12) !important;
-}
-[data-theme="mono"] .shadow-2xl {
-  box-shadow: 0 8px 40px rgba(57, 255, 20, 0.16) !important;
-}
-
-/* 네온: rounded 계열 border-color 통일 */
-[data-theme="mono"] .rounded-2xl,
-[data-theme="mono"] .rounded-3xl,
-[data-theme="mono"] .rounded-xl,
-[data-theme="mono"] .rounded-full {
-  border-color: #252538;
-}
-
-/* 네온: active/hover 상태 배경 */
-[data-theme="mono"] button:active,
-[data-theme="mono"] button.active\:bg-gray-100:active { background-color: #1e1e32 !important; }
-[data-theme="mono"] button:hover:not(:disabled)       { background-color: #1a1a2e; }

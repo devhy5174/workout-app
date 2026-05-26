@@ -32,7 +32,7 @@ const themes: { value: Theme; label: string; gradient: string }[] = [
   { value: "energy", label: "에너지", gradient: "from-orange-500 to-red-500" },
   { value: "nature", label: "자연", gradient: "from-green-500 to-lime-500" },
   { value: "cosmo", label: "코스모", gradient: "from-blue-500 to-purple-500" },
-  { value: "mono", label: "네온", gradient: "from-lime-400 to-fuchsia-500" },
+  { value: "mono", label: "미드나잇", gradient: "from-slate-900 to-sky-400" },
 ];
 
 const LANGUAGE_LABELS = { ko: "한국어", en: "English" } as const;
