@@ -150,6 +150,7 @@ export default function Workout() {
   const [gpsDistance, setGpsDistance] = useState(0); // km
   const [distanceSource, setDistanceSource] = useState<"gps" | "estimated">("estimated");
   const gpsDistanceRef = useRef(0);
+  const [showGpsModal, setShowGpsModal] = useState(false);
 
   const isSaved = useRef(false);
   const wakeLockRef = useRef<WakeLockSentinel | null>(null);
@@ -349,26 +350,9 @@ export default function Workout() {
     }
   };
 
-  const startWorkoutWithPermission = async () => {
-    if (!isNative()) {
-      setState("running");
-      return;
-    }
+  // GPS 모달 이후 공통 진행 로직 (배터리 최적화 → 운동 시작)
+  const proceedToRunning = async () => {
     try {
-      const { granted } = await WorkoutNative.checkActivityPermission();
-      if (!granted) {
-        setPermissionDenied(false);
-        setShowPermissionModal(true);
-        return;
-      }
-      // GPS permission: non-blocking — denial just falls back to estimated distance
-      try {
-        const { granted: gpsGranted } = await WorkoutNative.checkLocationPermission();
-        if (!gpsGranted) {
-          await WorkoutNative.requestLocationPermission();
-        }
-      } catch (_) {}
-      // 삼성 배터리 최적화 제외 여부 확인 (최초 1회만 안내)
       const batteryGuideShown = localStorage.getItem("battery_guide_shown");
       if (!batteryGuideShown) {
         const { excluded } = await WorkoutNative.isBatteryOptimizationExcluded();
@@ -377,7 +361,31 @@ export default function Workout() {
           return;
         }
       }
+    } catch (_) {}
+    setState("running");
+  };
+
+  const startWorkoutWithPermission = async () => {
+    if (!isNative()) {
       setState("running");
+      return;
+    }
+    try {
+      // 1. 활동 인식 권한
+      const { granted } = await WorkoutNative.checkActivityPermission();
+      if (!granted) {
+        setPermissionDenied(false);
+        setShowPermissionModal(true);
+        return;
+      }
+      // 2. GPS 권한: 없으면 자체 안내 모달 먼저 — 바로 Android 팝업 노출하지 않음
+      const { granted: gpsGranted } = await WorkoutNative.checkLocationPermission();
+      if (!gpsGranted) {
+        setShowGpsModal(true);
+        return; // 이후 플로우는 GPS 모달 버튼 콜백에서 처리
+      }
+      // 3. GPS 이미 허용 → 배터리 최적화 → 운동 시작
+      await proceedToRunning();
     } catch {
       setState("running");
     }
@@ -1107,6 +1115,42 @@ export default function Workout() {
             </button>
           </div>
         </div>
+      )}
+
+      {/* GPS 위치 권한 안내 */}
+      {showGpsModal && (
+        <AlertModal
+          icon={IoLocationSharp}
+          iconClass="text-blue-500"
+          title="더 정확한 거리 기록"
+          message={
+            <div className="space-y-2 text-center">
+              <p>
+                실제 이동 거리와 평균 페이스를 기록하려면
+                <br />
+                <strong className="text-gray-700">위치 권한</strong>이 필요해요.
+              </p>
+              <p className="text-xs text-gray-400 pt-1">
+                위치 정보는 운동 중 거리 계산에만 사용됩니다.
+                <br />
+                권한 없이도 걸음수 기반 추정 거리로 계속할 수 있어요.
+              </p>
+            </div>
+          }
+          confirmLabel="GPS 기록 허용하기"
+          onConfirm={async () => {
+            setShowGpsModal(false);
+            try {
+              await WorkoutNative.requestLocationPermission();
+            } catch (_) {}
+            await proceedToRunning();
+          }}
+          cancelLabel="위치 권한 없이 시작하기"
+          onCancel={async () => {
+            setShowGpsModal(false);
+            await proceedToRunning();
+          }}
+        />
       )}
 
       {/* 삼성 배터리 최적화 안내 (최초 1회) */}
