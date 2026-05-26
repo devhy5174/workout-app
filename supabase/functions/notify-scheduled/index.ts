@@ -278,27 +278,36 @@ Deno.serve(async (req) => {
     const { error } = await supabase.from("notifications").insert(notifications);
     if (error) throw error;
 
-    // 웹 푸시 연쇄 발송 (push_subscriptions 있는 유저에게만)
+    // 웹 푸시 + FCM 동시 발송 (Android 잠금화면 포함)
     const uniqueUserIds = [...new Set(notifications.map((n) => n.user_id))];
     const firstNotif = notifications[0];
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const cronSecret = Deno.env.get("CRON_SECRET");
-
-    fetch(`${supabaseUrl}/functions/v1/notify-push`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        ...(expectedToken ? { "x-cron-secret": expectedToken } : {}),
+    const pushBody = JSON.stringify({
+      userIds: uniqueUserIds,
+      notification: {
+        title: firstNotif.title,
+        body: firstNotif.body,
+        data: { type: firstNotif.type, schedule: scheduleType },
       },
-      body: JSON.stringify({
-        userIds: uniqueUserIds,
-        notification: {
-          title: firstNotif.title,
-          body: firstNotif.body,
-          data: { type: firstNotif.type, schedule: scheduleType },
-        },
-      }),
-    }).catch((e) => console.warn("[notify-scheduled] push call failed:", e));
+    });
+    const authHeaders = {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
+      ...(expectedToken ? { "x-cron-secret": expectedToken } : {}),
+    };
+
+    await Promise.allSettled([
+      fetch(`${supabaseUrl}/functions/v1/notify-push`, {
+        method: "POST",
+        headers: authHeaders,
+        body: pushBody,
+      }).catch((e) => console.warn("[notify-scheduled] push call failed:", e)),
+      fetch(`${supabaseUrl}/functions/v1/notify-fcm`, {
+        method: "POST",
+        headers: authHeaders,
+        body: pushBody,
+      }).catch((e) => console.warn("[notify-scheduled] FCM call failed:", e)),
+    ]);
 
     console.log(`[notify-scheduled] type=${scheduleType} sent=${notifications.length}`);
     return new Response(JSON.stringify({ sent: notifications.length }), {

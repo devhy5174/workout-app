@@ -24,13 +24,6 @@ public class MainActivity extends BridgeActivity {
                         new String[]{Manifest.permission.POST_NOTIFICATIONS}, 1);
             }
         }
-        // ACTIVITY_RECOGNITION — Android 10+(API 29) 필수 런타임 권한
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACTIVITY_RECOGNITION)
-                    != PackageManager.PERMISSION_GRANTED) {
-                ActivityCompat.requestPermissions(this,
-                        new String[]{Manifest.permission.ACTIVITY_RECOGNITION}, 2);
-            }
-        }
+        // ACTIVITY_RECOGNITION — 운동 시작 시점에 앱 자체 안내 모달 후 요청 (여기서 직접 요청 안 함)
     }
 }

@@ -38,6 +38,14 @@
             android:foregroundServiceType="health"
             android:exported="false" />
 
+        <!-- FCM 기본 알림 채널 (백그라운드 알림 표시에 필수) -->
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_channel_id"
+            android:value="default" />
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_icon"
+            android:resource="@mipmap/ic_launcher" />
+
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.fileprovider"

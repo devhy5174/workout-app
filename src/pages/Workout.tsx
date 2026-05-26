@@ -2,10 +2,11 @@ import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { FaPlay, FaPause, FaStop, FaUsers } from "react-icons/fa";
 import { IoTime, IoFootsteps, IoLocationSharp, IoFlame } from "react-icons/io5";
-import { MdOutlineMonitorHeart } from "react-icons/md";
+import { MdBatteryAlert, MdDirectionsWalk } from "react-icons/md";
 import AlertModal from "../components/ui/AlertModal";
 import { useActivityType } from "../context/ActivityTypeContext";
 import { useUser } from "../context/UserContext";
+import { useTheme } from "../context/ThemeContext";
 import { getAvatarCharacterById } from "../data/avatarCharacters";
 import { activityTypes } from "../data/activityTypes";
 import { storage } from "../utils/storage";
@@ -21,7 +22,6 @@ import { useTodayStats } from "../hooks/useTodayStats";
 import { useYesterdayPace } from "../hooks/useYesterdayPace";
 import { notifyGoalReached } from "../utils/notificationTriggers";
 import WorkoutNative, { isNative } from "../lib/workoutNative";
-import { initHealthConnect, readTodayStepsHC, getHCState, resetHCState } from "../lib/healthConnectService";
 
 const WK_KEY = {
   state: "wk_state",
@@ -92,46 +92,47 @@ export default function Workout() {
   const { selectedActivityType, selectedId, selectActivityType } =
     useActivityType();
   const { user, userGoal, saveWorkout, userProfile } = useUser();
+  const { theme } = useTheme();
   const { todayStats } = useTodayStats(user?.id ?? null);
   const { selectedBubbleId } = useActiveBubble();
 
+  // Native는 항상 idle로 시작 — mount 시 getStatus()로 서비스 상태 복구
   const [state, setState] = useState<WorkoutState>(
-    () => (localStorage.getItem(WK_KEY.state) as WorkoutState) ?? "idle",
+    () => isNative() ? "idle" : (localStorage.getItem(WK_KEY.state) as WorkoutState) ?? "idle",
   );
-  const [steps, setSteps] = useState<number>(() =>
-    Number(localStorage.getItem(WK_KEY.steps) ?? 0),
+  const [steps, setSteps] = useState<number>(
+    () => isNative() ? 0 : Number(localStorage.getItem(WK_KEY.steps) ?? 0),
   );
-  const [elapsed, setElapsed] = useState<number>(() =>
-    Number(localStorage.getItem(WK_KEY.elapsed) ?? 0),
+  const [elapsed, setElapsed] = useState<number>(
+    () => isNative() ? 0 : Number(localStorage.getItem(WK_KEY.elapsed) ?? 0),
   );
   const yesterdayPace = useYesterdayPace(user?.id ?? null, elapsed, steps);
   const [showStartModal, setShowStartModal] = useState(false);
   const [showModal, setShowModal] = useState(false);
-  const [showHCGuide, setShowHCGuide] = useState(false);
+
   const [pendingId, setPendingId] = useState<number>(() => selectedId ?? 1);
 
   const [showBuddies, setShowBuddies] = useState(true);
   const [tooShort, setTooShort] = useState(false);
+  const [showPermissionModal, setShowPermissionModal] = useState(false);
+  const [permissionDenied, setPermissionDenied] = useState(false);
+  const [estimationMode, setEstimationMode] = useState(false);
+  const [showBatteryGuide, setShowBatteryGuide] = useState(false);
   const isSaved = useRef(false);
   const wakeLockRef = useRef<WakeLockSentinel | null>(null);
   const stepsRef = useRef(steps);
-  // Health Connect: 운동 시작 시점의 오늘 누적 걸음수 기준점
-  const hcStartStepsRef = useRef<number | null>(null);
-  // HC가 걸음수를 직접 제공 중인지 (state로 폴링 이펙트 트리거, ref로 콜백 내 동기 접근)
-  const [hcActive, setHcActive] = useState(false);
-  const hcActiveRef = useRef(false);
-  // HC 자동 일시정지: 걸음수 변화 없을 때 타이머만 멈춤 (state는 "running" 유지)
-  const [isAutoPaused, setIsAutoPaused] = useState(false);
-  const isAutoPausedRef = useRef(false);
+  const isRestoredSessionRef = useRef(false);
+  const stateRef = useRef<WorkoutState>(state);
   const elapsedRef = useRef(elapsed);
-  const lastHCStepsRef = useRef<number>(0);
-  const lastHCStepTimeRef = useRef<number>(0);
   useEffect(() => {
     stepsRef.current = steps;
   }, [steps]);
   useEffect(() => {
     elapsedRef.current = elapsed;
   }, [elapsed]);
+  useEffect(() => {
+    stateRef.current = state;
+  }, [state]);
 
   // 링 주변 공전할 실유저 (최대 2명)
   const [buddies, setBuddies] = useState<
@@ -239,28 +240,15 @@ export default function Workout() {
     Object.values(WK_KEY).forEach((k) => localStorage.removeItem(k));
   };
 
-  const performSave = async () => {
+  // overrideSteps/overrideElapsed: handleStop에서 서비스 종료 전 가져온 정확한 값
+  const performSave = async (overrideSteps?: number, overrideElapsed?: number) => {
     if (isSaved.current) return;
     isSaved.current = true;
 
-    // ref 값을 기준으로 사용 (stale closure 방지)
-    let finalSteps = stepsRef.current;
-    const currentElapsedRef = elapsedRef.current;
+    const finalSteps = overrideSteps ?? stepsRef.current;
+    const currentElapsedRef = overrideElapsed ?? elapsedRef.current;
     const strideVal = userProfile?.height ? (userProfile.height * 0.415) / 100 : 0.7;
-    let finalDistance = parseFloat((finalSteps * strideVal / 1000).toFixed(2));
-
-    // Health Connect로 실제 걸음수 확인 (가능한 경우)
-    if (getHCState() === "available" && hcStartStepsRef.current !== null) {
-      const endSteps = await readTodayStepsHC();
-      if (endSteps !== null) {
-        const hcSessionSteps = Math.max(0, endSteps - hcStartStepsRef.current);
-        // HC 동기화 지연 방지: HC 값이 폴링 누적값보다 낮으면 폴링값 유지
-        finalSteps = Math.max(stepsRef.current, hcSessionSteps);
-        finalDistance = parseFloat((finalSteps * strideVal / 1000).toFixed(2));
-      }
-    }
-
-    console.log("[performSave] finalSteps:", finalSteps, "displayedSteps:", steps, "stepsRef:", stepsRef.current, "elapsed(state):", elapsed, "elapsed(ref):", currentElapsedRef, "hcStartSteps:", hcStartStepsRef.current);
+    const finalDistance = parseFloat((finalSteps * strideVal / 1000).toFixed(2));
 
     if (currentElapsedRef < 30 || finalSteps < 50) {
       console.warn("[performSave] 너무 짧은 운동 — elapsed:", currentElapsedRef, "finalSteps:", finalSteps);
@@ -319,15 +307,71 @@ export default function Workout() {
     }
   };
 
+  const startWorkoutWithPermission = async () => {
+    if (!isNative()) {
+      setState("running");
+      return;
+    }
+    try {
+      const { granted } = await WorkoutNative.checkActivityPermission();
+      if (!granted) {
+        setPermissionDenied(false);
+        setShowPermissionModal(true);
+        return;
+      }
+      // 삼성 배터리 최적화 제외 여부 확인 (최초 1회만 안내)
+      const batteryGuideShown = localStorage.getItem("battery_guide_shown");
+      if (!batteryGuideShown) {
+        const { excluded } = await WorkoutNative.isBatteryOptimizationExcluded();
+        if (!excluded) {
+          setShowBatteryGuide(true);
+          return;
+        }
+      }
+      setState("running");
+    } catch {
+      setState("running");
+    }
+  };
+
   const handleStop = async () => {
+    // 서비스 종료 전 최종 센서값 가져오기 (notification steps = saved steps 보장)
+    let serviceSteps: number | undefined;
+    let serviceElapsed: number | undefined;
+    if (isNative() && !estimationMode) {
+      try {
+        const status = await WorkoutNative.getStatus();
+        console.log("[FINAL_SNAPSHOT]", {
+          serviceRunning: status.isRunning,
+          notificationSteps: status.steps,
+          uiSteps: stepsRef.current,
+          serviceElapsed: status.elapsed,
+          uiElapsed: elapsedRef.current,
+          isPaused: status.isPaused,
+          estimationMode: false,
+        });
+        if (status.isRunning) {
+          serviceSteps = status.steps;
+          serviceElapsed = status.elapsed;
+        }
+      } catch (_) {}
+      WorkoutNative.stopWorkout().catch(() => {});
+    } else if (estimationMode) {
+      console.log("[FINAL_SNAPSHOT]", {
+        serviceRunning: false,
+        uiSteps: stepsRef.current,
+        uiElapsed: elapsedRef.current,
+        estimationMode: true,
+      });
+    }
     setState("done");
-    if (isNative()) WorkoutNative.stopWorkout().catch(() => {});
-    await performSave();
+    await performSave(serviceSteps, serviceElapsed);
     setShowModal(true);
   };
 
-  // 앱 재실행 시 백그라운드 경과 시간 복구
+  // 앱 재실행 시 백그라운드 경과 시간 복구 — 웹 전용 (네이티브는 getStatus()로 복구)
   useEffect(() => {
+    if (isNative()) return;
     if (state !== "running") return;
     const resumeAt = Number(localStorage.getItem(WK_KEY.resumeAt) ?? 0);
     if (!resumeAt) return;
@@ -375,84 +419,6 @@ export default function Workout() {
     return () => document.removeEventListener("visibilitychange", onVisible);
   }, [state]);
 
-  // Health Connect: 운동 시작 시 권한 요청 + 기준 걸음수 저장 → hcActive 활성화
-  useEffect(() => {
-    if (state !== "running") return;
-    if (hcStartStepsRef.current !== null) return; // 일시정지 후 재개 시 재초기화 방지
-    (async () => {
-      try {
-        const hcState = await initHealthConnect();
-        if (hcState !== "available") return; // 거부/불가 → 타이머 fallback 유지
-        const todaySteps = await readTodayStepsHC();
-        // readTodayStepsHC 실패(null) 시에도 0으로 기준점 설정 후 활성화
-        hcStartStepsRef.current = todaySteps ?? 0;
-        lastHCStepsRef.current = 0;
-        lastHCStepTimeRef.current = Date.now();
-        hcActiveRef.current = true;
-        setHcActive(true);
-      } catch (e) {
-        // 예상치 못한 오류 → HC 비활성, 타이머 방식으로 계속 진행
-        console.warn("[Workout] HC 초기화 실패, fallback:", e);
-        hcStartStepsRef.current = null;
-        hcActiveRef.current = false;
-        setHcActive(false);
-      }
-    })();
-  }, [state === "running"]);
-
-  // Health Connect: 5초마다 오늘 누적 걸음수 읽어 세션 걸음수(시작 이후 증가분)로 업데이트
-  // 자동 일시정지: 30초간 걸음수 변화 없으면 타이머 멈춤, 재개되면 자동 복귀
-  useEffect(() => {
-    if (state !== "running" || !hcActive) return;
-
-    const pollHC = async () => {
-      try {
-        const todaySteps = await readTodayStepsHC();
-        if (todaySteps === null) return;
-        if (hcStartStepsRef.current === null) return;
-        const sessionSteps = Math.max(0, todaySteps - hcStartStepsRef.current);
-
-        if (sessionSteps > lastHCStepsRef.current) {
-          lastHCStepsRef.current = sessionSteps;
-          lastHCStepTimeRef.current = Date.now();
-          if (isAutoPausedRef.current) {
-            isAutoPausedRef.current = false;
-            setIsAutoPaused(false);
-            if (isNative()) WorkoutNative.resumeWorkout().catch(() => {});
-          }
-        } else if (
-          lastHCStepTimeRef.current > 0 &&
-          !isAutoPausedRef.current &&
-          Date.now() - lastHCStepTimeRef.current > 30_000
-        ) {
-          isAutoPausedRef.current = true;
-          setIsAutoPaused(true);
-          if (isNative()) WorkoutNative.pauseWorkout().catch(() => {});
-        }
-
-        setSteps(sessionSteps);
-        stepsRef.current = sessionSteps;
-      } catch (e) {
-        console.warn("[Workout] HC poll 오류, fallback:", e);
-        hcActiveRef.current = false;
-        setHcActive(false);
-      }
-    };
-
-    pollHC().catch(() => {
-      hcActiveRef.current = false;
-      setHcActive(false);
-    });
-
-    const id = setInterval(() => {
-      pollHC().catch(() => {
-        hcActiveRef.current = false;
-        setHcActive(false);
-      });
-    }, 5_000);
-
-    return () => clearInterval(id);
-  }, [state, hcActive]);
 
   // 세션 시작/종료
   useEffect(() => {
@@ -486,35 +452,76 @@ export default function Workout() {
     }
   }, [state, selectedActivityType]);
 
-  // 네이티브: 상태 변화에 따라 ForegroundService 제어
+  // 네이티브: 백그라운드 복구 — mount 시 + 포그라운드 복귀 시 서비스 상태 확인
   useEffect(() => {
     if (!isNative()) return;
+
+    const restoreFromNative = async () => {
+      try {
+        const status = await WorkoutNative.getStatus();
+        if (status.isRunning) {
+          const targetState: WorkoutState = status.isPaused ? "paused" : "running";
+          // 현재 state와 다를 때만 flag 설정 (같으면 effect가 다시 안 뜨므로 불필요)
+          if (stateRef.current !== targetState) {
+            isRestoredSessionRef.current = true;
+          }
+          const nativeSteps = status.steps ?? 0;
+          const nativeElapsed = status.elapsed ?? 0;
+          setSteps(nativeSteps);
+          stepsRef.current = nativeSteps;
+          setElapsed(nativeElapsed);
+          elapsedRef.current = nativeElapsed;
+          setState(targetState);
+        } else if (stateRef.current === "running" || stateRef.current === "paused") {
+          // 서비스가 종료됐는데 React는 진행 중으로 알고 있는 경우 (알림에서 종료)
+          clearWorkoutSession();
+          setState("idle");
+        }
+      } catch (_) {}
+    };
+
+    restoreFromNative();
+
+    const onVisible = () => {
+      if (document.visibilityState === "visible") restoreFromNative();
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => document.removeEventListener("visibilitychange", onVisible);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // 네이티브: 상태 변화에 따라 ForegroundService 제어 (estimationMode면 서비스 시작 안 함)
+  useEffect(() => {
+    if (!isNative() || estimationMode) return;
     if (state === "running") {
+      // 복구된 세션이면 startWorkout 생략 (이미 서비스 살아있음)
+      if (isRestoredSessionRef.current) {
+        isRestoredSessionRef.current = false;
+        return;
+      }
       WorkoutNative.startWorkout({
         activityType: selectedActivityType?.type ?? "walker",
         nickname: userProfile?.nickname ?? "",
         characterId: userProfile?.character_id ?? "",
+        theme,
       }).catch(() => {});
     } else if (state === "paused") {
       WorkoutNative.pauseWorkout().catch(() => {});
     }
   }, [state]);
 
-  // 네이티브: WorkoutService(TYPE_STEP_COUNTER 센서) 이벤트 동기화
-  // HC 사용 중이면 elapsed만 보정, HC 없으면 steps도 네이티브 센서값으로 동기화
+  // 네이티브: WorkoutService TYPE_STEP_COUNTER 센서 이벤트 → UI 동기화
   useEffect(() => {
     if (!isNative()) return;
     let listener: { remove: () => void } | null = null;
     WorkoutNative.addListener("workoutUpdate", (data) => {
-      // elapsed: JS 타이머가 느슨해진 경우에만 보정 (2초 이상 차이날 때)
+      // elapsed: JS 타이머와 2초 이상 차이날 때만 서비스 값으로 보정
       setElapsed((prev) =>
         Math.abs(data.elapsed - prev) > 2 ? data.elapsed : prev,
       );
-      // steps: HC 미사용 시 네이티브 TYPE_STEP_COUNTER 센서값으로 동기화
-      if (!hcActiveRef.current) {
-        setSteps(data.steps);
-        stepsRef.current = data.steps;
-      }
+      // steps: 항상 서비스 센서값으로 동기화 (단일 source of truth)
+      setSteps(data.steps);
+      stepsRef.current = data.steps;
     })
       .then((l) => {
         listener = l;
@@ -525,9 +532,9 @@ export default function Workout() {
     };
   }, []);
 
-  // 걸음 수 증가 (유형별 페이스) — HC 또는 네이티브 센서 활성 시 시뮬레이션 비활성
+  // 걸음 수 증가 시뮬레이션 — 웹 또는 권한 거절(estimationMode) 시
   useEffect(() => {
-    if (state !== "running" || hcActive || isNative()) return;
+    if (state !== "running" || (isNative() && !estimationMode)) return;
     const intervalMap: Record<string, number> = {
       walker: 600, // 분당 100보
       power_walker: 500, // 분당 120보
@@ -546,14 +553,14 @@ export default function Workout() {
       });
     }, ms);
     return () => clearInterval(id);
-  }, [state, selectedActivityType, hcActive]);
+  }, [state, selectedActivityType, estimationMode]);
 
-  // 타이머 (1초마다) — HC 자동 일시정지 중에는 멈춤
+  // 타이머 (1초마다)
   useEffect(() => {
-    if (state !== "running" || isAutoPaused) return;
+    if (state !== "running") return;
     const id = setInterval(() => setElapsed((prev) => prev + 1), 1000);
     return () => clearInterval(id);
-  }, [state, isAutoPaused]);
+  }, [state]);
 
   const statIcon = (
     Icon: React.ComponentType<{ className?: string }>,
@@ -655,12 +662,7 @@ export default function Workout() {
         style={{ color: "var(--color-primary)" }}
       >
         {state === "idle" && "시작 버튼을 눌러보세요!"}
-        {state === "running" && !isAutoPaused && "🔥 운동 중이에요!"}
-        {state === "running" && isAutoPaused && (
-          <span className="inline-flex items-center justify-center gap-1">
-            ⏸ 걸음 감지 안됨 — 자동 일시정지
-          </span>
-        )}
+        {state === "running" && "🔥 운동 중이에요!"}
         {state === "paused" && (
           <span className="inline-flex items-center justify-center gap-1">
             <FaPause /> 일시정지됨
@@ -893,12 +895,7 @@ export default function Workout() {
           {state === "paused" && (
             <>
               <button
-                onClick={() => {
-                  isAutoPausedRef.current = false;
-                  setIsAutoPaused(false);
-                  lastHCStepTimeRef.current = Date.now();
-                  setState("running");
-                }}
+                onClick={() => setState("running")}
                 className="flex-1 py-4 rounded-2xl text-white font-extrabold shadow-md active:scale-95 transition flex items-center justify-center gap-2"
                 style={{
                   background:
@@ -922,11 +919,8 @@ export default function Workout() {
                   setSteps(0);
                   setElapsed(0);
                   isSaved.current = false;
-                  hcStartStepsRef.current = null;
-                  hcActiveRef.current = false;
-                  setHcActive(false);
-                  resetHCState();
                   setTooShort(false);
+                  setEstimationMode(false);
                   setState("idle");
                   clearWorkoutSession();
                 }}
@@ -1017,11 +1011,7 @@ export default function Workout() {
               onClick={() => {
                 selectActivityType(pendingId);
                 setShowStartModal(false);
-                if (!localStorage.getItem("hc_guide_seen")) {
-                  setShowHCGuide(true);
-                } else {
-                  setState("running");
-                }
+                startWorkoutWithPermission();
               }}
 
               className="w-full py-4 rounded-2xl text-white font-extrabold text-base active:scale-95 transition shadow-md"
@@ -1036,40 +1026,101 @@ export default function Workout() {
         </div>
       )}
 
-      {/* 헬스커넥트 안내 (첫 운동 시작 시 1회) */}
-      {showHCGuide && (
+      {/* 삼성 배터리 최적화 안내 (최초 1회) */}
+      {showBatteryGuide && (
         <AlertModal
-          icon={MdOutlineMonitorHeart}
-          iconClass="text-primary"
-          title="더 정확한 운동 기록"
+          icon={MdBatteryAlert}
+          iconClass="text-yellow-400"
+          title="운동 기록 중단 방지"
           message={
-            <div className="text-left space-y-2 w-full">
-              <p className="text-center text-gray-400 mb-3">
-                헬스커넥트를 연결하면 실제 걸음수로 기록돼요
+            <div className="space-y-2 text-center">
+              <p>
+                일부 기기(삼성 등)에서 배터리 절약으로 인해<br />
+                운동 기록이 중단될 수 있어요.
               </p>
-              <div className="bg-gray-50 rounded-2xl p-3 space-y-2">
-                {[
-                  { Icon: IoFootsteps, text: "실제 걸음수 측정 (폰 센서 직접 연동)" },
-                  { Icon: FaPause,     text: "안 걸으면 타이머 자동 일시정지" },
-                  { Icon: IoFlame,     text: "실제 걸음 기반 칼로리 계산" },
-                ].map(({ Icon, text }) => (
-                  <div key={text} className="flex items-center gap-2">
-                    <Icon className="text-primary shrink-0" />
-                    <span className="text-xs font-bold text-gray-700">{text}</span>
-                  </div>
-                ))}
-                <p className="text-[10px] text-gray-400 pt-1 border-t border-gray-200">
-                  미연결 시 활동 유형별 예상값으로 기록돼요
-                </p>
-              </div>
+              <p className="text-gray-700 font-semibold">
+                배터리 제한 해제를 권장해요 😊
+              </p>
+              <p className="text-xs text-gray-400 pt-1">
+                해제 후 오래 걸어도 걸음 수가 정확하게 기록됩니다.
+              </p>
             </div>
           }
-          confirmLabel="확인"
-          onConfirm={() => {
-            localStorage.setItem("hc_guide_seen", "1");
-            setShowHCGuide(false);
+          confirmLabel="배터리 제한 해제하기"
+          onConfirm={async () => {
+            localStorage.setItem("battery_guide_shown", "1");
+            await WorkoutNative.requestBatteryOptimizationExclusion();
+            setShowBatteryGuide(false);
             setState("running");
           }}
+          cancelLabel="괜찮아요, 그냥 시작할게요"
+          onCancel={() => {
+            localStorage.setItem("battery_guide_shown", "1");
+            setShowBatteryGuide(false);
+            setState("running");
+          }}
+        />
+      )}
+
+      {/* 신체 활동 권한 안내 */}
+      {showPermissionModal && !permissionDenied && (
+        <AlertModal
+          icon={MdDirectionsWalk}
+          iconClass="text-primary"
+          title="걸음 수 측정 권한 필요"
+          message={
+            <span>
+              함께걸어요가 걸음 수를 정확히 측정하려면<br />
+              <strong className="text-gray-700">신체 활동 권한</strong>이 필요해요.<br />
+              이 권한은 운동 중 걸음 수 측정에만 사용됩니다.
+            </span>
+          }
+          confirmLabel="권한 허용하기"
+          onConfirm={async () => {
+            try {
+              const { granted } = await WorkoutNative.requestActivityPermission();
+              if (granted) {
+                setShowPermissionModal(false);
+                setState("running");
+              } else {
+                setPermissionDenied(true);
+              }
+            } catch {
+              setShowPermissionModal(false);
+              setState("running");
+            }
+          }}
+          cancelLabel="취소"
+          onCancel={() => setShowPermissionModal(false)}
+        />
+      )}
+
+      {/* 권한 거절 — 예상값 안내 */}
+      {showPermissionModal && permissionDenied && (
+        <AlertModal
+          icon={IoFootsteps}
+          iconClass="text-orange-400"
+          title="예상값으로 측정됩니다"
+          message={
+            <div className="space-y-2 text-center">
+              <p>
+                권한 없이도 운동을 계속할 수 있어요.<br />
+                걸음 수는 선택한 활동 유형의<br />
+                평균 보폭으로 자동 계산됩니다.
+              </p>
+              <p className="text-orange-400 font-semibold text-xs">
+                실제 걸음 수와 다소 차이가 있을 수 있어요.
+              </p>
+            </div>
+          }
+          confirmLabel="예상값으로 계속하기"
+          onConfirm={() => {
+            setEstimationMode(true);
+            setShowPermissionModal(false);
+            setState("running");
+          }}
+          cancelLabel="취소"
+          onCancel={() => setShowPermissionModal(false)}
         />
       )}
 
@@ -1263,11 +1314,8 @@ export default function Workout() {
                     setSteps(0);
                     setElapsed(0);
                     isSaved.current = false;
-                    hcStartStepsRef.current = null;
-                    hcActiveRef.current = false;
-                    setHcActive(false);
-                    resetHCState();
                     setTooShort(false);
+                    setEstimationMode(false);
                     setShowModal(false);
                     setState("idle");
                     clearWorkoutSession();

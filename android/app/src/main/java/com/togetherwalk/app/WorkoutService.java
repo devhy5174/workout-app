@@ -10,6 +10,7 @@ import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
+import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.PorterDuff;
 import android.graphics.PorterDuffXfermode;
@@ -20,8 +21,10 @@ import android.hardware.SensorManager;
 import android.os.Binder;
 import android.os.Build;
 import android.os.IBinder;
+import android.widget.RemoteViews;
 import androidx.core.app.NotificationCompat;
 import java.io.InputStream;
+import java.util.Locale;
 
 public class WorkoutService extends Service implements SensorEventListener {
 
@@ -34,6 +37,7 @@ public class WorkoutService extends Service implements SensorEventListener {
     static final String EXTRA_ACTIVITY  = "activity_type";
     static final String EXTRA_NICKNAME  = "nickname";
     static final String EXTRA_CHARACTER = "character_id";
+    static final String EXTRA_THEME     = "theme";
     static final String BROADCAST_UPDATE = "com.togetherwalk.app.WORKOUT_UPDATE";
 
     private SensorManager sensorManager;
@@ -49,6 +53,9 @@ public class WorkoutService extends Service implements SensorEventListener {
     private String activityType  = "walker";
     private String nickname      = "";
     private String characterId   = "";
+    private String theme         = "energy";
+
+    private static WorkoutService instance;
 
     private final IBinder binder = new LocalBinder();
 
@@ -61,9 +68,34 @@ public class WorkoutService extends Service implements SensorEventListener {
     @Override
     public void onCreate() {
         super.onCreate();
+        instance = this;
         sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
         stepSensor    = sensorManager.getDefaultSensor(Sensor.TYPE_STEP_COUNTER);
         createNotificationChannel();
+    }
+
+    @Override
+    public void onDestroy() {
+        isRunning = false;
+        try { sensorManager.unregisterListener(this); } catch (Exception ignored) {}
+        instance = null;
+        super.onDestroy();
+    }
+
+    public static boolean isServiceRunning() {
+        return instance != null && instance.isRunning;
+    }
+    public static int getStaticSteps() {
+        return instance != null ? instance.currentSteps : 0;
+    }
+    public static int getStaticElapsedSec() {
+        return instance != null ? instance.getElapsedSec() : 0;
+    }
+    public static String getStaticActivityType() {
+        return instance != null ? instance.activityType : "walker";
+    }
+    public static boolean getStaticIsPaused() {
+        return instance != null && instance.isPaused;
     }
 
     @Override
@@ -80,6 +112,8 @@ public class WorkoutService extends Service implements SensorEventListener {
                                 ? intent.getStringExtra(EXTRA_NICKNAME) : "";
                 characterId   = intent.getStringExtra(EXTRA_CHARACTER) != null
                                 ? intent.getStringExtra(EXTRA_CHARACTER) : "";
+                theme         = intent.getStringExtra(EXTRA_THEME) != null
+                                ? intent.getStringExtra(EXTRA_THEME) : "energy";
                 baselineSteps = -1;
                 currentSteps  = 0;
                 startTimeMs   = System.currentTimeMillis();
@@ -162,65 +196,95 @@ public class WorkoutService extends Service implements SensorEventListener {
     public int getCurrentSteps() { return currentSteps; }
 
     private void updateNotification() {
-        NotificationManager nm =
-            (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-        nm.notify(NOTIF_ID, buildNotification());
+        try {
+            NotificationManager nm =
+                (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+            nm.notify(NOTIF_ID, buildNotification());
+        } catch (Exception ignored) {}
     }
 
     private Notification buildNotification() {
-        String emoji = activityEmoji(activityType);
-        String label = activityLabel(activityType);
         int elapsed  = getElapsedSec();
         int min      = elapsed / 60;
         int sec      = elapsed % 60;
-        String timeStr = String.format("%02d:%02d", min, sec);
+        String timeStr = String.format(Locale.getDefault(), "%02d:%02d", min, sec);
 
         double distance = currentSteps * 0.0008;
-        int    calories = (int)(currentSteps * kcalPerMin(activityType) / stepsPerMin(activityType));
+        int    calories = (int)(currentSteps * kcalPerStep(activityType));
 
-        String titleText = emoji + " " + label + " 중" +
-            (nickname.isEmpty() ? "" : "  ·  " + nickname);
-        String statsLine = "⏱ " + timeStr
-            + "   👣 " + currentSteps + "보"
-            + "   🔥 " + calories + "kcal";
+        String stepsStr  = String.format(Locale.getDefault(), "%,d", currentSteps);
+        String labelText = activityLabel(activityType) + (isPaused ? " (일시정지)" : " 중");
+        String distStr   = String.format(Locale.getDefault(), "%.2f", distance);
 
-        Intent openIntent = new Intent(this, MainActivity.class);
-        openIntent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
-        PendingIntent piOpen = PendingIntent.getActivity(this, 0, openIntent,
-            PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+        int themeColor = getThemeColor(theme);
 
+        // 캐릭터 비트맵 로드
+        Bitmap charBitmap = loadCharacterBitmap(characterId);
+        if (charBitmap == null) {
+            charBitmap = toCircleBitmap(
+                BitmapFactory.decodeResource(getResources(), R.mipmap.ic_launcher));
+        }
+
+        // 일시정지/재개 PendingIntent & 아이콘 (반투명 배경 drawable)
+        int pauseIcon = isPaused ? R.drawable.ic_notif_play : R.drawable.ic_notif_pause;
         Intent pauseIntent = new Intent(this, WorkoutService.class);
         pauseIntent.setAction(isPaused ? ACTION_RESUME : ACTION_PAUSE);
         PendingIntent piPause = PendingIntent.getService(this, 1, pauseIntent,
             PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
 
-        Intent stopIntent = new Intent(this, WorkoutService.class);
-        stopIntent.setAction(ACTION_STOP);
-        PendingIntent piStop = PendingIntent.getService(this, 2, stopIntent,
-            PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+        // --- RemoteViews: 접힌 뷰 ---
+        RemoteViews compact = new RemoteViews(getPackageName(),
+            R.layout.notification_workout_compact);
+        compact.setTextViewText(R.id.notif_steps,        stepsStr);
+        compact.setTextViewText(R.id.notif_time_cal,     timeStr);
+        compact.setTextViewText(R.id.notif_dist_kcal,    distStr + "km  ·  " + calories + "kcal");
+        compact.setTextViewText(R.id.notif_status_compact, activityLabel(activityType) + (isPaused ? " (정지)" : "중"));
+        compact.setImageViewBitmap(R.id.notif_character,   charBitmap);
+        compact.setImageViewResource(R.id.notif_pause_btn, pauseIcon);
+        compact.setOnClickPendingIntent(R.id.notif_pause_btn, piPause);
 
-        // 캐릭터 이미지 로드 (Capacitor 번들 assets에서)
-        Bitmap largeIcon = loadCharacterBitmap(characterId);
-        if (largeIcon == null) {
-            largeIcon = BitmapFactory.decodeResource(getResources(), R.mipmap.ic_launcher);
-        }
+        // --- RemoteViews: 펼친 뷰 ---
+        RemoteViews big = new RemoteViews(getPackageName(),
+            R.layout.notification_workout_big);
+        big.setTextViewText(R.id.notif_steps_big,    stepsStr);
+        big.setTextViewText(R.id.notif_time_big,     timeStr);
+        big.setTextViewText(R.id.notif_dist_big,     distStr + "km");
+        big.setTextViewText(R.id.notif_cal_big,      calories + "kcal");
+        big.setTextViewText(R.id.notif_nickname_big, nickname);
+        big.setTextViewText(R.id.notif_activity_big, activityLabel(activityType) + (isPaused ? " (정지)" : "중"));
+        big.setImageViewBitmap(R.id.notif_character_big,    charBitmap);
+        big.setImageViewResource(R.id.notif_pause_btn_big,  pauseIcon);
+        big.setOnClickPendingIntent(R.id.notif_pause_btn_big, piPause);
+
+        // 앱 열기 인텐트
+        Intent openIntent = new Intent(this, MainActivity.class);
+        openIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK
+            | Intent.FLAG_ACTIVITY_SINGLE_TOP
+            | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        PendingIntent piOpen = PendingIntent.getActivity(this, 0, openIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
 
         return new NotificationCompat.Builder(this, CHANNEL_ID)
             .setSmallIcon(R.mipmap.ic_launcher)
-            .setLargeIcon(largeIcon)
-            .setContentTitle(titleText)
-            .setContentText(statsLine)
+            .setColor(themeColor)
+            .setColorized(true)
+            .setCustomContentView(compact)
+            .setCustomBigContentView(big)
             .setOngoing(true)
             .setOnlyAlertOnce(true)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .setContentIntent(piOpen)
-            .addAction(0, isPaused ? "▶ 재개" : "⏸ 일시정지", piPause)
-            .addAction(0, "■ 종료", piStop)
             .build();
     }
 
-    // Vite 빌드 시 해시가 붙으므로 prefix로 스캔해서 찾음
-    // 예: character_01-CYcv8PvW.webp
+    private int getThemeColor(String t) {
+        switch (t) {
+            case "nature": return Color.parseColor("#2ECC71");
+            case "cosmo":  return Color.parseColor("#5B6CF9");
+            default:       return Color.parseColor("#FF5733"); // energy
+        }
+    }
+
     private Bitmap loadCharacterBitmap(String charId) {
         if (charId == null || charId.isEmpty()) return null;
         try {
@@ -282,21 +346,12 @@ public class WorkoutService extends Service implements SensorEventListener {
         }
     }
 
-    private double kcalPerMin(String t) {
+    private double kcalPerStep(String t) {
         switch (t) {
-            case "runner":       return 8.0;
-            case "power_walker": return 5.0;
-            case "hiker":        return 6.0;
-            default:             return 3.0;
-        }
-    }
-
-    private double stepsPerMin(String t) {
-        switch (t) {
-            case "runner":       return 150.0;
-            case "power_walker": return 120.0;
-            case "hiker":        return 90.0;
-            default:             return 100.0;
+            case "runner":       return 8.0 / 150.0;
+            case "power_walker": return 5.0 / 120.0;
+            case "hiker":        return 6.0 / 90.0;
+            default:             return 3.0 / 100.0;
         }
     }
 }

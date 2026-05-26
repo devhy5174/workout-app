@@ -4,13 +4,14 @@ import { localDateStr, calcConsecutiveStreak } from "../utils/streak";
 const MIN_STREAK_STEPS = 1000;
 
 // 하루 합산 1,000보 이상인 날짜 기준으로 연속 스트릭 계산 후 업데이트
-export async function recalcAndUpdateStreak(userId: string): Promise<void> {
+// 새로운 streak 값을 반환 (UI 즉시 반영용)
+export async function recalcAndUpdateStreak(userId: string): Promise<number> {
   const { data, error } = await supabase
     .from("workout_history")
     .select("date, steps")
     .eq("user_id", userId);
 
-  if (error || !data) return;
+  if (error || !data) return 0;
 
   // 날짜별 steps 합산
   const stepsByDate: Record<string, number> = {};
@@ -29,6 +30,8 @@ export async function recalcAndUpdateStreak(userId: string): Promise<void> {
     .from("app_users")
     .update({ streak: newStreak })
     .eq("id", userId);
+
+  return newStreak;
 }
 
 export type WorkoutRecord = {

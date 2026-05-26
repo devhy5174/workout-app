@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/notif_root_big"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:gravity="center_vertical"
+    android:paddingStart="6dp"
+    android:paddingEnd="8dp"
+    android:paddingTop="10dp"
+    android:paddingBottom="10dp">
+
+    <!-- 걸음수 -->
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:gravity="center_horizontal"
+        android:layout_marginEnd="18dp">
+
+        <TextView
+            android:id="@+id/notif_steps_big"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="0"
+            android:textSize="40sp"
+            android:textColor="#FFFFFF"
+            android:textStyle="bold"
+            android:includeFontPadding="false"/>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="걸음"
+            android:textSize="11sp"
+            android:textColor="#BBFFFFFF"/>
+    </LinearLayout>
+
+    <!-- 시간 + 일시정지 버튼 / 거리 / 칼로리 -->
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:orientation="vertical"
+        android:gravity="start|center_vertical">
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <TextView
+                android:id="@+id/notif_time_big"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="00:00"
+                android:textSize="22sp"
+                android:textColor="#FFFFFF"
+                android:textStyle="bold"
+                android:includeFontPadding="false"/>
+
+            <ImageView
+                android:id="@+id/notif_pause_btn_big"
+                android:layout_width="30dp"
+                android:layout_height="30dp"
+                android:background="@drawable/bg_notif_btn"
+                android:padding="6dp"
+                android:scaleType="fitCenter"
+                android:clickable="true"
+                android:focusable="true"
+                android:layout_marginStart="8dp"
+                android:contentDescription="일시정지"/>
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/notif_dist_big"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="0.00km"
+            android:textSize="15sp"
+            android:textColor="#CCFFFFFF"
+            android:textStyle="bold"
+            android:layout_marginTop="5dp"/>
+
+        <TextView
+            android:id="@+id/notif_cal_big"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="0kcal"
+            android:textSize="15sp"
+            android:textColor="#CCFFFFFF"
+            android:textStyle="bold"
+            android:layout_marginTop="2dp"/>
+    </LinearLayout>
+
+    <!-- 캐릭터 + 닉네임 + 상태 (세로 가운데 정렬) -->
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:gravity="center_horizontal"
+        android:layout_marginStart="10dp">
+
+        <ImageView
+            android:id="@+id/notif_character_big"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
+            android:scaleType="centerCrop"/>
+
+        <TextView
+            android:id="@+id/notif_nickname_big"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text=""
+            android:textSize="11sp"
+            android:textColor="#FFFFFF"
+            android:textStyle="bold"
+            android:maxLines="1"
+            android:ellipsize="end"
+            android:gravity="center"
+            android:layout_marginTop="4dp"/>
+
+        <TextView
+            android:id="@+id/notif_activity_big"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="산책중"
+            android:textSize="9sp"
+            android:textColor="#AAFFFFFF"
+            android:maxLines="1"
+            android:ellipsize="end"
+            android:gravity="center"
+            android:layout_marginTop="2dp"/>
+    </LinearLayout>
+
+</LinearLayout>

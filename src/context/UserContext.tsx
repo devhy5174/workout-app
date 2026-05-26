@@ -273,8 +273,15 @@ export function UserProvider({ children }: { children: ReactNode }) {
     };
     setWorkoutRecords((prev) => [newRecord, ...prev]);
 
-    // 하루 합산 1,000보 기준으로 streak 재계산 (fire-and-forget)
-    recalcAndUpdateStreak(user.id).catch(() => {});
+    // 하루 합산 1,000보 기준으로 streak 재계산 후 React state 즉시 반영
+    recalcAndUpdateStreak(user.id).then((newStreak) => {
+      setUserProfile((prev) => {
+        if (!prev) return prev;
+        const next = { ...prev, streak: newStreak };
+        userProfileRef.current = next;
+        return next;
+      });
+    }).catch(() => {});
 
     return { error: null };
   };

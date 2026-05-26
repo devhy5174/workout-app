@@ -19,7 +19,12 @@ import { calculateWorkoutMBTI } from "../utils/premiumMonthlyReportUtils";
 import { WORKOUT_MBTI_DICTIONARY } from "../data/premiumReportData";
 import WorkoutMbtiCard from "../components/home/WorkoutMbtiCard";
 import { HiBell } from "react-icons/hi";
-import { IoFootsteps, IoFlash, IoPeople, IoInformationCircle } from "react-icons/io5";
+import {
+  IoFootsteps,
+  IoFlash,
+  IoPeople,
+  IoInformationCircle,
+} from "react-icons/io5";
 import AlertModal from "../components/ui/AlertModal";
 import { useNotifications } from "../hooks/useNotifications";
 import { NotificationDrawer } from "../components/notifications/NotificationDrawer";
@@ -73,7 +78,6 @@ const GOAL_TYPE_UNIT = {
   distance: "km",
   calories: "kcal",
 };
-
 
 function ProgressBar({
   value,
@@ -172,16 +176,21 @@ export default function Home() {
       : new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
 
     const newEvents = events.filter(
-      (e) => e.isActive && new Date(e.createdAt) > threshold && !notifiedIds.includes(e.id),
+      (e) =>
+        e.isActive &&
+        new Date(e.createdAt) > threshold &&
+        !notifiedIds.includes(e.id),
     );
     if (newEvents.length === 0) return;
 
-    const title = newEvents.length === 1
-      ? `🎉 새 이벤트: ${newEvents[0].title}`
-      : `🎉 새 이벤트 ${newEvents.length}개가 추가됐어요!`;
-    const body = newEvents.length === 1
-      ? (newEvents[0].description || "이벤트 탭에서 확인해보세요!")
-      : "이벤트 탭에서 확인해보세요!";
+    const title =
+      newEvents.length === 1
+        ? `🎉 새 이벤트: ${newEvents[0].title}`
+        : `🎉 새 이벤트 ${newEvents.length}개가 추가됐어요!`;
+    const body =
+      newEvents.length === 1
+        ? newEvents[0].description || "이벤트 탭에서 확인해보세요!"
+        : "이벤트 탭에서 확인해보세요!";
 
     createNotification({
       user_id: user.id,
@@ -202,9 +211,15 @@ export default function Home() {
   );
   const displayedText = useTypingEffect(bubbleMsg);
 
-const [activeUsers, setActiveUsers] = useState<DisplayUser[]>([]);
+  const [activeUsers, setActiveUsers] = useState<DisplayUser[]>([]);
   const [top3Tab, setTop3Tab] = useState<"daily" | "weekly">("daily");
-  const { top3, todayTop3, myWeeklyRank, myDailyRank, isLoading: top3Loading } = useWeeklyTop3(user?.id);
+  const {
+    top3,
+    todayTop3,
+    myWeeklyRank,
+    myDailyRank,
+    isLoading: top3Loading,
+  } = useWeeklyTop3(user?.id);
 
   useEffect(() => {
     async function buildActiveUsers() {
@@ -214,7 +229,8 @@ const [activeUsers, setActiveUsers] = useState<DisplayUser[]>([]);
         const shuffled = [...sessions].sort(() => Math.random() - 0.5);
         realUsers = shuffled.map((s) => ({
           nickname: s.nickname,
-          character_image: getAvatarCharacterById(s.character_id)?.image ?? null,
+          character_image:
+            getAvatarCharacterById(s.character_id)?.image ?? null,
           activity: s.exercise_type,
           steps: Math.floor(Math.random() * 5000) + 3000,
           isReal: true,
@@ -290,9 +306,12 @@ const [activeUsers, setActiveUsers] = useState<DisplayUser[]>([]);
     });
     const typeCounts: Record<string, number> = {};
     monthly.forEach((w) => {
-      if (w.workout_type) typeCounts[w.workout_type] = (typeCounts[w.workout_type] ?? 0) + 1;
+      if (w.workout_type)
+        typeCounts[w.workout_type] = (typeCounts[w.workout_type] ?? 0) + 1;
     });
-    const dominantWorkoutType = Object.entries(typeCounts).sort((a, b) => b[1] - a[1])[0]?.[0];
+    const dominantWorkoutType = Object.entries(typeCounts).sort(
+      (a, b) => b[1] - a[1],
+    )[0]?.[0];
 
     const code = calculateWorkoutMBTI({
       workoutDays: uniqueDays.size,
@@ -337,8 +356,10 @@ const [activeUsers, setActiveUsers] = useState<DisplayUser[]>([]);
           title="스트릭 & 이번주 운동 기준"
           message={
             <span>
-              하루 총 걸음수가 <strong className="text-gray-700">1,000보 이상</strong>이어야
-              {" "}스트릭이 쌓이고 이번주 운동에 카운트돼요.{"\n\n"}
+              하루 총 걸음수가{" "}
+              <strong className="text-gray-700">1,000보 이상</strong>이어야{" "}
+              스트릭이 쌓이고 이번주 운동에 카운트돼요.{"\n\n"}
+              <br />
               짧은 산책을 여러 번 나눠 기록해도{" "}
               <strong className="text-gray-700">합산 1,000보</strong>면 OK!
             </span>
@@ -385,7 +406,10 @@ const [activeUsers, setActiveUsers] = useState<DisplayUser[]>([]);
             onClick={() => setNotifOpen(true)}
             aria-label={`알림${unreadCount > 0 ? ` (${unreadCount}개)` : ""}`}
             className="relative w-8 h-8 rounded-full flex items-center justify-center shadow-sm"
-            style={{ background: "linear-gradient(135deg, var(--color-primary), var(--color-secondary))" }}
+            style={{
+              background:
+                "linear-gradient(135deg, var(--color-primary), var(--color-secondary))",
+            }}
           >
             <HiBell size={16} className="text-white" />
             {unreadCount > 0 && (
@@ -406,7 +430,10 @@ const [activeUsers, setActiveUsers] = useState<DisplayUser[]>([]);
           onMarkAllRead={markAllAsRead}
           onDelete={deleteNotification}
           onClose={() => setNotifOpen(false)}
-          onNavigate={(path) => { setNotifOpen(false); navigate(path); }}
+          onNavigate={(path) => {
+            setNotifOpen(false);
+            navigate(path);
+          }}
         />
       )}
 
@@ -709,14 +736,20 @@ const [activeUsers, setActiveUsers] = useState<DisplayUser[]>([]);
       <div className="mx-4 mt-4 bg-white rounded-3xl shadow-sm">
         <div className="px-5 py-3 flex items-center justify-between border-b border-gray-50">
           <div className="flex items-center gap-2">
-            <span className="font-extrabold text-gray-700 text-sm">파티 현황</span>
+            <span className="font-extrabold text-gray-700 text-sm">
+              파티 현황
+            </span>
             <div className="flex gap-1">
               {(["daily", "weekly"] as const).map((t) => (
                 <button
                   key={t}
                   onClick={() => setPartyTab(t)}
                   className={`text-[10px] font-bold px-2 py-0.5 rounded-full transition ${partyTab === t ? "text-white" : "text-gray-400"}`}
-                  style={partyTab === t ? { background: "var(--color-primary)" } : undefined}
+                  style={
+                    partyTab === t
+                      ? { background: "var(--color-primary)" }
+                      : undefined
+                  }
                 >
                   {t === "daily" ? "오늘" : "주간"}
                 </button>
@@ -735,25 +768,42 @@ const [activeUsers, setActiveUsers] = useState<DisplayUser[]>([]);
           <PartyHighlightTicker
             icon={<IoFootsteps className="text-sm text-orange-500" />}
             iconBg="bg-orange-100"
-            label={partyTab === "daily" ? "오늘 최다 도보수" : "이번 주 최다 도보수"}
+            label={
+              partyTab === "daily" ? "오늘 최다 도보수" : "이번 주 최다 도보수"
+            }
             items={
               highlightsLoading
                 ? []
-                : (partyTab === "daily" ? topParties : weeklyTopParties).map((p, i) => {
-                    const medal = MEDAL_CONFIG[i]?.medal ?? `${i + 1}위`;
-                    return {
-                      text: `${medal} ${p.name} · ${p.value.toLocaleString()}보`,
-                      partyId: p.id,
-                      content: (
-                        <>
-                          <span className="text-gray-600">{medal}&nbsp;&nbsp;</span>
-                          {p.leaderNickname && <span className="text-gray-500">{p.leaderNickname}의 파티&nbsp;</span>}
-                          <span className="font-bold" style={{ color: "var(--color-primary)" }}>{p.name}</span>
-                          <span className="text-gray-500">&nbsp;·&nbsp;{p.value.toLocaleString()}보</span>
-                        </>
-                      ),
-                    };
-                  })
+                : (partyTab === "daily" ? topParties : weeklyTopParties).map(
+                    (p, i) => {
+                      const medal = MEDAL_CONFIG[i]?.medal ?? `${i + 1}위`;
+                      return {
+                        text: `${medal} ${p.name} · ${p.value.toLocaleString()}보`,
+                        partyId: p.id,
+                        content: (
+                          <>
+                            <span className="text-gray-600">
+                              {medal}&nbsp;&nbsp;
+                            </span>
+                            {p.leaderNickname && (
+                              <span className="text-gray-500">
+                                {p.leaderNickname}의 파티&nbsp;
+                              </span>
+                            )}
+                            <span
+                              className="font-bold"
+                              style={{ color: "var(--color-primary)" }}
+                            >
+                              {p.name}
+                            </span>
+                            <span className="text-gray-500">
+                              &nbsp;·&nbsp;{p.value.toLocaleString()}보
+                            </span>
+                          </>
+                        ),
+                      };
+                    },
+                  )
             }
             emptyText={highlightsLoading ? "불러오는 중..." : "데이터가 없어요"}
             onTap={() => navigate("/party")}
@@ -761,7 +811,11 @@ const [activeUsers, setActiveUsers] = useState<DisplayUser[]>([]);
           <PartyHighlightTicker
             icon={<IoFlash className="text-sm text-emerald-500" />}
             iconBg="bg-emerald-100"
-            label={partyTab === "daily" ? "실시간 활동 멤버" : "이번 주 일평균 도보수"}
+            label={
+              partyTab === "daily"
+                ? "실시간 활동 멤버"
+                : "이번 주 일평균 도보수"
+            }
             items={
               highlightsLoading
                 ? []
@@ -771,9 +825,20 @@ const [activeUsers, setActiveUsers] = useState<DisplayUser[]>([]);
                       partyId: p.id,
                       content: (
                         <>
-                          {p.leaderNickname && <span className="text-gray-500">{p.leaderNickname}의 파티&nbsp;</span>}
-                          <span className="font-bold" style={{ color: "var(--color-primary)" }}>{p.name}</span>
-                          <span className="text-gray-500">&nbsp;·&nbsp;{p.value}명 운동 중</span>
+                          {p.leaderNickname && (
+                            <span className="text-gray-500">
+                              {p.leaderNickname}의 파티&nbsp;
+                            </span>
+                          )}
+                          <span
+                            className="font-bold"
+                            style={{ color: "var(--color-primary)" }}
+                          >
+                            {p.name}
+                          </span>
+                          <span className="text-gray-500">
+                            &nbsp;·&nbsp;{p.value}명 운동 중
+                          </span>
                         </>
                       ),
                     }))
@@ -784,16 +849,35 @@ const [activeUsers, setActiveUsers] = useState<DisplayUser[]>([]);
                         partyId: p.id,
                         content: (
                           <>
-                            <span className="text-gray-600">{medal}&nbsp;&nbsp;</span>
-                            {p.leaderNickname && <span className="text-gray-500">{p.leaderNickname}의 파티&nbsp;</span>}
-                            <span className="font-bold" style={{ color: "var(--color-primary)" }}>{p.name}</span>
-                            <span className="text-gray-500">&nbsp;·&nbsp;{p.value.toLocaleString()}보</span>
+                            <span className="text-gray-600">
+                              {medal}&nbsp;&nbsp;
+                            </span>
+                            {p.leaderNickname && (
+                              <span className="text-gray-500">
+                                {p.leaderNickname}의 파티&nbsp;
+                              </span>
+                            )}
+                            <span
+                              className="font-bold"
+                              style={{ color: "var(--color-primary)" }}
+                            >
+                              {p.name}
+                            </span>
+                            <span className="text-gray-500">
+                              &nbsp;·&nbsp;{p.value.toLocaleString()}보
+                            </span>
                           </>
                         ),
                       };
                     })
             }
-            emptyText={highlightsLoading ? "불러오는 중..." : partyTab === "daily" ? "현재 운동 중인 파티가 없어요" : "데이터가 없어요"}
+            emptyText={
+              highlightsLoading
+                ? "불러오는 중..."
+                : partyTab === "daily"
+                  ? "현재 운동 중인 파티가 없어요"
+                  : "데이터가 없어요"
+            }
             onTap={() => navigate("/party")}
           />
           {user && (
@@ -806,13 +890,24 @@ const [activeUsers, setActiveUsers] = useState<DisplayUser[]>([]);
                 highlightsLoading
                   ? []
                   : (() => {
-                      const r = partyTab === "daily" ? myPartyRank : myPartyWeeklyRank;
+                      const r =
+                        partyTab === "daily" ? myPartyRank : myPartyWeeklyRank;
                       if (!r) return [];
-                      const medal = MEDAL_CONFIG[r.rank - 1]?.medal ?? `${r.rank}위`;
-                      return [{ text: `${medal}  ${r.partyName} · ${r.steps.toLocaleString()}보`, partyId: r.partyId }];
+                      const medal =
+                        MEDAL_CONFIG[r.rank - 1]?.medal ?? `${r.rank}위`;
+                      return [
+                        {
+                          text: `${medal}  ${r.partyName} · ${r.steps.toLocaleString()}보`,
+                          partyId: r.partyId,
+                        },
+                      ];
                     })()
               }
-              emptyText={highlightsLoading ? "불러오는 중..." : "파티에 참가하면 순위를 볼 수 있어요"}
+              emptyText={
+                highlightsLoading
+                  ? "불러오는 중..."
+                  : "파티에 참가하면 순위를 볼 수 있어요"
+              }
               onTap={(partyId) => navigate(`/party/${partyId}`)}
             />
           )}
@@ -823,21 +918,29 @@ const [activeUsers, setActiveUsers] = useState<DisplayUser[]>([]);
       {(() => {
         const activeTop3 = top3Tab === "weekly" ? top3 : todayTop3;
         const activeMyRank = top3Tab === "weekly" ? myWeeklyRank : myDailyRank;
-        const myCharImage = getAvatarCharacterById(userProfile?.character_id ?? "")?.image ?? null;
+        const myCharImage =
+          getAvatarCharacterById(userProfile?.character_id ?? "")?.image ??
+          null;
         const isInTop3 = user && activeTop3.some((e) => e.user_id === user.id);
 
         return (
           <div className="mx-4 mt-3 bg-white rounded-3xl shadow-sm">
             <div className="px-5 py-3 flex items-center gap-2 border-b border-gray-50">
               <span className="text-lg">🏆</span>
-              <span className="font-extrabold text-gray-700 text-sm">TOP 3</span>
+              <span className="font-extrabold text-gray-700 text-sm">
+                TOP 3
+              </span>
               <div className="flex gap-1">
                 {(["daily", "weekly"] as const).map((t) => (
                   <button
                     key={t}
                     onClick={() => setTop3Tab(t)}
                     className={`text-[10px] font-bold px-2 py-0.5 rounded-full transition ${top3Tab === t ? "text-white" : "text-gray-400"}`}
-                    style={top3Tab === t ? { background: "var(--color-primary)" } : undefined}
+                    style={
+                      top3Tab === t
+                        ? { background: "var(--color-primary)" }
+                        : undefined
+                    }
                   >
                     {t === "daily" ? "오늘" : "이번 주"}
                   </button>
@@ -847,7 +950,10 @@ const [activeUsers, setActiveUsers] = useState<DisplayUser[]>([]);
             <div className="flex flex-col">
               {top3Loading ? (
                 Array.from({ length: 3 }).map((_, i) => (
-                  <div key={i} className="flex items-center gap-4 px-5 py-3.5 animate-pulse">
+                  <div
+                    key={i}
+                    className="flex items-center gap-4 px-5 py-3.5 animate-pulse"
+                  >
                     <div className="w-8 h-8 rounded-full bg-gray-100" />
                     <div className="flex-1 flex flex-col gap-1.5">
                       <div className="h-3 bg-gray-100 rounded w-24" />
@@ -857,24 +963,37 @@ const [activeUsers, setActiveUsers] = useState<DisplayUser[]>([]);
                 ))
               ) : activeTop3.length === 0 ? (
                 <div className="px-5 py-6 text-center text-xs text-gray-400 font-semibold">
-                  {top3Tab === "weekly" ? "이번 주 아직 운동 기록이 없어요" : "오늘 아직 운동 기록이 없어요"}
+                  {top3Tab === "weekly"
+                    ? "이번 주 아직 운동 기록이 없어요"
+                    : "오늘 아직 운동 기록이 없어요"}
                 </div>
               ) : (
                 <>
                   {activeTop3.map((entry) => {
                     const config = MEDAL_CONFIG[entry.rank - 1];
-                    const charImage = getAvatarCharacterById(entry.character_id)?.image ?? null;
+                    const charImage =
+                      getAvatarCharacterById(entry.character_id)?.image ?? null;
                     const isMe = user?.id === entry.user_id;
                     return (
                       <div
                         key={entry.rank}
                         className="flex items-center gap-4 px-5 py-3.5"
-                        style={isMe ? { background: "var(--color-primary-light)" } : undefined}
+                        style={
+                          isMe
+                            ? { background: "var(--color-primary-light)" }
+                            : undefined
+                        }
                       >
-                        <span className="text-2xl w-8 text-center">{config.medal}</span>
+                        <span className="text-2xl w-8 text-center">
+                          {config.medal}
+                        </span>
                         <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center overflow-hidden flex-shrink-0 shadow-sm">
                           {charImage ? (
-                            <img src={charImage} alt="" className="w-full h-full object-contain" />
+                            <img
+                              src={charImage}
+                              alt=""
+                              className="w-full h-full object-contain"
+                            />
                           ) : (
                             <span className="text-base">🏃</span>
                           )}
@@ -883,14 +1002,28 @@ const [activeUsers, setActiveUsers] = useState<DisplayUser[]>([]);
                           <p className="font-bold text-gray-800 text-sm truncate">
                             {entry.nickname}
                             {isMe && (
-                              <span className="ml-1.5 text-[9px] font-extrabold px-1.5 py-0.5 rounded-full text-white" style={{ background: "var(--color-primary)" }}>나</span>
+                              <span
+                                className="ml-1.5 text-[9px] font-extrabold px-1.5 py-0.5 rounded-full text-white"
+                                style={{ background: "var(--color-primary)" }}
+                              >
+                                나
+                              </span>
                             )}
                           </p>
-                          <p className="text-xs font-semibold" style={{ color: isMe ? "var(--color-primary)" : config.textColor }}>
+                          <p
+                            className="text-xs font-semibold"
+                            style={{
+                              color: isMe
+                                ? "var(--color-primary)"
+                                : config.textColor,
+                            }}
+                          >
                             {entry.steps.toLocaleString()} 걸음
                           </p>
                         </div>
-                        <span className="text-xs font-extrabold text-gray-300">#{entry.rank}</span>
+                        <span className="text-xs font-extrabold text-gray-300">
+                          #{entry.rank}
+                        </span>
                       </div>
                     );
                   })}
@@ -899,16 +1032,28 @@ const [activeUsers, setActiveUsers] = useState<DisplayUser[]>([]);
                   {user && !isInTop3 && (
                     <>
                       <div className="flex items-center justify-center py-0.5">
-                        <span className="text-[11px] text-gray-300 font-bold tracking-widest">···</span>
+                        <span className="text-[11px] text-gray-300 font-bold tracking-widest">
+                          ···
+                        </span>
                       </div>
                       {activeMyRank ? (
-                        <div className="flex items-center gap-4 px-5 py-3.5 rounded-b-3xl" style={{ background: "var(--color-primary-light)" }}>
-                          <span className="text-sm font-extrabold w-8 text-center" style={{ color: "var(--color-primary)" }}>
+                        <div
+                          className="flex items-center gap-4 px-5 py-3.5 rounded-b-3xl"
+                          style={{ background: "var(--color-primary-light)" }}
+                        >
+                          <span
+                            className="text-sm font-extrabold w-8 text-center"
+                            style={{ color: "var(--color-primary)" }}
+                          >
                             #{activeMyRank.rank}
                           </span>
                           <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center overflow-hidden flex-shrink-0 shadow-sm">
                             {myCharImage ? (
-                              <img src={myCharImage} alt="" className="w-full h-full object-contain" />
+                              <img
+                                src={myCharImage}
+                                alt=""
+                                className="w-full h-full object-contain"
+                              />
                             ) : (
                               <span className="text-base">🏃</span>
                             )}
@@ -916,17 +1061,29 @@ const [activeUsers, setActiveUsers] = useState<DisplayUser[]>([]);
                           <div className="flex-1 min-w-0">
                             <p className="font-bold text-gray-800 text-sm truncate">
                               {userProfile?.nickname ?? "나"}
-                              <span className="ml-1.5 text-[9px] font-extrabold px-1.5 py-0.5 rounded-full text-white" style={{ background: "var(--color-primary)" }}>나</span>
+                              <span
+                                className="ml-1.5 text-[9px] font-extrabold px-1.5 py-0.5 rounded-full text-white"
+                                style={{ background: "var(--color-primary)" }}
+                              >
+                                나
+                              </span>
                             </p>
-                            <p className="text-xs font-semibold" style={{ color: "var(--color-primary)" }}>
+                            <p
+                              className="text-xs font-semibold"
+                              style={{ color: "var(--color-primary)" }}
+                            >
                               {activeMyRank.steps.toLocaleString()} 걸음
                             </p>
                           </div>
-                          <span className="text-xs text-gray-400 font-semibold">전체 {activeMyRank.total}명</span>
+                          <span className="text-xs text-gray-400 font-semibold">
+                            전체 {activeMyRank.total}명
+                          </span>
                         </div>
                       ) : (
                         <div className="px-5 py-3.5 text-center rounded-b-3xl bg-gray-50">
-                          <p className="text-xs text-gray-400 font-semibold">아직 기록이 없어요. 지금 운동해보세요! 🏃</p>
+                          <p className="text-xs text-gray-400 font-semibold">
+                            아직 기록이 없어요. 지금 운동해보세요! 🏃
+                          </p>
                         </div>
                       )}
                     </>

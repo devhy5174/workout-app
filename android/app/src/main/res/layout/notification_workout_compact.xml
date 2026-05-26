@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/notif_root"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:gravity="center_vertical"
+    android:paddingStart="6dp"
+    android:paddingEnd="6dp"
+    android:paddingTop="4dp"
+    android:paddingBottom="4dp">
+
+    <!-- 걸음수 (최대 크기) -->
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:gravity="center_horizontal"
+        android:layout_marginEnd="14dp">
+
+        <TextView
+            android:id="@+id/notif_steps"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="0"
+            android:textSize="32sp"
+            android:textColor="#FFFFFF"
+            android:textStyle="bold"
+            android:includeFontPadding="false"/>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="걸음"
+            android:textSize="10sp"
+            android:textColor="#BBFFFFFF"/>
+    </LinearLayout>
+
+    <!-- 시간 + 일시정지 버튼 / 거리·칼로리 -->
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:orientation="vertical"
+        android:gravity="start|center_vertical">
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <TextView
+                android:id="@+id/notif_time_cal"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="00:00"
+                android:textSize="16sp"
+                android:textColor="#FFFFFF"
+                android:textStyle="bold"
+                android:includeFontPadding="false"/>
+
+            <ImageView
+                android:id="@+id/notif_pause_btn"
+                android:layout_width="22dp"
+                android:layout_height="22dp"
+                android:background="@drawable/bg_notif_btn"
+                android:padding="4dp"
+                android:scaleType="fitCenter"
+                android:clickable="true"
+                android:focusable="true"
+                android:layout_marginStart="6dp"
+                android:contentDescription="일시정지"/>
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/notif_dist_kcal"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="0.00km · 0kcal"
+            android:textSize="11sp"
+            android:textColor="#CCFFFFFF"
+            android:textStyle="bold"
+            android:layout_marginTop="2dp"/>
+    </LinearLayout>
+
+    <!-- 캐릭터 + 운동 상태 -->
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:gravity="center_horizontal"
+        android:layout_marginStart="10dp">
+
+        <ImageView
+            android:id="@+id/notif_character"
+            android:layout_width="38dp"
+            android:layout_height="38dp"
+            android:scaleType="centerCrop"/>
+
+        <TextView
+            android:id="@+id/notif_status_compact"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="산책중"
+            android:textSize="9sp"
+            android:textColor="#CCFFFFFF"
+            android:textStyle="bold"
+            android:gravity="center"
+            android:layout_marginTop="2dp"/>
+    </LinearLayout>
+
+</LinearLayout>
