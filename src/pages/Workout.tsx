@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { FaPlay, FaPause, FaStop, FaUsers } from "react-icons/fa";
-import { IoTime, IoFootsteps, IoLocationSharp, IoFlame } from "react-icons/io5";
+import { IoTime, IoFootsteps, IoLocationSharp, IoFlame, IoSpeedometer } from "react-icons/io5";
 import { MdBatteryAlert, MdDirectionsWalk } from "react-icons/md";
 import AlertModal from "../components/ui/AlertModal";
 import { useActivityType } from "../context/ActivityTypeContext";
@@ -69,6 +69,33 @@ const ACTIVITY_LABEL: Record<string, string> = {
   runner: "러닝 중",
   hiker: "등산 중",
 };
+
+// 활동 유형별 스탯 레이아웃: primary = 크게 표시, secondary = 3개 소형 카드
+const STAT_LAYOUT = {
+  walker:       { primary: "steps",    secondary: ["calories", "distance", "time"] },
+  power_walker: { primary: "steps",    secondary: ["calories", "distance", "time"] },
+  runner:       { primary: "distance", secondary: ["pace",     "time",     "calories"] },
+  hiker:        { primary: "distance", secondary: ["time",     "steps",    "calories"] },
+} as const;
+
+type StatKey = "time" | "steps" | "distance" | "calories" | "pace";
+
+// 각 stat 키별 아이콘 (large: 1차 카드용, small: 보조 카드용)
+const STAT_ICON_LG = {
+  time:     <IoTime          className="text-3xl text-violet-500" />,
+  steps:    <IoFootsteps     className="text-3xl text-emerald-500" />,
+  distance: <IoLocationSharp className="text-3xl text-blue-500" />,
+  calories: <IoFlame         className="text-3xl text-orange-500" />,
+  pace:     <IoSpeedometer   className="text-3xl text-red-500" />,
+} satisfies Record<StatKey, React.ReactElement>;
+
+const STAT_ICON_SM = {
+  time:     <IoTime          className="text-xl text-violet-500" />,
+  steps:    <IoFootsteps     className="text-xl text-emerald-500" />,
+  distance: <IoLocationSharp className="text-xl text-blue-500" />,
+  calories: <IoFlame         className="text-xl text-orange-500" />,
+  pace:     <IoSpeedometer   className="text-xl text-red-500" />,
+} satisfies Record<StatKey, React.ReactElement>;
 
 const SVG_SIZE = 280;
 const CX = SVG_SIZE / 2;
@@ -562,38 +589,27 @@ export default function Workout() {
     return () => clearInterval(id);
   }, [state]);
 
-  const statIcon = (
-    Icon: React.ComponentType<{ className?: string }>,
-    _bg: string,
-    color: string,
-  ) => <Icon className={`text-xl ${color}`} />;
+  // 러너 페이스 계산 (elapsed/distance 파생값 — 센서 로직 변경 없음)
+  const paceMinPerKm = distance > 0 ? (elapsed / 60) / distance : 0;
+  const paceStr = distance > 0
+    ? `${Math.floor(paceMinPerKm)}'${String(Math.round((paceMinPerKm % 1) * 60)).padStart(2, "0")}"`
+    : `--'--"`;
 
-  const stats = [
-    {
-      label: "시간",
-      value: formatTime(elapsed),
-      unit: "시간",
-      icon: statIcon(IoTime, "bg-violet-100", "text-violet-500"),
-    },
-    {
-      label: "걸음수",
-      value: steps.toLocaleString(),
-      unit: "보",
-      icon: statIcon(IoFootsteps, "bg-emerald-100", "text-emerald-500"),
-    },
-    {
-      label: "거리",
-      value: distance.toFixed(2),
-      unit: "km",
-      icon: statIcon(IoLocationSharp, "bg-blue-100", "text-blue-500"),
-    },
-    {
-      label: "칼로리",
-      value: String(calories),
-      unit: "kcal",
-      icon: statIcon(IoFlame, "bg-orange-100", "text-orange-500"),
-    },
-  ];
+  // 활동 유형별 스탯 데이터
+  const allStatItems: Record<StatKey, { label: string; value: string; unit: string }> = {
+    time:     { label: "시간",   value: formatTime(elapsed),    unit: "시간" },
+    steps:    { label: "걸음수", value: steps.toLocaleString(), unit: "보" },
+    distance: { label: "거리",   value: distance.toFixed(2),    unit: "km" },
+    calories: { label: "칼로리", value: String(calories),       unit: "kcal" },
+    pace:     { label: "페이스", value: paceStr,                unit: "/km" },
+  };
+
+  const statLayout = STAT_LAYOUT[actType as keyof typeof STAT_LAYOUT] ?? STAT_LAYOUT.walker;
+  const primaryStat = { ...allStatItems[statLayout.primary], iconLg: STAT_ICON_LG[statLayout.primary] };
+  const secondaryStats = statLayout.secondary.map((k) => ({
+    ...allStatItems[k],
+    iconSm: STAT_ICON_SM[k],
+  }));
 
   return (
     <div className="flex flex-col h-screen bg-bg">
@@ -843,20 +859,38 @@ export default function Workout() {
             </div>
           )}
 
-        {/* 스탯 카드 */}
-        <div className="w-full grid grid-cols-4 gap-2">
-          {stats.map((s) => (
+        {/* 스탯 카드 - 활동 유형별 레이아웃 */}
+        <div className="w-full flex flex-col gap-2">
+          {/* 메인 지표 — 활동 유형에 따라 걸음수 or 거리 크게 표시 */}
+          <div className="w-full bg-white rounded-2xl px-5 py-4 flex items-center gap-4 shadow-sm">
             <div
-              key={s.label}
-              className="bg-white rounded-2xl p-3 flex flex-col items-center gap-1 shadow-sm"
+              className="w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0"
+              style={{ background: "var(--color-primary-light)" }}
             >
-              {s.icon}
-              <p className="font-extrabold text-gray-800 text-base leading-none mt-1">
-                {s.value}
-              </p>
-              <p className="text-[10px] text-gray-400">{s.unit || s.label}</p>
+              {primaryStat.iconLg}
             </div>
-          ))}
+            <div>
+              <p className="font-extrabold text-4xl text-gray-800 leading-none">
+                {primaryStat.value}
+              </p>
+              <p className="text-sm text-gray-400 mt-1">{primaryStat.unit}</p>
+            </div>
+          </div>
+          {/* 보조 지표 3개 */}
+          <div className="w-full grid grid-cols-3 gap-2">
+            {secondaryStats.map((s) => (
+              <div
+                key={s.label}
+                className="bg-white rounded-2xl p-3 flex flex-col items-center gap-1 shadow-sm"
+              >
+                {s.iconSm}
+                <p className="font-extrabold text-gray-800 text-base leading-none mt-1">
+                  {s.value}
+                </p>
+                <p className="text-[10px] text-gray-400">{s.unit}</p>
+              </div>
+            ))}
+          </div>
         </div>
 
         {/* 컨트롤 버튼 */}

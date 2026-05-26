@@ -212,20 +212,43 @@ public class WorkoutService extends Service implements SensorEventListener {
         double distance = currentSteps * 0.0008;
         int    calories = (int)(currentSteps * kcalPerStep(activityType));
 
-        String stepsStr  = String.format(Locale.getDefault(), "%,d", currentSteps);
-        String labelText = activityLabel(activityType) + (isPaused ? " (일시정지)" : " 중");
-        String distStr   = String.format(Locale.getDefault(), "%.2f", distance);
+        String stepsStr = String.format(Locale.getDefault(), "%,d", currentSteps);
+        String distStr  = String.format(Locale.getDefault(), "%.2f", distance);
+        String statusLabel = activityLabel(activityType) + (isPaused ? " (정지)" : "중");
+
+        // 활동 유형별 메인 지표 분기 ─────────────────────────────────
+        // runner/hiker: 거리(km) 크게 표시   walker/power_walker: 걸음수 크게 표시
+        boolean distancePrimary = activityType.equals("runner") || activityType.equals("hiker");
+
+        String primaryValue, primaryLabel, compactSecondary, bigSecondaryLine;
+        if (distancePrimary) {
+            primaryValue = distStr;
+            primaryLabel = "km";
+            if (activityType.equals("runner")) {
+                String pace  = formatPace(distance, elapsed);
+                compactSecondary  = pace + "  ·  " + calories + "kcal";
+                bigSecondaryLine  = pace;
+            } else {
+                // hiker: 거리 크게, 걸음수를 보조 라인에
+                compactSecondary = stepsStr + "보  ·  " + calories + "kcal";
+                bigSecondaryLine = stepsStr + "보";
+            }
+        } else {
+            // walker, power_walker: 걸음수 크게
+            primaryValue     = stepsStr;
+            primaryLabel     = "걸음";
+            compactSecondary = distStr + "km  ·  " + calories + "kcal";
+            bigSecondaryLine = distStr + "km";
+        }
 
         int themeColor = getThemeColor(theme);
 
-        // 캐릭터 비트맵 로드
         Bitmap charBitmap = loadCharacterBitmap(characterId);
         if (charBitmap == null) {
             charBitmap = toCircleBitmap(
                 BitmapFactory.decodeResource(getResources(), R.mipmap.ic_launcher));
         }
 
-        // 일시정지/재개 PendingIntent & 아이콘 (반투명 배경 drawable)
         int pauseIcon = isPaused ? R.drawable.ic_notif_play : R.drawable.ic_notif_pause;
         Intent pauseIntent = new Intent(this, WorkoutService.class);
         pauseIntent.setAction(isPaused ? ACTION_RESUME : ACTION_PAUSE);
@@ -235,10 +258,11 @@ public class WorkoutService extends Service implements SensorEventListener {
         // --- RemoteViews: 접힌 뷰 ---
         RemoteViews compact = new RemoteViews(getPackageName(),
             R.layout.notification_workout_compact);
-        compact.setTextViewText(R.id.notif_steps,        stepsStr);
-        compact.setTextViewText(R.id.notif_time_cal,     timeStr);
-        compact.setTextViewText(R.id.notif_dist_kcal,    distStr + "km  ·  " + calories + "kcal");
-        compact.setTextViewText(R.id.notif_status_compact, activityLabel(activityType) + (isPaused ? " (정지)" : "중"));
+        compact.setTextViewText(R.id.notif_steps,         primaryValue);
+        compact.setTextViewText(R.id.notif_steps_label,   primaryLabel);
+        compact.setTextViewText(R.id.notif_time_cal,      timeStr);
+        compact.setTextViewText(R.id.notif_dist_kcal,     compactSecondary);
+        compact.setTextViewText(R.id.notif_status_compact, statusLabel);
         compact.setImageViewBitmap(R.id.notif_character,   charBitmap);
         compact.setImageViewResource(R.id.notif_pause_btn, pauseIcon);
         compact.setOnClickPendingIntent(R.id.notif_pause_btn, piPause);
@@ -246,17 +270,17 @@ public class WorkoutService extends Service implements SensorEventListener {
         // --- RemoteViews: 펼친 뷰 ---
         RemoteViews big = new RemoteViews(getPackageName(),
             R.layout.notification_workout_big);
-        big.setTextViewText(R.id.notif_steps_big,    stepsStr);
-        big.setTextViewText(R.id.notif_time_big,     timeStr);
-        big.setTextViewText(R.id.notif_dist_big,     distStr + "km");
-        big.setTextViewText(R.id.notif_cal_big,      calories + "kcal");
-        big.setTextViewText(R.id.notif_nickname_big, nickname);
-        big.setTextViewText(R.id.notif_activity_big, activityLabel(activityType) + (isPaused ? " (정지)" : "중"));
-        big.setImageViewBitmap(R.id.notif_character_big,    charBitmap);
+        big.setTextViewText(R.id.notif_steps_big,        primaryValue);
+        big.setTextViewText(R.id.notif_steps_label_big,  primaryLabel);
+        big.setTextViewText(R.id.notif_time_big,         timeStr);
+        big.setTextViewText(R.id.notif_dist_big,         bigSecondaryLine);
+        big.setTextViewText(R.id.notif_cal_big,          calories + "kcal");
+        big.setTextViewText(R.id.notif_nickname_big,     nickname);
+        big.setTextViewText(R.id.notif_activity_big,     statusLabel);
+        big.setImageViewBitmap(R.id.notif_character_big, charBitmap);
         big.setImageViewResource(R.id.notif_pause_btn_big,  pauseIcon);
         big.setOnClickPendingIntent(R.id.notif_pause_btn_big, piPause);
 
-        // 앱 열기 인텐트
         Intent openIntent = new Intent(this, MainActivity.class);
         openIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK
             | Intent.FLAG_ACTIVITY_SINGLE_TOP
@@ -277,10 +301,20 @@ public class WorkoutService extends Service implements SensorEventListener {
             .build();
     }
 
+    private String formatPace(double distanceKm, int elapsedSec) {
+        if (distanceKm < 0.01) return "--'--\"/km";
+        double minPerKm = (elapsedSec / 60.0) / distanceKm;
+        int m = (int) minPerKm;
+        int s = (int) Math.round((minPerKm - m) * 60);
+        if (s == 60) { m++; s = 0; }
+        return m + "'" + String.format(Locale.getDefault(), "%02d", s) + "\"/km";
+    }
+
     private int getThemeColor(String t) {
         switch (t) {
             case "nature": return Color.parseColor("#2ECC71");
             case "cosmo":  return Color.parseColor("#5B6CF9");
+            case "mono":   return Color.parseColor("#39FF14");
             default:       return Color.parseColor("#FF5733"); // energy
         }
     }

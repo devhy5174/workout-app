@@ -26,12 +26,13 @@ import { TextSheet } from "../components/settings/TextSheet";
 import { SectionLabel } from "../components/settings/SectionLabel";
 import appIcon from "../assets/images/icon.png";
 
-type Theme = "energy" | "nature" | "cosmo";
+type Theme = "energy" | "nature" | "cosmo" | "mono";
 
 const themes: { value: Theme; label: string; gradient: string }[] = [
   { value: "energy", label: "에너지", gradient: "from-orange-500 to-red-500" },
   { value: "nature", label: "자연", gradient: "from-green-500 to-lime-500" },
   { value: "cosmo", label: "코스모", gradient: "from-blue-500 to-purple-500" },
+  { value: "mono", label: "네온", gradient: "from-lime-400 to-fuchsia-500" },
 ];
 
 const LANGUAGE_LABELS = { ko: "한국어", en: "English" } as const;
@@ -69,7 +70,7 @@ export default function Settings() {
           </span>
           <p className="text-sm font-semibold text-gray-700">테마 선택</p>
         </div>
-        <div className="p-4 flex gap-2">
+        <div className="p-4 grid grid-cols-4 gap-2">
           {themes.map((t) => {
             const isActive = theme === t.value;
             return (
@@ -77,7 +78,7 @@ export default function Settings() {
                 key={t.value}
                 onClick={() => setTheme(t.value)}
                 aria-label={`${t.label} 테마 선택`}
-                className={`flex-1 flex flex-col items-center gap-2 rounded-xl py-3 border-2 transition-all ${
+                className={`flex flex-col items-center gap-2 rounded-xl py-3 border-2 transition-all ${
                   isActive
                     ? "border-[var(--color-primary)] bg-[var(--color-primary)]/5 scale-[1.02]"
                     : "border-transparent bg-gray-50"

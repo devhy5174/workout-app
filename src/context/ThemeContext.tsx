@@ -1,9 +1,9 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
 
-type Theme = "energy" | "nature" | "cosmo";
+type Theme = "energy" | "nature" | "cosmo" | "mono";
 
-const VALID_THEMES: Theme[] = ["energy", "nature", "cosmo"];
+const VALID_THEMES: Theme[] = ["energy", "nature", "cosmo", "mono"];
 const isValidTheme = (t: string): t is Theme => VALID_THEMES.includes(t as Theme);
 
 const ThemeContext = createContext<{
