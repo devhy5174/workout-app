@@ -129,11 +129,12 @@ npm run build && npx cap sync android
 
 ## 테마 시스템
 
-| 테마   | primary   | 분위기      |
-| ------ | --------- | ----------- |
-| energy | `#ff5733` | 주황·빨강   |
-| nature | `#2ecc71` | 그린·옐로우 |
-| cosmo  | `#5b6cf9` | 블루·퍼플   |
+| 테마     | primary   | 분위기          |
+| -------- | --------- | --------------- |
+| energy   | `#ff5733` | 주황·빨강       |
+| nature   | `#2ecc71` | 그린·옐로우     |
+| cosmo    | `#5b6cf9` | 블루·퍼플       |
+| midnight | `#0f172a` | 슬레이트·스카이 |
 
 ---
 
@@ -207,12 +208,54 @@ Capacitor 커스텀 플러그인으로 웹 ↔ 네이티브를 연결합니다.
        → 권한 거절 시 앱 내 안내 후 예상값으로 계속 진행 가능
 ```
 
+### GPS 거리 추적 (Phase 1)
+
+러너·등산가 유형에서 FusedLocationProviderClient 기반 실제 이동 거리 및 평균 페이스를 측정합니다.
+
+| 항목 | 상세 |
+|------|------|
+| GPS 엔진 | `FusedLocationProviderClient` (Google Play Services) |
+| 우선순위 | 러너·등산가 → `PRIORITY_HIGH_ACCURACY` / 산책·파워워킹 → `PRIORITY_BALANCED_POWER_ACCURACY` |
+| 위치 갱신 주기 | 5초 / 최소 3초 / 최소 이동 거리 5m |
+| 정확도 필터 | GPS 오차 반경 > 30m 이면 해당 위치 무시 |
+| 점프 필터 | 5초 윈도우 내 > 60m 이동 시 노이즈로 간주 무시 |
+| 거리 단조증가 | GPS 거리는 `Math.max(이전, 현재)` — 역주행 없음 |
+| 일시정지 처리 | 정지 시 GPS 중단, 재개 시 `lastGpsLocation = null` 후 재측정 |
+| steps 단일 출처 | GPS는 거리·페이스 전용 — 걸음수 센서(`TYPE_STEP_COUNTER`)는 영향 없음 |
+
+**effectiveDistance (실효 거리) 선택 로직**
+
+```
+gpsDistance > 0 ? gpsDistance (GPS 실측)
+              : steps × 보폭 / 1000 (추정)
+```
+
+**DB 마이그레이션 (미적용 — 신규 컬럼)**
+
+```sql
+ALTER TABLE workout_history ADD COLUMN gps_distance numeric;
+ALTER TABLE workout_history ADD COLUMN distance_source text DEFAULT 'estimated';
+```
+
+마이그레이션 전까지 두 컬럼은 프론트에서 저장 시 생략(strip)되며, `RunnerStatsTab`은 `gps_distance` 유무로 GPS/추정 뱃지를 자동 구분합니다.
+
+---
+
 ### 권한 요청 흐름
 
-- 앱 시작 시 자동 권한 팝업 없음
-- 운동 시작 버튼 클릭 시에만 권한 확인
-- 권한 없으면 자체 안내 모달 표시 후 Android 권한 팝업 호출
-- 거절 시 예상값 모드로 운동 가능 (차이 있을 수 있음 안내)
+**활동 인식 권한 (걸음수)**
+
+- 앱 시작 시 자동 팝업 없음 — 운동 시작 버튼 클릭 시에만 확인
+- 권한 없으면 자체 안내 모달 → Android 시스템 팝업 순서로 요청
+- 거절 시: 추정 모드 진행 가능 (안내 포함)
+
+**위치 권한 (GPS 거리)**
+
+- 활동 인식 권한 확인 후, GPS 권한 상태를 조용히(popupless) 조회
+- 미허용이면 자체 안내 모달 표시:
+  > "실제 이동 거리와 평균 페이스를 기록하려면 위치 권한이 필요해요. 위치 정보는 운동 중 거리 계산에만 사용됩니다."
+- "GPS 기록 허용하기" → Android 시스템 팝업 → 운동 시작
+- "위치 권한 없이 시작하기" → 추정 거리 모드로 바로 시작 (Android 팝업 없음)
 
 ### 삼성 배터리 최적화 대응
 
