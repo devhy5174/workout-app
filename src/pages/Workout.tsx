@@ -157,6 +157,7 @@ export default function Workout() {
   const stepsRef = useRef(steps);
   const isRestoredSessionRef = useRef(false);
   const stateRef = useRef<WorkoutState>(state);
+  const prevStateRef = useRef<WorkoutState>("idle");
   const elapsedRef = useRef(elapsed);
   useEffect(() => {
     stepsRef.current = steps;
@@ -550,19 +551,32 @@ export default function Workout() {
   // 네이티브: 상태 변화에 따라 ForegroundService 제어 (estimationMode면 서비스 시작 안 함)
   useEffect(() => {
     if (!isNative() || estimationMode) return;
+    const prev = prevStateRef.current;
+    prevStateRef.current = state;
+
     if (state === "running") {
-      // 복구된 세션이면 startWorkout 생략 (이미 서비스 살아있음)
+      // 백그라운드 복구 세션이면 서비스 이미 살아있음 — startWorkout 생략
       if (isRestoredSessionRef.current) {
         isRestoredSessionRef.current = false;
         return;
       }
-      WorkoutNative.startWorkout({
-        activityType: selectedActivityType?.type ?? "walker",
-        nickname: userProfile?.nickname ?? "",
-        characterId: userProfile?.character_id ?? "",
-        theme,
-      }).catch(() => {});
+      // paused → running: ACTION_RESUME (이 경로에서 startWorkout 하면 카운터 초기화됨)
+      if (prev === "paused") {
+        WorkoutNative.resumeWorkout().catch(() => {});
+      } else {
+        WorkoutNative.startWorkout({
+          activityType: selectedActivityType?.type ?? "walker",
+          nickname: userProfile?.nickname ?? "",
+          characterId: userProfile?.character_id ?? "",
+          theme,
+        }).catch(() => {});
+      }
     } else if (state === "paused") {
+      // 복구된 세션이면 이미 서비스가 paused 상태 — pauseWorkout 중복 호출 방지
+      if (isRestoredSessionRef.current) {
+        isRestoredSessionRef.current = false;
+        return;
+      }
       WorkoutNative.pauseWorkout().catch(() => {});
     }
   }, [state]);
