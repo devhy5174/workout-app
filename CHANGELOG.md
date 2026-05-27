@@ -1,5 +1,42 @@
 # Changelog
 
+## [1.0.14] — 2026-05-27
+
+### 파티 목표 유형 · UX 개선 · 버그 수정
+
+**파티 목표 유형 추가 (걸음수 / 거리)**
+
+- `party_goal_type.sql`: `parties` 테이블에 `goal_type` (text, default 'steps'), `target_distance` (numeric) 컬럼 추가
+- `partyService.ts`: `Party`, `CreatePartyInput` 타입에 `goal_type`, `target_distance` 필드 추가, `createParty`에 신규 컬럼 저장
+- `Party.tsx`: 파티 만들기 모달에 "목표 유형" 토글 탭 추가 (👣 목표 걸음수 / 📍 목표 거리), 거리 옵션 3/5/10km, 총 목표 안내 문구 분기
+- `Party.tsx` 파티 카드: 목표 아이콘·레이블·값 `goal_type` 기준 분기, 오늘 현황 게이지 거리/걸음수 분기
+
+**PartyDetail 거리 목표 전면 반영**
+
+- `partyService.ts`: `PartyMember`에 `today_distance` 추가, `getPartyMembers`에서 오늘 GPS/추정 거리 합산
+- `partyService.ts`: `PartyTodayStats`에 `totalDistance` 추가, `getPartyTodayStats`에서 거리 집계
+- `PartyDetail.tsx`: 상단 정보 칩 `goal_type` 분기 (👟 N보 / 📍 Nkm), 오늘 파티 현황 게이지 거리 기준 분기, MVP 수치 km/보 분기
+- `MemberActivityCard`: `goalType` prop 추가 — 캐릭터 아래 수치 거리 목표 시 `today_distance(km)` 표시
+
+**버그 수정**
+
+- `WorkoutService.java`: `getStaticRoutePointsJson()` — 서비스 살아있으면 live `routePoints` 직접 직렬화 반환 → `stopWorkout()` fire-and-forget 후 `getRoutePoints()` 호출 시 race condition으로 `null` 저장되던 문제 해결
+- `partyService.ts`: `getPartyById` `.single()` → `.maybeSingle()` 변경 + `PartyDetail`에 1초 재시도 로직 추가 → 파티 입장 시 간헐적 406 오류 및 "파티를 찾을 수 없어요" 화면 해결
+
+**UI 문구 개선**
+
+- `RunnerStatsTab.tsx`: 활동분석 탭 "러닝" → "활동" 문구 전면 교체
+- `RunnerStatsTab.tsx`: 최근 활동 카드 이모지를 `workout_type` 기준 유형별 이모지로 변경 (🚶/🚶‍♂️/🏃/🏔️)
+- `activityTypes.ts`: 활동 유형 `style` 설명 문구 개선 (분당 kcal 제거 → 운동 중심 서술)
+  - 산책러: "걸음수 중심으로 가볍게 걷기"
+  - 파워워커: "거리와 운동효과 중심 빠른 걷기"
+  - 러너: "거리와 페이스 중심 러닝 기록"
+  - 등산가: "시간과 거리 중심 장거리 활동"
+- `InfoTab.tsx` · `ActivityTypePage.tsx`: "분당 Xkcal 소모" 라인 제거
+- `Workout.tsx`: 목표 뱃지 클릭 시 `/mypage?tab=info`(목표 설정 섹션)로 이동
+
+---
+
 ## [1.0.13] — 2026-05-27
 
 ### GPS 경로 지도 + 트래커 UI 개선
