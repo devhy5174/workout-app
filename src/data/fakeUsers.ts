@@ -135,7 +135,7 @@ const FAKE_USER_PROFILES: FakeUserProfile[] = [
   },
   {
     id: "fake-user-004",
-    nickname: "밤달리기🌙",
+    nickname: "밤달리기",
     character_id: c[7].id,
     character_image: c[7].image,
     activity: "runner",
@@ -767,7 +767,7 @@ export const FAKE_COMMUNITY_POSTS: CommunityPost[] = [
   {
     id: "fake-post-015",
     user_id: "fake-user-004",
-    nickname: "밤달리기🌙",
+    nickname: "밤달리기",
     character_id: c[7].id,
     activity_type_id: 3,
     profile_title: null,
@@ -782,7 +782,7 @@ export const FAKE_COMMUNITY_POSTS: CommunityPost[] = [
   {
     id: "fake-post-016",
     user_id: "fake-user-004",
-    nickname: "밤달리기🌙",
+    nickname: "밤달리기",
     character_id: c[7].id,
     activity_type_id: 3,
     profile_title: null,
