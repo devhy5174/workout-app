@@ -99,6 +99,7 @@ npm run build && npx cap sync android
 
 - 파티원 활동 그리드 (접속 여부 · 말풍선 · 걸음수/거리 실시간 — goal_type 기준)
 - 오늘 파티 현황 바 (총 걸음수 또는 총 거리 / 파티 평균 / MVP)
+- 파티 목표 100% 달성 시 커뮤니티 인증 피드 자동 포스팅 + 팝업 알림
 - 📢 파티 공지 (방장 작성·삭제 / 전원 실시간 반영)
 - 💬 응원 메시지 티커 (Supabase Realtime)
 - 7일 비활동 멤버 강퇴 (방장 전용)
@@ -113,11 +114,17 @@ npm run build && npx cap sync android
 - 아침·점심·저녁 3끼 맞춤 식단 추천 (칼로리 스케일링)
 - 프리미엄 대체 식단 새로고침 (구독 유도)
 
-### 💬 커뮤니티
+### 💬 커뮤니티 (인증 피드)
 
 - 자유 게시글 작성 / 조회
 - 게시글 욕설 필터링
 - 카테고리별 탭 필터
+- 포스트 카드 우측 하단 타임스탬프 (오늘이면 시각, 이전이면 월.일)
+- **파티 목표 달성 자동 인증 배너** — 파티가 오늘 목표를 달성하면 인증 피드에 자동 게시
+  - 파티장 계정으로 저장, 배너 스타일(🏆 파티 자동 인증)로 일반 포스트와 구분
+  - `source_type='party_goal'` / `source_id=partyId` / `source_date=오늘` DB 저장
+  - unique index로 같은 파티·같은 날 중복 방지 (23505 조용히 스킵)
+  - localStorage 빠른 사전차단 + active_sessions 갱신 시 실시간 달성 감지
 
 ### ⚙️ 설정
 
@@ -161,8 +168,9 @@ npm run build && npx cap sync android
 | `party_cheers`    | 응원 메시지                    |
 | `party_notices`   | 파티 공지                      |
 | `workout_history` | 운동 기록                      |
-| `active_sessions` | 실시간 운동 세션               |
-| `user_goals`      | 유저 목표                      |
+| `active_sessions`   | 실시간 운동 세션               |
+| `user_goals`        | 유저 목표                      |
+| `community_posts`   | 인증 피드 포스트 (`source_type·source_id·source_date` — 자동 포스트 중복 방지 unique index) |
 | `fcm_tokens`      | Android FCM 디바이스 토큰      |
 | `events`          | 이벤트 정의                    |
 | `event_grants`    | 이벤트 보상 지급 내역          |
