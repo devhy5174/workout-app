@@ -313,6 +313,16 @@ ALTER TABLE workout_history ADD COLUMN IF NOT EXISTS route_points jsonb;
 - "GPS 기록 허용하기" → Android 시스템 팝업 → 운동 시작
 - "위치 권한 없이 시작하기" → 추정 거리 모드로 바로 시작 (Android 팝업 없음)
 
+### Foreground Service 배터리 최적화 (v1.0.15)
+
+| 항목 | 이전 | 개선 |
+|------|------|------|
+| 캐릭터 이미지 디코딩 | 매 초 + 매 걸음마다 | 최초 1회 디코딩 후 캐시 재사용 |
+| 알림 갱신 주기 | 1초 타이머 + 걸음 감지 이중 갱신 | 1초 타이머로 통합 |
+| GPS 콜백 실행 스레드 | Main Looper | 전용 `HandlerThread` |
+
+---
+
 ### 삼성 배터리 최적화 대응
 
 - 운동 최초 시작 시 배터리 최적화 제외 여부 확인

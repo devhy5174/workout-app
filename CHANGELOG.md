@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.0.15] — 2026-05-27
+
+### Android Foreground Service 배터리 최적화
+
+- `WorkoutService.java`: 캐릭터 비트맵 캐시 적용 — 매 초 재디코딩 → 최초 1회만 디코딩 후 재사용 (`cachedCharBitmap` / `cachedCharId`)
+- `WorkoutService.java`: `onSensorChanged`에서 `updateNotification()` 제거 — 걸음 감지 시마다 알림 갱신하던 이중 업데이트를 1초 타이머로 통합
+- `WorkoutService.java`: GPS 위치 콜백을 `HandlerThread("GpsCallbackThread")`로 분리 — 기존 `Looper.getMainLooper()` 사용에 의한 메인 스레드 부하 방지
+
+---
+
 ## [1.0.14] — 2026-05-27
 
 ### 파티 목표 유형 · UX 개선 · 버그 수정
