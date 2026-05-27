@@ -117,12 +117,12 @@ export const CHARACTER_MESSAGES: Record<string, CharacterMessage[]> = {
     { text: "편의점 다녀오는 것도 산책이에요 🏪", type: "witty" },
     { text: "산책하면서 유튜브 보면 두 배로 이득 🎧", type: "witty" },
     { text: "걷다 보면 오늘 뭐 먹을지 떠오름 🍚", type: "witty" },
-    { text: "10분만 걸어봐요. 근데 아마 더 걷게 될걸요 😏", type: "witty" },
+    { text: "10분만 걸어봐요. 어차피 더 걷게 될걸요 😏", type: "witty" },
     //게으름
     { text: "오늘 산책 아직이에요? 저 기다리고 있었는데 👣", type: "lazy" },
     { text: "천천히라도 괜찮으니까 나가봐요 🌿", type: "lazy" },
     { text: "5분만 걸어도 안 한 것보단 나아요 😌", type: "lazy" },
-    { text: "소파 온도가 딱 맞죠? 근데 일어나요 🛋️", type: "lazy" },
+    { text: "소파 온도가 딱 맞죠? 그래도 일어나요 🛋️", type: "lazy" },
     {
       text: "유튜브 알고리즘보다 내 다리 알고리즘을 믿어봐요 🎬",
       type: "lazy",
@@ -155,7 +155,7 @@ export const CHARACTER_MESSAGES: Record<string, CharacterMessage[]> = {
     { text: "오늘 달리기 없음? 몸이 녹슬겠는데요 🔥", type: "lazy" },
     { text: "러닝화 먼지 쌓이고 있어요 지금 👟", type: "lazy" },
     { text: "딱 1km만요. 1km 후엔 더 달리고 싶어질 거예요 😏", type: "lazy" },
-    { text: "소파 온도가 딱 맞죠? 근데 일어나요 🛋️", type: "lazy" },
+    { text: "소파 온도가 딱 맞죠? 그래도 일어나요 🛋️", type: "lazy" },
     {
       text: "유튜브 알고리즘보다 내 다리 알고리즘을 믿어봐요 🎬",
       type: "lazy",
@@ -191,7 +191,7 @@ export const CHARACTER_MESSAGES: Record<string, CharacterMessage[]> = {
     { text: "산이 오늘도 기다렸는데... 🏔️", type: "lazy" },
     { text: "등산화 한 번 쳐다보기만 해도 기분 달라져요 🥾", type: "lazy" },
     { text: "가까운 공원이라도 어때요? 자연은 자연이니까 🌲", type: "lazy" },
-    { text: "소파 온도가 딱 맞죠? 근데 일어나요 🛋️", type: "lazy" },
+    { text: "소파 온도가 딱 맞죠? 그래도 일어나요 🛋️", type: "lazy" },
     {
       text: "유튜브 알고리즘보다 내 다리 알고리즘을 믿어봐요 🎬",
       type: "lazy",
@@ -230,7 +230,7 @@ export const CHARACTER_MESSAGES: Record<string, CharacterMessage[]> = {
     { text: "오늘 걸음수 0이면 내일 목표 두 배예요 😤", type: "lazy" },
     { text: "파워워커가 쉬는 날? 그런 거 없어요 💪", type: "lazy" },
     { text: "일어나서 신발만 신어봐요. 그다음은 자동이에요 ⚡", type: "lazy" },
-    { text: "소파 온도가 딱 맞죠? 근데 일어나요 🛋️", type: "lazy" },
+    { text: "소파 온도가 딱 맞죠? 그래도 일어나요 🛋️", type: "lazy" },
     {
       text: "유튜브 알고리즘보다 내 다리 알고리즘을 믿어봐요 🎬",
       type: "lazy",

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { FaUser } from "react-icons/fa";
 import {
   HiUserGroup,
@@ -25,6 +25,8 @@ import {
   deletePartyNotice,
   leavePartyAsLeader,
 } from "../lib/partyService";
+import { postPartyGoalAchieved } from "../lib/communityService";
+import { localDateStr } from "../utils/streak";
 import type {
   Party,
   PartyMember,
@@ -482,6 +484,34 @@ export default function PartyDetail() {
   const [showAlertConfirmModal, setShowAlertConfirmModal] = useState(false);
   const [showAlertSentModal, setShowAlertSentModal] = useState(false);
   const [showAlertAlreadySentModal, setShowAlertAlreadySentModal] = useState(false);
+  const [showGoalAchievedToast, setShowGoalAchievedToast] = useState(false);
+
+  // 파티 목표 달성 자동 포스팅 (진입 시 + active_sessions 갱신 후 실시간 체크)
+  const tryPostGoalAchieved = useCallback(
+    async (p: Party, stats: PartyTodayStats, currentMembers: PartyMember[]) => {
+      if (!user) return;
+      const isDistance = (p.goal_type ?? "steps") === "distance";
+      const targetPerMember = isDistance ? (p.target_distance ?? 5) : (p.target_steps ?? 10000);
+      const totalTarget = targetPerMember * p.member_count;
+      const current = isDistance ? stats.totalDistance : stats.totalSteps;
+      if (totalTarget <= 0 || current < totalTarget) return;
+
+      const posted = await postPartyGoalAchieved({
+        partyId: p.id,
+        partyName: p.name,
+        goalType: p.goal_type ?? "steps",
+        targetPerMember,
+        memberCount: p.member_count,
+        leaderUserId: p.created_by,
+        date: localDateStr(new Date()),
+        totalSteps: stats.totalSteps,
+        totalDistance: stats.totalDistance,
+        memberNicknames: currentMembers.map((m) => m.nickname),
+      });
+      if (posted) setShowGoalAchievedToast(true);
+    },
+    [user],
+  );
 
   const sendCheer = async () => {
     const text = cheerInput.trim();
@@ -502,6 +532,11 @@ export default function PartyDetail() {
     setTimeout(() => setToast(null), 2500);
   };
 
+  useEffect(() => {
+    if (!showGoalAchievedToast) return;
+    setShowGoalAchievedToast(false);
+  }, [showGoalAchievedToast]);
+
   const sortMembers = (list: PartyMember[]) =>
     list.sort((a, b) => {
       if (a.is_active !== b.is_active) return b.is_active ? 1 : -1;
@@ -515,8 +550,11 @@ export default function PartyDetail() {
       getPartyMembers(id),
       getPartyTodayStats(id),
     ]);
-    setMembers(sortMembers(m));
+    const sorted = sortMembers(m);
+    setMembers(sorted);
     setTodayStats(s);
+    // active_sessions 변경 후에도 실시간으로 목표 달성 여부 체크
+    if (party && s) tryPostGoalAchieved(party, s, sorted);
   };
 
   useEffect(() => {
@@ -532,10 +570,13 @@ export default function PartyDetail() {
         await new Promise((r) => setTimeout(r, 1000));
         p = await getPartyById(id);
       }
+      const sorted = sortMembers(m);
       setParty(p);
-      setMembers(sortMembers(m));
+      setMembers(sorted);
       setTodayStats(s);
       setIsLoading(false);
+      // 목표 달성 시 커뮤니티 자동 포스팅 (진입 시 첫 체크)
+      if (p && s) tryPostGoalAchieved(p, s, sorted);
     });
   }, [id]);
 
@@ -1170,6 +1211,23 @@ export default function PartyDetail() {
           }
           confirmLabel="확인"
           onConfirm={() => setShowAlertAlreadySentModal(false)}
+          zClass="z-[60]"
+        />
+      )}
+      {showGoalAchievedToast && (
+        <AlertModal
+          icon={HiUserGroup}
+          iconClass="text-primary"
+          title="파티 목표 달성! 🎉"
+          message={
+            <>
+              오늘 목표를 모두 채웠어요!<br />
+              파티의 인증 글이<br />
+              <span className="font-bold text-gray-700">인증 피드</span>에 올라갔어요 🏅
+            </>
+          }
+          confirmLabel="확인"
+          onConfirm={() => setShowGoalAchievedToast(false)}
           zClass="z-[60]"
         />
       )}

@@ -228,12 +228,16 @@ export default function WorkoutDetail() {
         {/* ── 캐릭터 응원 ──────────────────────────────────── */}
         <div className="bg-white rounded-3xl shadow-sm p-5 flex items-center gap-4">
           {characterImage ? (
-            <img
-              src={characterImage}
-              alt="캐릭터"
-              className="w-14 h-14 rounded-2xl object-contain flex-shrink-0"
+            <div
+              className="w-14 h-14 rounded-2xl overflow-hidden flex-shrink-0"
               style={{ background: "var(--color-primary-light)" }}
-            />
+            >
+              <img
+                src={characterImage}
+                alt="캐릭터"
+                className="w-full h-full object-contain scale-110"
+              />
+            </div>
           ) : (
             <div
               className="w-14 h-14 rounded-2xl flex items-center justify-center text-2xl flex-shrink-0"

@@ -466,7 +466,7 @@ export default function Home() {
               <img
                 src={selectedCharacter.image}
                 alt=""
-                className="w-full h-full select-none object-contain"
+                className="w-full h-full select-none object-contain scale-110"
                 draggable={false}
               />
             ) : (

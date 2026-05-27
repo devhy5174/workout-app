@@ -69,7 +69,7 @@ export default function Header() {
 
           {/* 캐릭터 아바타 */}
           <div
-            className="w-9 h-9 rounded-full flex items-center justify-center border-2 border-white/40 shadow-sm"
+            className="w-9 h-9 rounded-full flex items-center justify-center border-2 border-white/40 shadow-sm overflow-hidden"
             style={{ background: "rgba(255,255,255,0.2)" }}
             aria-label="내 캐릭터"
           >
@@ -77,7 +77,7 @@ export default function Header() {
               <img
                 src={selectedCharacter.image}
                 alt=""
-                className="h-8 w-8 object-contain"
+                className="h-8 w-8 object-contain scale-110"
                 draggable={false}
               />
             ) : (

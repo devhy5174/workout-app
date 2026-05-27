@@ -37,6 +37,7 @@ export type CommunityPost = {
   activity_type_id: number | null;
   profile_title: string | null;
   frame_id: string | null;
+  source_type?: string | null;
 };
 
 type ProfileMap = Map<string, { nickname: string; character_id: string | null; activity_type_id: number | null; title: string | null }>;
@@ -89,6 +90,7 @@ function mergePost(row: any, profileMap: ProfileMap, cheersMap: Record<string, n
     activity_type_id: profile?.activity_type_id ?? null,
     profile_title: profile?.title ?? null,
     frame_id: row.frame_id ?? null,
+    source_type: row.source_type ?? null,
   };
 }
 
@@ -167,6 +169,68 @@ export async function createPost(
   if (error || !row) return { data: null, error: error?.message ?? "작성 실패" };
   const profileMap = await fetchProfileMap([userId]);
   return { data: mergePost(row, profileMap, {}), error: null };
+}
+
+// 파티 목표 달성 자동 포스팅
+// 중복 방지: localStorage(빠른 사전차단) + DB unique index (source_type, source_id, source_date)
+export async function postPartyGoalAchieved(params: {
+  partyId: string;
+  partyName: string;
+  goalType: "steps" | "distance";
+  targetPerMember: number;
+  memberCount: number;
+  leaderUserId: string; // 파티장 계정으로 저장
+  date: string; // YYYY-MM-DD
+  totalSteps: number;
+  totalDistance: number;
+  memberNicknames: string[];
+}): Promise<boolean> {
+  const {
+    partyId, partyName, goalType, targetPerMember, memberCount,
+    leaderUserId, date, totalSteps, totalDistance, memberNicknames,
+  } = params;
+
+  const localKey = `party_goal_posted_${partyId}_${date}`;
+  if (localStorage.getItem(localKey)) return false;
+
+  const totalTarget =
+    goalType === "distance" ? targetPerMember * memberCount : targetPerMember * memberCount;
+  const pct = Math.round(
+    goalType === "distance"
+      ? (totalDistance / totalTarget) * 100
+      : (totalSteps / totalTarget) * 100,
+  );
+
+  const achieveText =
+    goalType === "distance"
+      ? `📍 파티 총 ${totalDistance.toFixed(2)}km 달성 (목표 ${totalTarget}km · ${pct}%)`
+      : `👣 파티 총 ${totalSteps.toLocaleString()}보 달성 (목표 ${totalTarget.toLocaleString()}보 · ${pct}%)`;
+
+  const memberLine = memberNicknames.length > 0
+    ? `🏅 ${memberNicknames.slice(0, 5).join(" · ")}${memberNicknames.length > 5 ? ` 외 ${memberNicknames.length - 5}명` : ""}`
+    : "";
+
+  const text = [`🎉 "${partyName}" 파티가 오늘 목표를 달성했어요!`, achieveText, memberLine]
+    .filter(Boolean)
+    .join("\n");
+
+  const { error } = await supabase.from("community_posts").insert({
+    user_id: leaderUserId,
+    text,
+    tags: ["파티달성"],
+    steps: goalType === "steps" ? totalSteps : 0,
+    cheers: 0,
+    source_type: "party_goal",
+    source_id: partyId,
+    source_date: date,
+  });
+
+  // unique index 위반(23505) = 다른 멤버가 이미 올린 것 → 정상 케이스
+  if (!error || (error as any).code === "23505") {
+    localStorage.setItem(localKey, "1");
+    return !error; // 실제로 내가 insert 성공한 경우만 true
+  }
+  return false;
 }
 
 export async function deletePost(postId: string): Promise<{ error: string | null }> {

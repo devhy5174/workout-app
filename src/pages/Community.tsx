@@ -27,9 +27,24 @@ interface Post {
   isMine?: boolean;
   character_id?: string | null;
   frame_id: string | null;
+  source_type?: string | null;
+  created_at: string;
 }
 
 type TabType = "community" | "mine";
+
+function formatPostTime(dateStr: string): string {
+  const d = new Date(dateStr);
+  const now = new Date();
+  const isToday =
+    d.getFullYear() === now.getFullYear() &&
+    d.getMonth() === now.getMonth() &&
+    d.getDate() === now.getDate();
+  if (isToday) {
+    return d.toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit", hour12: false });
+  }
+  return `${d.getMonth() + 1}.${d.getDate()}`;
+}
 
 function deriveTitle(activityTypeId: number | null): string {
   if (!activityTypeId) return "산책러";
@@ -150,6 +165,9 @@ function PostCard({
               ))}
             </div>
           )}
+          <p className="text-right text-[8px] text-stone-300 mt-0.5 leading-none">
+            {formatPostTime(post.created_at)}
+          </p>
         </div>
 
         {/* 박수 / 삭제 아이콘 — 내 글이면 숨김 */}
@@ -242,6 +260,59 @@ function PostCard({
   );
 }
 
+// ─── 파티 달성 배너 ────────────────────────────────────────
+function PartyGoalBanner({
+  post,
+  onDelete,
+  showDelete,
+}: {
+  post: Post;
+  onDelete?: () => void;
+  showDelete?: boolean;
+}) {
+  const lines = post.text.split("\n");
+  return (
+    <div className="rounded-2xl overflow-hidden border border-amber-100 shadow-sm">
+      <div className="bg-gradient-to-r from-amber-400 to-orange-400 px-4 py-2 flex items-center justify-between">
+        <div className="flex items-center gap-1.5">
+          <span className="text-sm">🏆</span>
+          <span className="text-[11px] font-extrabold text-white tracking-tight">
+            파티 목표 달성
+          </span>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-[9px] text-amber-100 font-semibold">
+            {formatPostTime(post.created_at)} · 자동 기록
+          </span>
+          {showDelete && onDelete && (
+            <button
+              onClick={onDelete}
+              aria-label="게시글 삭제"
+              className="text-amber-200 active:scale-95 transition-transform"
+            >
+              <HiTrash className="w-3.5 h-3.5" />
+            </button>
+          )}
+        </div>
+      </div>
+      <div className="bg-amber-50 px-4 py-3 flex flex-col gap-0.5">
+        {lines.map((line, i) => (
+          <p
+            key={i}
+            className={`text-xs leading-relaxed ${
+              i === 0
+                ? "font-extrabold text-stone-700"
+                : "font-semibold text-stone-500"
+            }`}
+          >
+            {line}
+          </p>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // ─── 빈 상태 ───────────────────────────────────────────────
 function EmptyState({ message }: { message: string }) {
   return (
@@ -292,6 +363,8 @@ export default function CommunityPage() {
     isMine: p.user_id === user?.id,
     character_id: p.character_id,
     frame_id: p.frame_id ?? null,
+    source_type: p.source_type ?? null,
+    created_at: p.created_at,
   });
 
   const enrichedPosts = posts.map((p) => toPost(p));
@@ -382,14 +455,18 @@ export default function CommunityPage() {
             {/* 말풍선 피드 */}
             <div className="flex flex-col gap-5">
               {filteredPosts.length > 0 ? (
-                filteredPosts.map((post) => (
-                  <PostCard
-                    key={post.id}
-                    post={post}
-                    onCheer={() => toggleCheer(post.id)}
-                    frameId={post.frame_id ?? null}
-                  />
-                ))
+                filteredPosts.map((post) =>
+                  post.source_type === "party_goal" ? (
+                    <PartyGoalBanner key={post.id} post={post} />
+                  ) : (
+                    <PostCard
+                      key={post.id}
+                      post={post}
+                      onCheer={() => toggleCheer(post.id)}
+                      frameId={post.frame_id ?? null}
+                    />
+                  ),
+                )
               ) : (
                 <EmptyState message="해당 태그의 기록이 없어요" />
               )}
@@ -471,16 +548,25 @@ export default function CommunityPage() {
             {/* 내 말풍선 피드 */}
             <div className="flex flex-col gap-5">
               {enrichedMyPosts.length > 0 ? (
-                enrichedMyPosts.map((post) => (
-                  <PostCard
-                    key={post.id}
-                    post={post}
-                    onCheer={() => toggleCheer(post.id)}
-                    onDelete={() => setDeleteTargetId(post.id)}
-                    showDelete
-                    frameId={post.frame_id ?? null}
-                  />
-                ))
+                enrichedMyPosts.map((post) =>
+                  post.source_type === "party_goal" ? (
+                    <PartyGoalBanner
+                      key={post.id}
+                      post={post}
+                      onDelete={() => setDeleteTargetId(post.id)}
+                      showDelete
+                    />
+                  ) : (
+                    <PostCard
+                      key={post.id}
+                      post={post}
+                      onCheer={() => toggleCheer(post.id)}
+                      onDelete={() => setDeleteTargetId(post.id)}
+                      showDelete
+                      frameId={post.frame_id ?? null}
+                    />
+                  ),
+                )
               ) : (
                 <EmptyState message="아직 기록이 없어요. 첫 움직인 기록을 남겨보세요 👣" />
               )}

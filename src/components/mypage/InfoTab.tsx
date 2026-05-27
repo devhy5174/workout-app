@@ -482,7 +482,7 @@ export default function InfoTab() {
             <img
               src={selectedCharacter.image}
               alt=""
-              className="h-26 w-26 object-contain"
+              className="h-26 w-26 object-contain scale-110"
               draggable={false}
             />
           ) : (
