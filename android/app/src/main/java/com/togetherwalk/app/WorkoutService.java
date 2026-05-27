@@ -23,6 +23,8 @@ import android.hardware.SensorManager;
 import android.location.Location;
 import android.os.Binder;
 import android.os.Build;
+import android.os.Handler;
+import android.os.HandlerThread;
 import android.os.IBinder;
 import android.os.Looper;
 import android.widget.RemoteViews;
@@ -81,6 +83,14 @@ public class WorkoutService extends Service implements SensorEventListener {
     private final ArrayList<JSONObject> routePoints = new ArrayList<>();
     private static String lastRoutePointsJson = "[]";
 
+    // ── Bitmap cache — characterId당 한 번만 디코딩 ──────────────────────────
+    private Bitmap cachedCharBitmap = null;
+    private String cachedCharId     = null;
+
+    // ── GPS HandlerThread — main looper 부하 방지 ────────────────────────────
+    private HandlerThread gpsThread;
+    private Looper        gpsLooper;
+
     private static WorkoutService instance;
 
     private final IBinder binder = new LocalBinder();
@@ -98,6 +108,9 @@ public class WorkoutService extends Service implements SensorEventListener {
         sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
         stepSensor    = sensorManager.getDefaultSensor(Sensor.TYPE_STEP_COUNTER);
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
+        gpsThread = new HandlerThread("GpsCallbackThread");
+        gpsThread.start();
+        gpsLooper = gpsThread.getLooper();
         setupLocationCallback();
         createNotificationChannel();
     }
@@ -107,6 +120,9 @@ public class WorkoutService extends Service implements SensorEventListener {
         isRunning = false;
         try { sensorManager.unregisterListener(this); } catch (Exception ignored) {}
         stopGpsTracking();
+        if (gpsThread != null) { gpsThread.quitSafely(); gpsThread = null; }
+        cachedCharBitmap = null;
+        cachedCharId     = null;
         instance = null;
         super.onDestroy();
     }
@@ -159,6 +175,11 @@ public class WorkoutService extends Service implements SensorEventListener {
                                 ? intent.getStringExtra(EXTRA_CHARACTER) : "";
                 theme         = intent.getStringExtra(EXTRA_THEME) != null
                                 ? intent.getStringExtra(EXTRA_THEME) : "energy";
+                // 캐릭터가 바뀌면 캐시 무효화
+                if (!characterId.equals(cachedCharId)) {
+                    cachedCharBitmap = null;
+                    cachedCharId     = null;
+                }
                 baselineSteps    = -1;
                 currentSteps     = 0;
                 gpsDistanceMeters = 0.0;
@@ -280,7 +301,7 @@ public class WorkoutService extends Service implements SensorEventListener {
 
         try {
             fusedLocationClient.requestLocationUpdates(
-                request, locationCallback, Looper.getMainLooper());
+                request, locationCallback, gpsLooper);
         } catch (Exception ignored) {}
     }
 
@@ -310,7 +331,7 @@ public class WorkoutService extends Service implements SensorEventListener {
         int total = (int) event.values[0];
         if (baselineSteps < 0) baselineSteps = total;
         currentSteps = total - baselineSteps;
-        updateNotification();
+        // 알림 업데이트는 1초 타이머에서 처리 — 센서마다 호출하면 배터리 낭비
         broadcastUpdate();
     }
 
@@ -383,10 +404,17 @@ public class WorkoutService extends Service implements SensorEventListener {
 
         int themeColor = getThemeColor(theme);
 
-        Bitmap charBitmap = loadCharacterBitmap(characterId);
-        if (charBitmap == null) {
-            charBitmap = toCircleBitmap(
-                BitmapFactory.decodeResource(getResources(), R.mipmap.ic_launcher));
+        Bitmap charBitmap;
+        if (cachedCharBitmap != null && characterId.equals(cachedCharId)) {
+            charBitmap = cachedCharBitmap;
+        } else {
+            charBitmap = loadCharacterBitmap(characterId);
+            if (charBitmap == null) {
+                charBitmap = toCircleBitmap(
+                    BitmapFactory.decodeResource(getResources(), R.mipmap.ic_launcher));
+            }
+            cachedCharBitmap = charBitmap;
+            cachedCharId     = characterId;
         }
 
         int pauseIcon = isPaused ? R.drawable.ic_notif_play : R.drawable.ic_notif_pause;
