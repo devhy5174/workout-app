@@ -11,6 +11,13 @@ import {
 import { useUser } from "../../context/UserContext";
 import type { WorkoutRecord } from "../../lib/workoutService";
 
+const WORKOUT_EMOJI: Record<string, string> = {
+  walker: "🚶",
+  power_walker: "🚶‍♂️",
+  runner: "🏃",
+  hiker: "🏔️",
+};
+
 // gps_distance 컬럼이 있는 레코드는 GPS 기반 거리를, 없으면 distance(추정값) 사용
 // DB 마이그레이션 후 gps_distance 컬럼이 채워지면 자동으로 GPS 값이 반영됨
 function getDistance(r: WorkoutRecord): number {
@@ -139,7 +146,7 @@ export default function RunnerStatsTab() {
       <div className="flex flex-col items-center justify-center gap-4 py-16">
         <span className="text-6xl">🏃</span>
         <p className="font-extrabold text-gray-700 text-lg">
-          러닝 기록이 없어요
+          활동 기록이 없어요
         </p>
         <p className="text-sm text-gray-400 text-center leading-relaxed">
           러너 유형으로 운동을 완료하면
@@ -161,11 +168,11 @@ export default function RunnerStatsTab() {
         }}
       >
         <p className="text-white/70 text-[11px] font-bold mb-3 tracking-wide">
-          🏃 러닝 전체 기록
+          🏃 활동 전체 기록
         </p>
         <div className="grid grid-cols-3 gap-y-4 gap-x-2">
           {[
-            { label: "총 러닝", value: `${summary!.count}회` },
+            { label: "총 활동", value: `${summary!.count}회` },
             { label: "총 거리", value: formatDist(summary!.totalDist) },
             {
               label: "소모 칼로리",
@@ -196,7 +203,7 @@ export default function RunnerStatsTab() {
               "linear-gradient(135deg, var(--color-primary)18, var(--color-secondary)18)",
           }}
         >
-          <p className="font-extrabold text-gray-800">러닝 거리 차트</p>
+          <p className="font-extrabold text-gray-800">활동 거리 차트</p>
         </div>
         <div className="flex flex-col gap-4 p-4">
           <div className="bg-gray-100 rounded-2xl p-1 flex">
@@ -218,7 +225,7 @@ export default function RunnerStatsTab() {
           {chartData.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-40 gap-2 text-gray-300">
               <span className="text-3xl">🏃</span>
-              <p className="text-sm font-bold">이 기간엔 러닝 기록이 없어요</p>
+              <p className="text-sm font-bold">이 기간엔 활동 기록이 없어요</p>
             </div>
           ) : (
             <ResponsiveContainer width="100%" height={180}>
@@ -299,7 +306,7 @@ export default function RunnerStatsTab() {
               "linear-gradient(135deg, var(--color-primary)18, var(--color-secondary)18)",
           }}
         >
-          <p className="font-extrabold text-gray-800">최근 러닝</p>
+          <p className="font-extrabold text-gray-800">최근 활동</p>
         </div>
         <div className="flex flex-col divide-y divide-gray-50">
           {[...allRuns]
@@ -318,7 +325,7 @@ export default function RunnerStatsTab() {
                     className="w-9 h-9 rounded-xl flex items-center justify-center text-lg flex-shrink-0"
                     style={{ background: "var(--color-primary-light)" }}
                   >
-                    🏃
+                    {WORKOUT_EMOJI[r.workout_type] ?? "🏃"}
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-1.5">

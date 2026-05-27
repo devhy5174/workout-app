@@ -18,7 +18,9 @@ import FakePartyPreview from "../components/FakePartyPreview";
 
 type TimeSlot = "새벽" | "아침" | "저녁" | "주말";
 type StepsOption = 5000 | 10000 | 15000;
+type DistanceOption = 3 | 5 | 10;
 type MaxMembersOption = 5 | 10 | 20;
+type GoalType = "steps" | "distance";
 
 const timeSlotEmoji: Record<TimeSlot, string> = {
   새벽: "🌅",
@@ -167,11 +169,17 @@ function PartyCard({
           </div>
         </button>
         <div className="bg-gray-50 rounded-2xl px-3 py-2 flex items-center gap-2">
-          <span className="text-base">👣</span>
+          <span className="text-base">
+            {(party.goal_type ?? "steps") === "distance" ? "📍" : "👣"}
+          </span>
           <div>
-            <p className="text-[10px] text-gray-400">목표 걸음수</p>
+            <p className="text-[10px] text-gray-400">
+              {(party.goal_type ?? "steps") === "distance" ? "목표 거리" : "목표 걸음수"}
+            </p>
             <p className="text-xs font-bold text-gray-700">
-              {(party.target_steps ?? 10000).toLocaleString()}보/인
+              {(party.goal_type ?? "steps") === "distance"
+                ? `${party.target_distance ?? 5}km/인`
+                : `${(party.target_steps ?? 10000).toLocaleString()}보/인`}
             </p>
           </div>
         </div>
@@ -205,46 +213,42 @@ function PartyCard({
           <p className="text-[10px] text-gray-300 animate-pulse">
             불러오는 중...
           </p>
-        ) : (
-          <>
-            <div className="flex items-center justify-between">
-              <p className="text-[10px] font-bold text-gray-700">
-                <span className="text-orange-500">
-                  {todayStats.totalSteps.toLocaleString()}
-                </span>
-                {" / "}
-                {(
-                  (party.target_steps ?? 10000) * party.member_count
-                ).toLocaleString()}
-                보
-              </p>
-              <p className="text-[10px] font-bold text-orange-400">
-                {Math.min(
-                  Math.round(
-                    (todayStats.totalSteps /
-                      ((party.target_steps ?? 10000) * party.member_count)) *
-                      100,
-                  ),
-                  100,
-                )}
-                %
-              </p>
-            </div>
-            <div className="w-full h-1.5 bg-orange-100 rounded-full overflow-hidden">
-              <div
-                className="h-full bg-gradient-to-r from-orange-400 to-primary rounded-full transition-all duration-700"
-                style={{
-                  width: `${Math.min(
-                    (todayStats.totalSteps /
-                      ((party.target_steps ?? 10000) * party.member_count)) *
-                      100,
-                    100,
-                  )}%`,
-                }}
-              />
-            </div>
-          </>
-        )}
+        ) : (() => {
+          const isDistance = (party.goal_type ?? "steps") === "distance";
+          const totalTarget = isDistance
+            ? (party.target_distance ?? 5) * party.member_count
+            : (party.target_steps ?? 10000) * party.member_count;
+          const current = isDistance
+            ? todayStats.totalDistance
+            : todayStats.totalSteps;
+          const pct = totalTarget > 0
+            ? Math.min(Math.round((current / totalTarget) * 100), 100)
+            : 0;
+          return (
+            <>
+              <div className="flex items-center justify-between">
+                <p className="text-[10px] font-bold text-gray-700">
+                  <span className="text-orange-500">
+                    {isDistance
+                      ? `${current.toFixed(2)}km`
+                      : current.toLocaleString() + "보"}
+                  </span>
+                  {" / "}
+                  {isDistance
+                    ? `${totalTarget}km`
+                    : totalTarget.toLocaleString() + "보"}
+                </p>
+                <p className="text-[10px] font-bold text-orange-400">{pct}%</p>
+              </div>
+              <div className="w-full h-1.5 bg-orange-100 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-gradient-to-r from-orange-400 to-primary rounded-full transition-all duration-700"
+                  style={{ width: `${pct}%` }}
+                />
+              </div>
+            </>
+          );
+        })()}
       </div>
 
       <div className="flex flex-col gap-2">
@@ -598,7 +602,9 @@ function CreatePartyModal({
 }) {
   const [name, setName] = useState("");
   const [nameError, setNameError] = useState<string | null>(null);
+  const [goalType, setGoalType] = useState<GoalType>("steps");
   const [steps, setSteps] = useState<StepsOption>(10000);
+  const [distance, setDistance] = useState<DistanceOption>(5);
   const [timeSlot, setTimeSlot] = useState<TimeSlot>("아침");
   const [maxMembers, setMaxMembers] = useState<MaxMembersOption>(10);
   const [selectedTagIds, setSelectedTagIds] = useState<number[]>([]);
@@ -629,11 +635,18 @@ function CreatePartyModal({
           )
         : [timeSlot];
 
+    const description =
+      goalType === "steps"
+        ? `${timeSlot} ${steps.toLocaleString()}보 함께 달려요!`
+        : `${timeSlot} ${distance}km 함께 달려요!`;
+
     await onCreate({
       name: name.trim(),
-      description: `${timeSlot} ${steps.toLocaleString()}보 함께 달려요!`,
+      description,
       max_members: maxMembers,
-      target_steps: steps,
+      target_steps: goalType === "steps" ? steps : 0,
+      goal_type: goalType,
+      target_distance: goalType === "distance" ? distance : undefined,
       exercise_time: timeSlot,
       tags,
     });
@@ -642,6 +655,7 @@ function CreatePartyModal({
   };
 
   const stepsOptions: StepsOption[] = [5000, 10000, 15000];
+  const distanceOptions: DistanceOption[] = [3, 5, 10];
   const timeSlotOptions: TimeSlot[] = ["새벽", "아침", "저녁", "주말"];
   const maxMembersOptions: MaxMembersOption[] = [5, 10, 20];
 
@@ -682,27 +696,67 @@ function CreatePartyModal({
           )}
         </div>
 
-        <div className="flex flex-col gap-1.5">
-          <label className="text-xs font-bold text-gray-500">목표 걸음수</label>
-          <div className="flex gap-2">
-            {stepsOptions.map((s) => (
+        <div className="flex flex-col gap-2">
+          <label className="text-xs font-bold text-gray-500">목표 유형</label>
+          <div className="bg-gray-100 rounded-2xl p-1 flex">
+            {(["steps", "distance"] as GoalType[]).map((type) => (
               <button
-                key={s}
-                onClick={() => setSteps(s)}
-                className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition ${
-                  steps === s
-                    ? "bg-primary text-white"
-                    : "bg-gray-100 text-gray-500"
+                key={type}
+                onClick={() => setGoalType(type)}
+                className={`flex-1 py-2 rounded-xl text-sm font-bold transition ${
+                  goalType === type
+                    ? "bg-white text-gray-800 shadow-sm"
+                    : "text-gray-400"
                 }`}
               >
-                {s.toLocaleString()}보
+                {type === "steps" ? "👣 목표 걸음수" : "📍 목표 거리"}
               </button>
             ))}
           </div>
-          <p className="text-[10px] text-gray-400">
-            총 목표 {(steps * maxMembers).toLocaleString()}보 ({maxMembers}명 ×{" "}
-            {steps.toLocaleString()}보)
-          </p>
+
+          {goalType === "steps" ? (
+            <div className="flex flex-col gap-1.5">
+              <div className="flex gap-2">
+                {stepsOptions.map((s) => (
+                  <button
+                    key={s}
+                    onClick={() => setSteps(s)}
+                    className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition ${
+                      steps === s
+                        ? "bg-primary text-white"
+                        : "bg-gray-100 text-gray-500"
+                    }`}
+                  >
+                    {s.toLocaleString()}보
+                  </button>
+                ))}
+              </div>
+              <p className="text-[10px] text-gray-400">
+                총 목표 {(steps * maxMembers).toLocaleString()}보 ({maxMembers}명 × {steps.toLocaleString()}보)
+              </p>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-1.5">
+              <div className="flex gap-2">
+                {distanceOptions.map((d) => (
+                  <button
+                    key={d}
+                    onClick={() => setDistance(d)}
+                    className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition ${
+                      distance === d
+                        ? "bg-primary text-white"
+                        : "bg-gray-100 text-gray-500"
+                    }`}
+                  >
+                    {d}km
+                  </button>
+                ))}
+              </div>
+              <p className="text-[10px] text-gray-400">
+                총 목표 {(distance * maxMembers).toFixed(0)}km ({maxMembers}명 × {distance}km)
+              </p>
+            </div>
+          )}
         </div>
 
         <div className="flex flex-col gap-1.5">

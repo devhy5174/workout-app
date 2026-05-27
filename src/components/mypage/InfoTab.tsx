@@ -91,7 +91,9 @@ function GoalSetModal({ onClose }: { onClose: () => void }) {
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between mb-1">
-          <h3 className="text-lg font-extrabold text-gray-800">목표 설정하기</h3>
+          <h3 className="text-lg font-extrabold text-gray-800">
+            목표 설정하기
+          </h3>
           <button
             onClick={onClose}
             className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 font-bold"
@@ -229,7 +231,8 @@ function ActivityTypeSheet({ onClose }: { onClose: () => void }) {
             </button>
           </div>
           <p className="text-sm text-gray-400 mb-4">
-            나에게 맞는 운동 스타일을 골라봐!
+            나에게 맞는 운동 스타일을 골라봐! <br />
+            활동 유형에 따라 운동 기록과 분석 방식이 달라져요
           </p>
           <div className="flex flex-col gap-3 pb-5">
             {activityTypes.map((c) => {
@@ -268,11 +271,6 @@ function ActivityTypeSheet({ onClose }: { onClose: () => void }) {
                         )}
                       </div>
                       <p className="text-xs text-gray-500 mt-0.5">{c.style}</p>
-                      <div className="flex items-center gap-1 mt-1">
-                        <span className="text-[11px] font-semibold text-gray-500">
-                          🔥 분당 {c.kcalPerMin}kcal 소모
-                        </span>
-                      </div>
                     </div>
                     <div
                       className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${
@@ -359,7 +357,9 @@ function CharacterSheet({ onClose }: { onClose: () => void }) {
           onClick={(e) => e.stopPropagation()}
         >
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-extrabold text-gray-800">캐릭터 변경</h3>
+            <h3 className="text-lg font-extrabold text-gray-800">
+              캐릭터 변경
+            </h3>
             <button
               onClick={onClose}
               className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 font-bold"
@@ -562,7 +562,10 @@ export default function InfoTab() {
             >
               {icon}
               <p className="text-lg font-extrabold leading-tight text-gray-800">
-                {value}<span className="text-xs text-gray-400 font-normal ml-0.5">{unit}</span>
+                {value}
+                <span className="text-xs text-gray-400 font-normal ml-0.5">
+                  {unit}
+                </span>
               </p>
               <p className="text-[10px] text-gray-400">{label}</p>
             </div>
@@ -758,8 +761,16 @@ export default function InfoTab() {
             <div className="flex flex-col gap-1.5">
               {[
                 { range: "18.5 미만", label: "저체중", color: "text-blue-500" },
-                { range: "18.5 ~ 22.9", label: "정상", color: "text-green-500" },
-                { range: "23 ~ 24.9", label: "과체중", color: "text-yellow-500" },
+                {
+                  range: "18.5 ~ 22.9",
+                  label: "정상",
+                  color: "text-green-500",
+                },
+                {
+                  range: "23 ~ 24.9",
+                  label: "과체중",
+                  color: "text-yellow-500",
+                },
                 { range: "25 이상", label: "비만", color: "text-red-500" },
               ].map(({ range, label, color }) => (
                 <div

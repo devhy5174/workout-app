@@ -14,6 +14,8 @@ export type Party = {
   leader_nickname: string;
   max_members: number;
   target_steps: number;
+  goal_type?: "steps" | "distance";
+  target_distance?: number;
   exercise_time: TimeSlot;
   tags: string[];
   created_at: string;
@@ -31,6 +33,7 @@ export type PartyMember = {
   character_image: string | null;
   weekly_steps: number;
   today_steps: number;
+  today_distance: number;
   is_active: boolean;
   joined_at: string;
   last_active_at: string | null;
@@ -43,6 +46,8 @@ export type CreatePartyInput = {
   description: string;
   max_members: number;
   target_steps: number;
+  goal_type: "steps" | "distance";
+  target_distance?: number;
   exercise_time: TimeSlot;
   tags: string[];
 };
@@ -173,7 +178,7 @@ export async function getPartyById(partyId: string): Promise<Party | null> {
     .from("parties")
     .select("*, party_members(count)")
     .eq("id", partyId)
-    .single();
+    .maybeSingle();
   if (error || !data) return null;
   const [result] = await withLeaderNicknames([data]);
   return result ?? null;
@@ -217,6 +222,8 @@ export async function createParty(
       description: input.description,
       max_members: input.max_members,
       target_steps: input.target_steps,
+      goal_type: input.goal_type,
+      target_distance: input.target_distance ?? null,
       exercise_time: input.exercise_time,
       tags: input.tags,
       created_by: userId,
@@ -330,6 +337,7 @@ export async function leavePartyAsLeader(
 
 export type PartyTodayStats = {
   totalSteps: number;
+  totalDistance: number;
   avgSteps: number;
   topMember: { user_id: string; nickname: string; steps: number } | null;
 };
@@ -343,7 +351,7 @@ export async function getPartyTodayStats(
     .eq("party_id", partyId);
 
   if (!members || members.length === 0)
-    return { totalSteps: 0, avgSteps: 0, topMember: null };
+    return { totalSteps: 0, totalDistance: 0, avgSteps: 0, topMember: null };
 
   const userIds = members.map((m: any) => m.user_id);
   const todayStart = new Date();
@@ -351,19 +359,23 @@ export async function getPartyTodayStats(
 
   const { data: workouts } = await supabase
     .from("workout_history")
-    .select("user_id, steps")
+    .select("user_id, steps, gps_distance, distance")
     .in("user_id", userIds)
     .gte("created_at", todayStart.toISOString());
 
   if (!workouts || workouts.length === 0)
-    return { totalSteps: 0, avgSteps: 0, topMember: null };
+    return { totalSteps: 0, totalDistance: 0, avgSteps: 0, topMember: null };
 
   const stepsMap = new Map<string, number>();
+  const distMap = new Map<string, number>();
   workouts.forEach((w: any) => {
-    stepsMap.set(w.user_id, (stepsMap.get(w.user_id) ?? 0) + w.steps);
+    stepsMap.set(w.user_id, (stepsMap.get(w.user_id) ?? 0) + (w.steps ?? 0));
+    const dist = (w.gps_distance ?? 0) > 0 ? w.gps_distance : (w.distance ?? 0);
+    distMap.set(w.user_id, (distMap.get(w.user_id) ?? 0) + dist);
   });
 
   let totalSteps = 0;
+  let totalDistance = 0;
   let topUserId = "";
   let topSteps = 0;
 
@@ -374,8 +386,9 @@ export async function getPartyTodayStats(
       topUserId = userId;
     }
   });
+  distMap.forEach((d) => { totalDistance += d; });
 
-  if (totalSteps === 0) return { totalSteps: 0, avgSteps: 0, topMember: null };
+  if (totalSteps === 0) return { totalSteps: 0, totalDistance: 0, avgSteps: 0, topMember: null };
 
   const avgSteps = Math.round(totalSteps / members.length);
 
@@ -385,6 +398,7 @@ export async function getPartyTodayStats(
 
   return {
     totalSteps,
+    totalDistance: parseFloat(totalDistance.toFixed(2)),
     avgSteps,
     topMember: { user_id: topUserId, nickname: topNickname, steps: topSteps },
   };
@@ -563,7 +577,7 @@ export async function getPartyMembers(partyId: string): Promise<PartyMember[]> {
         .gte("created_at", weekStart.toISOString()),
       supabase
         .from("workout_history")
-        .select("user_id, steps")
+        .select("user_id, steps, gps_distance, distance")
         .in("user_id", userIds)
         .gte("created_at", todayStart.toISOString()),
       supabase
@@ -587,8 +601,11 @@ export async function getPartyMembers(partyId: string): Promise<PartyMember[]> {
   });
 
   const todayStepsMap = new Map<string, number>();
+  const todayDistMap = new Map<string, number>();
   (todayResult.data ?? []).forEach((w: any) => {
-    todayStepsMap.set(w.user_id, (todayStepsMap.get(w.user_id) ?? 0) + w.steps);
+    todayStepsMap.set(w.user_id, (todayStepsMap.get(w.user_id) ?? 0) + (w.steps ?? 0));
+    const dist = (w.gps_distance ?? 0) > 0 ? w.gps_distance : (w.distance ?? 0);
+    todayDistMap.set(w.user_id, (todayDistMap.get(w.user_id) ?? 0) + dist);
   });
 
   const activeUserIds = new Set(
@@ -631,6 +648,7 @@ export async function getPartyMembers(partyId: string): Promise<PartyMember[]> {
       character_image: characterImage,
       weekly_steps: weeklyStepsMap.get(m.user_id) ?? 0,
       today_steps: todayStepsMap.get(m.user_id) ?? 0,
+      today_distance: parseFloat((todayDistMap.get(m.user_id) ?? 0).toFixed(2)),
       is_active: activeUserIds.has(m.user_id),
       joined_at: m.joined_at,
       last_active_at,

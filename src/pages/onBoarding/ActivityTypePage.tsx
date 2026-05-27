@@ -58,11 +58,6 @@ export default function ActivityTypePage() {
                   )}
                 </div>
                 <p className="text-sm text-gray-500 mt-0.5">{c.style}</p>
-                <div className="flex items-center gap-1 mt-2">
-                  <span className="text-xs font-semibold text-gray-500">
-                    🔥 분당 {c.kcalPerMin}kcal 소모
-                  </span>
-                </div>
               </div>
 
               {/* 선택 체크 */}

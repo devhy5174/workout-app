@@ -61,6 +61,7 @@ function MemberActivityCard({
   canKickInactive,
   onKick,
   activeBubbleId,
+  goalType = "steps",
 }: {
   member: PartyMember;
   isMe: boolean;
@@ -68,6 +69,7 @@ function MemberActivityCard({
   canKickInactive: boolean;
   onKick: () => void;
   activeBubbleId: string | null;
+  goalType?: "steps" | "distance";
 }) {
   const {
     is_active,
@@ -76,6 +78,7 @@ function MemberActivityCard({
     nickname,
     title,
     today_steps,
+    today_distance,
   } = member;
   const inactive7 = isInactive7Days(member);
   const bubble = resolveBubblePreview(activeBubbleId);
@@ -150,13 +153,15 @@ function MemberActivityCard({
         {isPartyLeader ? "👑" : ""}
       </p>
 
-      {/* 걸음수 (고정 높이) */}
+      {/* 걸음수 / 거리 (고정 높이) */}
       <div className="h-4 flex items-center justify-center">
         {!inactive7 && (
           <p
             className={`text-[9px] font-bold ${is_active ? "text-emerald-500" : "text-gray-400"}`}
           >
-            {today_steps.toLocaleString()}보
+            {goalType === "distance"
+              ? `${today_distance.toFixed(2)}km`
+              : `${today_steps.toLocaleString()}보`}
           </p>
         )}
       </div>
@@ -521,7 +526,12 @@ export default function PartyDetail() {
       getPartyById(id),
       getPartyMembers(id),
       getPartyTodayStats(id),
-    ]).then(([p, m, s]) => {
+    ]).then(async ([p, m, s]) => {
+      // party가 null이면 JWT 세션 타이밍 문제일 수 있으므로 1초 후 1회 재시도
+      if (!p) {
+        await new Promise((r) => setTimeout(r, 1000));
+        p = await getPartyById(id);
+      }
       setParty(p);
       setMembers(sortMembers(m));
       setTodayStats(s);
@@ -800,7 +810,9 @@ export default function PartyDetail() {
               👥 {party.member_count}/{party.max_members}명
             </span>
             <span className="text-[10px] text-gray-500 font-semibold bg-gray-50 px-2 py-1 rounded-full">
-              👟 {(party.target_steps ?? 10000).toLocaleString()}보
+              {(party.goal_type ?? "steps") === "distance"
+                ? `📍 ${party.target_distance ?? 5}km/인`
+                : `👟 ${(party.target_steps ?? 10000).toLocaleString()}보/인`}
             </span>
             {party.tags.slice(0, 2).map((t) => (
               <span
@@ -835,101 +847,91 @@ export default function PartyDetail() {
             <p className="text-xs text-gray-300 animate-pulse">
               불러오는 중...
             </p>
-          ) : (
-            <>
-              <div className="flex items-center justify-between">
-                <p className="text-xs font-bold text-gray-700">
-                  <span className="text-orange-500">
-                    {todayStats.totalSteps.toLocaleString()}
-                  </span>
-                  {" / "}
-                  {(
-                    (party.target_steps ?? 10000) * party.member_count
-                  ).toLocaleString()}
-                  보
-                </p>
-                <p className="text-xs font-extrabold text-orange-400">
-                  {Math.min(
-                    Math.round(
-                      (todayStats.totalSteps /
-                        Math.max(
-                          (party.target_steps ?? 10000) * party.member_count,
-                          1,
-                        )) *
-                        100,
-                    ),
-                    100,
-                  )}
-                  %
-                </p>
-              </div>
-              {todayStats.avgSteps > 0 && (
-                <p className="text-[11px] text-gray-400 font-semibold">
-                  파티 평균{" "}
-                  <span className="text-orange-400 font-extrabold">
-                    {todayStats.avgSteps.toLocaleString()}보
-                  </span>
-                </p>
-              )}
-              <div className="w-full h-2 bg-orange-100 rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-gradient-to-r from-orange-400 to-primary rounded-full transition-all duration-700"
-                  style={{
-                    width: `${Math.min(
-                      (todayStats.totalSteps /
-                        Math.max(
-                          (party.target_steps ?? 10000) * party.member_count,
-                          1,
-                        )) *
-                        100,
-                      100,
-                    )}%`,
-                  }}
-                />
-              </div>
+          ) : (() => {
+            const isDistance = (party.goal_type ?? "steps") === "distance";
+            const totalTarget = isDistance
+              ? (party.target_distance ?? 5) * party.member_count
+              : (party.target_steps ?? 10000) * party.member_count;
+            const current = isDistance
+              ? todayStats.totalDistance
+              : todayStats.totalSteps;
+            const pct = Math.min(
+              Math.round((current / Math.max(totalTarget, 0.01)) * 100),
+              100,
+            );
+            const mvpMember = todayStats.topMember
+              ? members.find((m) => m.user_id === todayStats.topMember!.user_id)
+              : null;
+            const mvpValue = isDistance
+              ? `${(mvpMember?.today_distance ?? 0).toFixed(2)}km`
+              : `${todayStats.topMember?.steps.toLocaleString() ?? 0}보`;
 
-              {todayStats.topMember &&
-                (() => {
-                  const mvp = members.find(
-                    (m) => m.user_id === todayStats.topMember!.user_id,
-                  );
-                  return (
-                    <div className="flex items-center gap-3 bg-amber-50 rounded-2xl px-4 py-3">
-                      <div className="relative flex-shrink-0">
-                        <div className="w-12 h-12 rounded-2xl bg-amber-100 flex items-center justify-center overflow-hidden">
-                          {mvp?.character_image ? (
-                            <img
-                              src={mvp.character_image}
-                              alt={todayStats.topMember.nickname}
-                              className="w-full h-full object-contain"
-                              draggable={false}
-                            />
-                          ) : (
-                            <span className="text-2xl">
-                              {mvp?.character_emoji ?? "🏃"}
-                            </span>
-                          )}
-                        </div>
-                        <span className="absolute -top-1.5 -right-1.5 text-base leading-none">
-                          🥇
-                        </span>
+            return (
+              <>
+                <div className="flex items-center justify-between">
+                  <p className="text-xs font-bold text-gray-700">
+                    <span className="text-orange-500">
+                      {isDistance
+                        ? `${current.toFixed(2)}km`
+                        : current.toLocaleString() + "보"}
+                    </span>
+                    {" / "}
+                    {isDistance
+                      ? `${totalTarget}km`
+                      : totalTarget.toLocaleString() + "보"}
+                  </p>
+                  <p className="text-xs font-extrabold text-orange-400">{pct}%</p>
+                </div>
+                {!isDistance && todayStats.avgSteps > 0 && (
+                  <p className="text-[11px] text-gray-400 font-semibold">
+                    파티 평균{" "}
+                    <span className="text-orange-400 font-extrabold">
+                      {todayStats.avgSteps.toLocaleString()}보
+                    </span>
+                  </p>
+                )}
+                <div className="w-full h-2 bg-orange-100 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-gradient-to-r from-orange-400 to-primary rounded-full transition-all duration-700"
+                    style={{ width: `${pct}%` }}
+                  />
+                </div>
+
+                {todayStats.topMember && (
+                  <div className="flex items-center gap-3 bg-amber-50 rounded-2xl px-4 py-3">
+                    <div className="relative flex-shrink-0">
+                      <div className="w-12 h-12 rounded-2xl bg-amber-100 flex items-center justify-center overflow-hidden">
+                        {mvpMember?.character_image ? (
+                          <img
+                            src={mvpMember.character_image}
+                            alt={todayStats.topMember.nickname}
+                            className="w-full h-full object-contain"
+                            draggable={false}
+                          />
+                        ) : (
+                          <span className="text-2xl">
+                            {mvpMember?.character_emoji ?? "🏃"}
+                          </span>
+                        )}
                       </div>
-                      <div>
-                        <p className="text-[10px] font-extrabold text-amber-500 uppercase tracking-wide">
-                          오늘의 MVP
-                        </p>
-                        <p className="text-sm font-extrabold text-gray-800 leading-tight">
-                          {todayStats.topMember.nickname}
-                        </p>
-                        <p className="text-xs font-bold text-amber-500">
-                          {todayStats.topMember.steps.toLocaleString()}보
-                        </p>
-                      </div>
+                      <span className="absolute -top-1.5 -right-1.5 text-base leading-none">
+                        🥇
+                      </span>
                     </div>
-                  );
-                })()}
-            </>
-          )}
+                    <div>
+                      <p className="text-[10px] font-extrabold text-amber-500 uppercase tracking-wide">
+                        오늘의 MVP
+                      </p>
+                      <p className="text-sm font-extrabold text-gray-800 leading-tight">
+                        {todayStats.topMember.nickname}
+                      </p>
+                      <p className="text-xs font-bold text-amber-500">{mvpValue}</p>
+                    </div>
+                  </div>
+                )}
+              </>
+            );
+          })()}
         </div>
 
         {/* 파티 멤버 활동 그리드 */}
@@ -961,6 +963,7 @@ export default function PartyDetail() {
                       ? selectedBubbleId
                       : m.active_bubble_id
                   }
+                  goalType={party.goal_type ?? "steps"}
                 />
               ))}
             </div>

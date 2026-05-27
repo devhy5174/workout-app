@@ -134,6 +134,12 @@ public class WorkoutService extends Service implements SensorEventListener {
         return instance != null && instance.gpsActive;
     }
     public static String getStaticRoutePointsJson() {
+        // 서비스가 살아있으면 live 데이터 직접 직렬화 — ACTION_STOP 처리 전 race condition 방지
+        if (instance != null) {
+            try {
+                return new JSONArray(instance.routePoints).toString();
+            } catch (Exception ignored) {}
+        }
         return lastRoutePointsJson;
     }
 

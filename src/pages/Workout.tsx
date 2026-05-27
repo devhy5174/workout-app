@@ -1,7 +1,13 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { FaPlay, FaPause, FaStop, FaUsers } from "react-icons/fa";
-import { IoTime, IoFootsteps, IoLocationSharp, IoFlame, IoSpeedometer } from "react-icons/io5";
+import {
+  IoTime,
+  IoFootsteps,
+  IoLocationSharp,
+  IoFlame,
+  IoSpeedometer,
+} from "react-icons/io5";
 import { MdBatteryAlert, MdDirectionsWalk } from "react-icons/md";
 import AlertModal from "../components/ui/AlertModal";
 import { lazy, Suspense } from "react";
@@ -74,29 +80,32 @@ const ACTIVITY_LABEL: Record<string, string> = {
 
 // 활동 유형별 스탯 레이아웃: primary = 크게 표시, secondary = 3개 소형 카드
 const STAT_LAYOUT = {
-  walker:       { primary: "steps",    secondary: ["calories", "distance", "time"] },
-  power_walker: { primary: "distance", secondary: ["pace",     "time",     "calories"] },
-  runner:       { primary: "distance", secondary: ["pace",     "time",     "calories"] },
-  hiker:        { primary: "distance", secondary: ["time",     "pace",     "calories"] },
+  walker: { primary: "steps", secondary: ["calories", "distance", "time"] },
+  power_walker: {
+    primary: "distance",
+    secondary: ["pace", "time", "calories"],
+  },
+  runner: { primary: "distance", secondary: ["pace", "time", "calories"] },
+  hiker: { primary: "distance", secondary: ["time", "pace", "calories"] },
 } as const;
 
 type StatKey = "time" | "steps" | "distance" | "calories" | "pace";
 
 // 각 stat 키별 아이콘 (large: 1차 카드용, small: 보조 카드용)
 const STAT_ICON_LG = {
-  time:     <IoTime          className="text-3xl text-violet-500" />,
-  steps:    <IoFootsteps     className="text-3xl text-emerald-500" />,
+  time: <IoTime className="text-3xl text-violet-500" />,
+  steps: <IoFootsteps className="text-3xl text-emerald-500" />,
   distance: <IoLocationSharp className="text-3xl text-blue-500" />,
-  calories: <IoFlame         className="text-3xl text-orange-500" />,
-  pace:     <IoSpeedometer   className="text-3xl text-red-500" />,
+  calories: <IoFlame className="text-3xl text-orange-500" />,
+  pace: <IoSpeedometer className="text-3xl text-red-500" />,
 } satisfies Record<StatKey, React.ReactElement>;
 
 const STAT_ICON_SM = {
-  time:     <IoTime          className="text-xl text-violet-500" />,
-  steps:    <IoFootsteps     className="text-xl text-emerald-500" />,
+  time: <IoTime className="text-xl text-violet-500" />,
+  steps: <IoFootsteps className="text-xl text-emerald-500" />,
   distance: <IoLocationSharp className="text-xl text-blue-500" />,
-  calories: <IoFlame         className="text-xl text-orange-500" />,
-  pace:     <IoSpeedometer   className="text-xl text-red-500" />,
+  calories: <IoFlame className="text-xl text-orange-500" />,
+  pace: <IoSpeedometer className="text-xl text-red-500" />,
 } satisfies Record<StatKey, React.ReactElement>;
 
 const SVG_SIZE = 280;
@@ -126,14 +135,16 @@ export default function Workout() {
   const { selectedBubbleId } = useActiveBubble();
 
   // Native는 항상 idle로 시작 — mount 시 getStatus()로 서비스 상태 복구
-  const [state, setState] = useState<WorkoutState>(
-    () => isNative() ? "idle" : (localStorage.getItem(WK_KEY.state) as WorkoutState) ?? "idle",
+  const [state, setState] = useState<WorkoutState>(() =>
+    isNative()
+      ? "idle"
+      : ((localStorage.getItem(WK_KEY.state) as WorkoutState) ?? "idle"),
   );
-  const [steps, setSteps] = useState<number>(
-    () => isNative() ? 0 : Number(localStorage.getItem(WK_KEY.steps) ?? 0),
+  const [steps, setSteps] = useState<number>(() =>
+    isNative() ? 0 : Number(localStorage.getItem(WK_KEY.steps) ?? 0),
   );
-  const [elapsed, setElapsed] = useState<number>(
-    () => isNative() ? 0 : Number(localStorage.getItem(WK_KEY.elapsed) ?? 0),
+  const [elapsed, setElapsed] = useState<number>(() =>
+    isNative() ? 0 : Number(localStorage.getItem(WK_KEY.elapsed) ?? 0),
   );
   const yesterdayPace = useYesterdayPace(user?.id ?? null, elapsed, steps);
   const [showStartModal, setShowStartModal] = useState(false);
@@ -143,7 +154,9 @@ export default function Workout() {
 
   const [showBuddies, setShowBuddies] = useState(true);
   const [tooShort, setTooShort] = useState(false);
-  const [savedRoutePoints, setSavedRoutePoints] = useState<{ lat: number; lng: number; timestamp: number }[]>([]);
+  const [savedRoutePoints, setSavedRoutePoints] = useState<
+    { lat: number; lng: number; timestamp: number }[]
+  >([]);
   const [showPermissionModal, setShowPermissionModal] = useState(false);
   const [permissionDenied, setPermissionDenied] = useState(false);
   const [estimationMode, setEstimationMode] = useState(false);
@@ -151,7 +164,9 @@ export default function Workout() {
 
   // GPS distance tracking (distance/pace only — steps source stays step sensor)
   const [gpsDistance, setGpsDistance] = useState(0); // km
-  const [distanceSource, setDistanceSource] = useState<"gps" | "estimated">("estimated");
+  const [distanceSource, setDistanceSource] = useState<"gps" | "estimated">(
+    "estimated",
+  );
   const gpsDistanceRef = useRef(0);
   const [showGpsModal, setShowGpsModal] = useState(false);
 
@@ -212,8 +227,8 @@ export default function Workout() {
   const stepsPerMin = (STEPS_PER_SEC[actType] ?? STEPS_PER_SEC.walker) * 60;
   // stride: 키 있으면 신체 기반(height × 0.415 / 100 m), 없으면 기본 0.7m
   const stride = userProfile?.height ? (userProfile.height * 0.415) / 100 : 0.7;
-  const distance = parseFloat((steps * stride / 1000).toFixed(2));
-  const calories = Math.floor(steps * kcalPerMin / stepsPerMin);
+  const distance = parseFloat(((steps * stride) / 1000).toFixed(2));
+  const calories = Math.floor((steps * kcalPerMin) / stepsPerMin);
   const elapsedMin = Math.floor(elapsed / 60);
   const elapsedSec = elapsed % 60;
   const durationLabel =
@@ -282,21 +297,35 @@ export default function Workout() {
   };
 
   // overrideSteps/overrideElapsed: handleStop에서 서비스 종료 전 가져온 정확한 값
-  const performSave = async (overrideSteps?: number, overrideElapsed?: number) => {
+  const performSave = async (
+    overrideSteps?: number,
+    overrideElapsed?: number,
+  ) => {
     if (isSaved.current) return;
     isSaved.current = true;
 
     const finalSteps = overrideSteps ?? stepsRef.current;
     const currentElapsedRef = overrideElapsed ?? elapsedRef.current;
-    const strideVal = userProfile?.height ? (userProfile.height * 0.415) / 100 : 0.7;
-    const estimatedDistance = parseFloat((finalSteps * strideVal / 1000).toFixed(2));
+    const strideVal = userProfile?.height
+      ? (userProfile.height * 0.415) / 100
+      : 0.7;
+    const estimatedDistance = parseFloat(
+      ((finalSteps * strideVal) / 1000).toFixed(2),
+    );
     // Prefer GPS distance when available — more accurate for runner/hiker
     const gpsKm = gpsDistanceRef.current;
-    const finalDistance = gpsKm > 0 ? parseFloat(gpsKm.toFixed(2)) : estimatedDistance;
-    const finalDistanceSource: "gps" | "estimated" = gpsKm > 0 ? "gps" : "estimated";
+    const finalDistance =
+      gpsKm > 0 ? parseFloat(gpsKm.toFixed(2)) : estimatedDistance;
+    const finalDistanceSource: "gps" | "estimated" =
+      gpsKm > 0 ? "gps" : "estimated";
 
     if (currentElapsedRef < 30 || finalSteps < 50) {
-      console.warn("[performSave] 너무 짧은 운동 — elapsed:", currentElapsedRef, "finalSteps:", finalSteps);
+      console.warn(
+        "[performSave] 너무 짧은 운동 — elapsed:",
+        currentElapsedRef,
+        "finalSteps:",
+        finalSteps,
+      );
       setTooShort(true);
       clearWorkoutSession();
       if (user) endSession(user.id);
@@ -304,7 +333,7 @@ export default function Workout() {
     }
     setTooShort(false);
 
-    const currentCalories = Math.floor(finalSteps * kcalPerMin / stepsPerMin);
+    const currentCalories = Math.floor((finalSteps * kcalPerMin) / stepsPerMin);
     const currentElapsed = currentElapsedRef;
 
     if (user) endSession(user.id);
@@ -334,7 +363,9 @@ export default function Workout() {
         : undefined;
 
     // GPS 경로 수집 — 네이티브에서 직렬화된 JSON 읽어옴
-    let routePoints: { lat: number; lng: number; timestamp: number }[] | undefined;
+    let routePoints:
+      | { lat: number; lng: number; timestamp: number }[]
+      | undefined;
     if (isNative()) {
       try {
         const { json } = await WorkoutNative.getRoutePoints();
@@ -382,7 +413,8 @@ export default function Workout() {
     try {
       const batteryGuideShown = localStorage.getItem("battery_guide_shown");
       if (!batteryGuideShown) {
-        const { excluded } = await WorkoutNative.isBatteryOptimizationExcluded();
+        const { excluded } =
+          await WorkoutNative.isBatteryOptimizationExcluded();
         if (!excluded) {
           setShowBatteryGuide(true);
           return;
@@ -406,7 +438,8 @@ export default function Workout() {
         return;
       }
       // 2. GPS 권한: 없으면 자체 안내 모달 먼저 — 바로 Android 팝업 노출하지 않음
-      const { granted: gpsGranted } = await WorkoutNative.checkLocationPermission();
+      const { granted: gpsGranted } =
+        await WorkoutNative.checkLocationPermission();
       if (!gpsGranted) {
         setShowGpsModal(true);
         return; // 이후 플로우는 GPS 모달 버튼 콜백에서 처리
@@ -503,7 +536,6 @@ export default function Workout() {
     return () => document.removeEventListener("visibilitychange", onVisible);
   }, [state]);
 
-
   // 세션 시작/종료
   useEffect(() => {
     if (state === "running" && user) {
@@ -544,7 +576,9 @@ export default function Workout() {
       try {
         const status = await WorkoutNative.getStatus();
         if (status.isRunning) {
-          const targetState: WorkoutState = status.isPaused ? "paused" : "running";
+          const targetState: WorkoutState = status.isPaused
+            ? "paused"
+            : "running";
           // 현재 state와 다를 때만 flag 설정 (같으면 effect가 다시 안 뜨므로 불필요)
           if (stateRef.current !== targetState) {
             isRestoredSessionRef.current = true;
@@ -556,7 +590,10 @@ export default function Workout() {
           setElapsed(nativeElapsed);
           elapsedRef.current = nativeElapsed;
           setState(targetState);
-        } else if (stateRef.current === "running" || stateRef.current === "paused") {
+        } else if (
+          stateRef.current === "running" ||
+          stateRef.current === "paused"
+        ) {
           // 서비스가 종료됐는데 React는 진행 중으로 알고 있는 경우 (알림에서 종료)
           clearWorkoutSession();
           setState("idle");
@@ -622,7 +659,10 @@ export default function Workout() {
       // GPS distance: monotonically increasing, only update when GPS is active
       if (data.distanceSource === "gps" && data.gpsDistance > 0) {
         setGpsDistance((prev) => Math.max(prev, data.gpsDistance));
-        gpsDistanceRef.current = Math.max(gpsDistanceRef.current, data.gpsDistance);
+        gpsDistanceRef.current = Math.max(
+          gpsDistanceRef.current,
+          data.gpsDistance,
+        );
         setDistanceSource("gps");
       }
     })
@@ -666,25 +706,39 @@ export default function Workout() {
   }, [state]);
 
   // GPS 우선 거리 (steps 기반 추정의 fallback)
-  const effectiveDistance = distanceSource === "gps" && gpsDistance > 0 ? gpsDistance : distance;
+  const effectiveDistance =
+    distanceSource === "gps" && gpsDistance > 0 ? gpsDistance : distance;
 
   // 러너 페이스 계산 — GPS 거리 기준 (없으면 추정 거리)
-  const paceMinPerKm = effectiveDistance > 0 ? (elapsed / 60) / effectiveDistance : 0;
-  const paceStr = effectiveDistance > 0
-    ? `${Math.floor(paceMinPerKm)}'${String(Math.round((paceMinPerKm % 1) * 60)).padStart(2, "0")}"`
-    : `--'--"`;
+  const paceMinPerKm =
+    effectiveDistance > 0 ? elapsed / 60 / effectiveDistance : 0;
+  const paceStr =
+    effectiveDistance > 0
+      ? `${Math.floor(paceMinPerKm)}'${String(Math.round((paceMinPerKm % 1) * 60)).padStart(2, "0")}"`
+      : `--'--"`;
 
   // 활동 유형별 스탯 데이터
-  const allStatItems: Record<StatKey, { label: string; value: string; unit: string }> = {
-    time:     { label: "시간",   value: formatTime(elapsed),           unit: "시간" },
-    steps:    { label: "걸음수", value: steps.toLocaleString(),        unit: "보" },
-    distance: { label: "거리",   value: effectiveDistance.toFixed(2),  unit: "km" },
-    calories: { label: "칼로리", value: String(calories),              unit: "kcal" },
-    pace:     { label: "페이스", value: paceStr,                       unit: "/km" },
+  const allStatItems: Record<
+    StatKey,
+    { label: string; value: string; unit: string }
+  > = {
+    time: { label: "시간", value: formatTime(elapsed), unit: "시간" },
+    steps: { label: "걸음수", value: steps.toLocaleString(), unit: "보" },
+    distance: {
+      label: "거리",
+      value: effectiveDistance.toFixed(2),
+      unit: "km",
+    },
+    calories: { label: "칼로리", value: String(calories), unit: "kcal" },
+    pace: { label: "페이스", value: paceStr, unit: "/km" },
   };
 
-  const statLayout = STAT_LAYOUT[actType as keyof typeof STAT_LAYOUT] ?? STAT_LAYOUT.walker;
-  const primaryStat = { ...allStatItems[statLayout.primary], iconLg: STAT_ICON_LG[statLayout.primary] };
+  const statLayout =
+    STAT_LAYOUT[actType as keyof typeof STAT_LAYOUT] ?? STAT_LAYOUT.walker;
+  const primaryStat = {
+    ...allStatItems[statLayout.primary],
+    iconLg: STAT_ICON_LG[statLayout.primary],
+  };
   const secondaryStats = statLayout.secondary.map((k) => ({
     ...allStatItems[k],
     iconSm: STAT_ICON_SM[k],
@@ -731,7 +785,11 @@ export default function Workout() {
       {/* 목표 뱃지 */}
       <div className="flex flex-col items-center  mt-1 mb-0">
         {userGoal ? (
-          <span className="text-xs font-bold px-3 py-1 rounded-full bg-white shadow-sm text-gray-500">
+          <button
+            onClick={() => navigate("/mypage?tab=info")}
+            aria-label="운동 목표 설정"
+            className="text-xs font-bold px-3 py-1 rounded-full bg-white shadow-sm text-gray-500 active:scale-95 transition"
+          >
             🎯 {GOAL_TYPE_LABEL[userGoal.goal_type]} 목표 ·{" "}
             {goalValue.toLocaleString()}
             {userGoal.goal_type === "steps"
@@ -739,11 +797,15 @@ export default function Workout() {
               : userGoal.goal_type === "distance"
                 ? "km"
                 : "kcal"}
-          </span>
+          </button>
         ) : (
-          <span className="text-xs text-gray-400">
+          <button
+            onClick={() => navigate("/mypage?tab=info")}
+            aria-label="운동 목표 설정"
+            className="text-xs text-gray-400 active:scale-95 transition"
+          >
             목표 없음 · 기본 5,000보
-          </span>
+          </button>
         )}
         {/* 오늘 누적 */}
         <p className="text-[11px] text-gray-400 mt-1 font-semibold">
@@ -836,37 +898,39 @@ export default function Workout() {
               50%       { transform: translateY(-6px); }
             }
           `}</style>
-          {showBuddies && buddies.map((buddy, i) => {
-            const isRight = i === 0;
-            return (
-              <div
-                key={i}
-                className="absolute flex flex-col items-center pointer-events-none"
-                style={{
-                  top: CY - 18,
-                  ...(isRight
-                    ? { left: CX + RADIUS + STROKE_W + 6 }
-                    : { right: SVG_SIZE - (CX - RADIUS - STROKE_W - 6) }),
-                  animation: `buddy-float ${3 + i * 0.7}s ease-in-out infinite`,
-                  animationDelay: `${i * 0.4}s`,
-                }}
-              >
-                <div className="bg-white shadow-sm rounded-full px-2 py-0.5 flex items-center gap-1 whitespace-nowrap mb-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse flex-shrink-0" />
-                  <span className="text-[8px] font-bold text-gray-600">
-                    {buddy.nickname} {ACTIVITY_LABEL[buddy.activity] ?? "운동 중"}
-                  </span>
+          {showBuddies &&
+            buddies.map((buddy, i) => {
+              const isRight = i === 0;
+              return (
+                <div
+                  key={i}
+                  className="absolute flex flex-col items-center pointer-events-none"
+                  style={{
+                    top: CY - 18,
+                    ...(isRight
+                      ? { left: CX + RADIUS + STROKE_W + 6 }
+                      : { right: SVG_SIZE - (CX - RADIUS - STROKE_W - 6) }),
+                    animation: `buddy-float ${3 + i * 0.7}s ease-in-out infinite`,
+                    animationDelay: `${i * 0.4}s`,
+                  }}
+                >
+                  <div className="bg-white shadow-sm rounded-full px-2 py-0.5 flex items-center gap-1 whitespace-nowrap mb-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse flex-shrink-0" />
+                    <span className="text-[8px] font-bold text-gray-600">
+                      {buddy.nickname}{" "}
+                      {ACTIVITY_LABEL[buddy.activity] ?? "운동 중"}
+                    </span>
+                  </div>
+                  <div className="w-9 h-9 rounded-full bg-white shadow-md border-2 border-white overflow-hidden">
+                    <img
+                      src={buddy.character_image}
+                      alt={buddy.nickname}
+                      className="w-full h-full object-contain"
+                    />
+                  </div>
                 </div>
-                <div className="w-9 h-9 rounded-full bg-white shadow-md border-2 border-white overflow-hidden">
-                  <img
-                    src={buddy.character_image}
-                    alt={buddy.nickname}
-                    className="w-full h-full object-contain"
-                  />
-                </div>
-              </div>
-            );
-          })}
+              );
+            })}
 
           <div className="absolute inset-0 flex flex-col items-center justify-center select-none">
             {state === "idle" && (
@@ -957,9 +1021,13 @@ export default function Workout() {
                     <p className="font-extrabold text-3xl text-gray-800 leading-none">
                       {primaryStat.value}
                     </p>
-                    <p className="text-sm text-gray-400 font-semibold">{primaryStat.unit}</p>
+                    <p className="text-sm text-gray-400 font-semibold">
+                      {primaryStat.unit}
+                    </p>
                   </div>
-                  {(actType === "runner" || actType === "hiker" || actType === "power_walker") &&
+                  {(actType === "runner" ||
+                    actType === "hiker" ||
+                    actType === "power_walker") &&
                     (state === "running" || state === "paused") && (
                       <span
                         className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full self-start ${
@@ -1004,7 +1072,9 @@ export default function Workout() {
                 <p className="font-extrabold text-4xl text-gray-800 leading-none">
                   {primaryStat.value}
                 </p>
-                <p className="text-sm text-gray-400 font-semibold">{primaryStat.unit}</p>
+                <p className="text-sm text-gray-400 font-semibold">
+                  {primaryStat.unit}
+                </p>
               </div>
             </div>
           )}
@@ -1182,7 +1252,6 @@ export default function Workout() {
                 setShowStartModal(false);
                 startWorkoutWithPermission();
               }}
-
               className="w-full py-4 rounded-2xl text-white font-extrabold text-base active:scale-95 transition shadow-md"
               style={{
                 background:
@@ -1240,7 +1309,8 @@ export default function Workout() {
           message={
             <div className="space-y-2 text-center">
               <p>
-                일부 기기(삼성 등)에서 배터리 절약으로 인해<br />
+                일부 기기(삼성 등)에서 배터리 절약으로 인해
+                <br />
                 운동 기록이 중단될 수 있어요.
               </p>
               <p className="text-gray-700 font-semibold">
@@ -1275,15 +1345,18 @@ export default function Workout() {
           title="걸음 수 측정 권한 필요"
           message={
             <span>
-              함께걸어요가 걸음 수를 정확히 측정하려면<br />
-              <strong className="text-gray-700">신체 활동 권한</strong>이 필요해요.<br />
-              이 권한은 운동 중 걸음 수 측정에만 사용됩니다.
+              함께걸어요가 걸음 수를 정확히 측정하려면
+              <br />
+              <strong className="text-gray-700">신체 활동 권한</strong>이
+              필요해요.
+              <br />이 권한은 운동 중 걸음 수 측정에만 사용됩니다.
             </span>
           }
           confirmLabel="권한 허용하기"
           onConfirm={async () => {
             try {
-              const { granted } = await WorkoutNative.requestActivityPermission();
+              const { granted } =
+                await WorkoutNative.requestActivityPermission();
               if (granted) {
                 setShowPermissionModal(false);
                 setState("running");
@@ -1309,8 +1382,10 @@ export default function Workout() {
           message={
             <div className="space-y-2 text-center">
               <p>
-                권한 없이도 운동을 계속할 수 있어요.<br />
-                걸음 수는 선택한 활동 유형의<br />
+                권한 없이도 운동을 계속할 수 있어요.
+                <br />
+                걸음 수는 선택한 활동 유형의
+                <br />
                 평균 보폭으로 자동 계산됩니다.
               </p>
               <p className="text-orange-400 font-semibold text-xs">
@@ -1376,7 +1451,10 @@ export default function Workout() {
                     style={{ background: "var(--color-primary-light)" }}
                   >
                     <span className="text-lg">🏆</span>
-                    <span className="text-sm font-bold" style={{ color: "var(--color-primary)" }}>
+                    <span
+                      className="text-sm font-bold"
+                      style={{ color: "var(--color-primary)" }}
+                    >
                       목표 달성 완료!
                     </span>
                   </div>
@@ -1395,11 +1473,15 @@ export default function Workout() {
                           <span className="font-extrabold text-4xl text-gray-800 leading-none">
                             {effectiveDistance.toFixed(2)}
                           </span>
-                          <span className="text-sm text-gray-400 font-semibold">km</span>
+                          <span className="text-sm text-gray-400 font-semibold">
+                            km
+                          </span>
                         </div>
                         <div className="flex items-center gap-1.5">
-                          <span className="text-xs text-gray-400 font-semibold">거리</span>
-                          {(state === "idle") && (
+                          <span className="text-xs text-gray-400 font-semibold">
+                            거리
+                          </span>
+                          {state === "idle" && (
                             <span
                               className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
                                 distanceSource === "gps"
@@ -1418,9 +1500,13 @@ export default function Workout() {
                           <span className="font-extrabold text-4xl text-gray-800 leading-none">
                             {steps.toLocaleString()}
                           </span>
-                          <span className="text-sm text-gray-400 font-semibold">보</span>
+                          <span className="text-sm text-gray-400 font-semibold">
+                            보
+                          </span>
                         </div>
-                        <span className="text-xs text-gray-400 font-semibold">걸음수</span>
+                        <span className="text-xs text-gray-400 font-semibold">
+                          걸음수
+                        </span>
                       </div>
                     </div>
                   ) : (
@@ -1433,26 +1519,76 @@ export default function Workout() {
                         <span className="font-extrabold text-5xl text-gray-800 leading-none">
                           {steps.toLocaleString()}
                         </span>
-                        <span className="text-base text-gray-400 font-semibold">보</span>
+                        <span className="text-base text-gray-400 font-semibold">
+                          보
+                        </span>
                       </div>
-                      <span className="text-xs text-gray-400 font-semibold">총 걸음수</span>
+                      <span className="text-xs text-gray-400 font-semibold">
+                        총 걸음수
+                      </span>
                     </div>
                   )}
                 </div>
 
                 {/* 보조 스탯 그리드 */}
                 {(() => {
-                  const resultStats = statLayout.primary === "distance"
-                    ? [
-                        { icon: <IoSpeedometer className="text-lg text-indigo-500" />, label: "페이스",  value: paceStr,                      unit: "/km"  },
-                        { icon: <IoTime        className="text-lg text-violet-500"  />, label: "시간",    value: durationLabel,                 unit: ""     },
-                        { icon: <IoFlame       className="text-lg text-orange-500"  />, label: "칼로리",  value: `${calories}`,                 unit: "kcal" },
-                      ]
-                    : [
-                        { icon: <IoLocationSharp className="text-lg text-blue-500"   />, label: distanceSource === "gps" ? "거리 GPS" : "거리 추정", value: effectiveDistance.toFixed(2), unit: "km"   },
-                        { icon: <IoTime          className="text-lg text-violet-500" />, label: "시간",   value: durationLabel,                 unit: ""     },
-                        { icon: <IoFlame         className="text-lg text-orange-500" />, label: "칼로리", value: `${calories}`,                 unit: "kcal" },
-                      ];
+                  const resultStats =
+                    statLayout.primary === "distance"
+                      ? [
+                          {
+                            icon: (
+                              <IoSpeedometer className="text-lg text-indigo-500" />
+                            ),
+                            label: "페이스",
+                            value: paceStr,
+                            unit: "/km",
+                          },
+                          {
+                            icon: (
+                              <IoTime className="text-lg text-violet-500" />
+                            ),
+                            label: "시간",
+                            value: durationLabel,
+                            unit: "",
+                          },
+                          {
+                            icon: (
+                              <IoFlame className="text-lg text-orange-500" />
+                            ),
+                            label: "칼로리",
+                            value: `${calories}`,
+                            unit: "kcal",
+                          },
+                        ]
+                      : [
+                          {
+                            icon: (
+                              <IoLocationSharp className="text-lg text-blue-500" />
+                            ),
+                            label:
+                              distanceSource === "gps"
+                                ? "거리 GPS"
+                                : "거리 추정",
+                            value: effectiveDistance.toFixed(2),
+                            unit: "km",
+                          },
+                          {
+                            icon: (
+                              <IoTime className="text-lg text-violet-500" />
+                            ),
+                            label: "시간",
+                            value: durationLabel,
+                            unit: "",
+                          },
+                          {
+                            icon: (
+                              <IoFlame className="text-lg text-orange-500" />
+                            ),
+                            label: "칼로리",
+                            value: `${calories}`,
+                            unit: "kcal",
+                          },
+                        ];
                   return (
                     <div className="px-5 pt-3">
                       <div className="grid grid-cols-3 gap-2">
@@ -1467,10 +1603,14 @@ export default function Workout() {
                                 {s.value}
                               </span>
                               {s.unit && (
-                                <span className="text-[10px] text-gray-400 font-semibold">{s.unit}</span>
+                                <span className="text-[10px] text-gray-400 font-semibold">
+                                  {s.unit}
+                                </span>
                               )}
                             </div>
-                            <span className="text-[10px] text-gray-400">{s.label}</span>
+                            <span className="text-[10px] text-gray-400">
+                              {s.label}
+                            </span>
                           </div>
                         ))}
                       </div>
@@ -1482,19 +1622,28 @@ export default function Workout() {
                 {savedRoutePoints.length >= 2 && (
                   <div className="px-5 pb-2">
                     <div className="rounded-2xl overflow-hidden relative">
-                      <Suspense fallback={
-                        <div className="w-full h-[180px] bg-gray-100 rounded-2xl flex items-center justify-center">
-                          <span className="text-gray-400 text-sm">🗺️ 지도 로딩 중...</span>
-                        </div>
-                      }>
+                      <Suspense
+                        fallback={
+                          <div className="w-full h-[180px] bg-gray-100 rounded-2xl flex items-center justify-center">
+                            <span className="text-gray-400 text-sm">
+                              🗺️ 지도 로딩 중...
+                            </span>
+                          </div>
+                        }
+                      >
                         <RouteMap points={savedRoutePoints} small />
                       </Suspense>
                       <div className="flex items-center gap-3 mt-2 px-1">
                         <span className="flex items-center gap-1 text-[11px] text-gray-400 font-semibold">
-                          <span className="w-2.5 h-2.5 rounded-full bg-green-500 inline-block" /> 출발
+                          <span className="w-2.5 h-2.5 rounded-full bg-green-500 inline-block" />{" "}
+                          출발
                         </span>
                         <span className="flex items-center gap-1 text-[11px] text-gray-400 font-semibold">
-                          <span className="w-2.5 h-2.5 rounded-full inline-block" style={{ background: "var(--color-primary)" }} /> 도착
+                          <span
+                            className="w-2.5 h-2.5 rounded-full inline-block"
+                            style={{ background: "var(--color-primary)" }}
+                          />{" "}
+                          도착
                         </span>
                         <span className="ml-auto text-[11px] text-gray-400 font-semibold">
                           {savedRoutePoints.length}개 좌표
