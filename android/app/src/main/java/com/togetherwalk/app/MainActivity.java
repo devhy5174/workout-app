@@ -1,6 +1,8 @@
 package com.togetherwalk.app;
 
 import android.Manifest;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import androidx.core.app.ActivityCompat;
@@ -12,7 +14,19 @@ public class MainActivity extends BridgeActivity {
     public void onCreate(android.os.Bundle savedInstanceState) {
         registerPlugin(WorkoutPlugin.class);
         super.onCreate(savedInstanceState);
+        createPushNotificationChannel();
         requestRuntimePermissions();
+    }
+
+    private void createPushNotificationChannel() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            NotificationChannel ch = new NotificationChannel(
+                "default", "알림", NotificationManager.IMPORTANCE_HIGH);
+            ch.setDescription("파티·목표·스트릭 등 앱 알림");
+            ch.enableVibration(true);
+            ((NotificationManager) getSystemService(NOTIFICATION_SERVICE))
+                .createNotificationChannel(ch);
+        }
     }
 
     private void requestRuntimePermissions() {
