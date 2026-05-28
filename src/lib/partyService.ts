@@ -463,7 +463,7 @@ export async function getAchievedPartiesForUser(
   const partyIds = memberRows.map((r: any) => r.party_id);
   const { data: parties } = await supabase
     .from("parties")
-    .select("id, name, target_steps, max_members")
+    .select("id, name, target_steps")
     .in("id", partyIds);
 
   if (!parties || parties.length === 0) return [];
@@ -474,15 +474,16 @@ export async function getAchievedPartiesForUser(
   const achieved: AchievedParty[] = [];
 
   for (const party of parties) {
-    const targetTotal = (party.target_steps ?? 0) * party.max_members;
-    if (targetTotal <= 0) continue;
-
     const { data: members } = await supabase
       .from("party_members")
       .select("user_id")
       .eq("party_id", party.id);
 
     if (!members || members.length === 0) continue;
+
+    // 실제 가입 인원 기준으로 목표 계산
+    const targetTotal = (party.target_steps ?? 0) * members.length;
+    if (targetTotal <= 0) continue;
 
     const memberUserIds = members.map((m: any) => m.user_id);
     const { data: workouts } = await supabase

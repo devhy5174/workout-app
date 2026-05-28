@@ -61,7 +61,21 @@ export async function createNotification(
   notification: Omit<Notification, "id" | "created_at">,
 ): Promise<{ error: string | null }> {
   const { error } = await supabase.from("notifications").insert(notification);
-  return { error: error?.message ?? null };
+  if (error) return { error: error.message };
+
+  // FCM 푸시 발송 (Android) — fire-and-forget
+  supabase.functions.invoke("notify-fcm", {
+    body: {
+      userIds: [notification.user_id],
+      notification: {
+        title: notification.title,
+        body: notification.body,
+        data: notification.data ?? {},
+      },
+    },
+  }).catch(() => {});
+
+  return { error: null };
 }
 
 // 개발/테스트용: Edge Function 수동 트리거
