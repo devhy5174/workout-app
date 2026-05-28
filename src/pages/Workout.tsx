@@ -171,6 +171,7 @@ export default function Workout() {
   const [showGpsModal, setShowGpsModal] = useState(false);
 
   const isSaved = useRef(false);
+  const lastSavedAt = useRef<number>(0);
   const wakeLockRef = useRef<WakeLockSentinel | null>(null);
   const stepsRef = useRef(steps);
   const isRestoredSessionRef = useRef(false);
@@ -302,7 +303,10 @@ export default function Workout() {
     overrideElapsed?: number,
   ) => {
     if (isSaved.current) return;
+    const now = Date.now();
+    if (now - lastSavedAt.current < 60_000) return;
     isSaved.current = true;
+    lastSavedAt.current = now;
 
     const finalSteps = overrideSteps ?? stepsRef.current;
     const currentElapsedRef = overrideElapsed ?? elapsedRef.current;
