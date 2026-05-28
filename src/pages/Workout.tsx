@@ -593,6 +593,12 @@ export default function Workout() {
           stepsRef.current = nativeSteps;
           setElapsed(nativeElapsed);
           elapsedRef.current = nativeElapsed;
+          const nativeGpsKm = status.gpsDistanceKm ?? 0;
+          if (nativeGpsKm > 0) {
+            setGpsDistance(nativeGpsKm);
+            gpsDistanceRef.current = nativeGpsKm;
+            setDistanceSource("gps");
+          }
           setState(targetState);
         } else if (
           stateRef.current === "running" ||
