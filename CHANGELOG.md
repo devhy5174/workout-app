@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.0.18] — 2026-05-28
+
+### 산책러 GPS 지도 + 알림 UI 수정 + 스플래시 텍스트
+
+- `Workout.tsx`: 산책러(walker) 보조 거리 카드에 GPS 배지(`📍 GPS` / `📍 추정`) 추가 — 운동 중 GPS 활성 여부 실시간 표시
+- `activityTypes.ts`: 산책러 style 문구 "걸음수 중심으로 가볍게 걷기" → "걸음수 + GPS 거리 · 가볍게 걷기" — 활동 유형 선택 카드에서 GPS 거리 지원 명시
+- `notification_workout_compact.xml`: 컴팩트 알림 루트 패딩 `4dp → 0dp` — Android 12+ 시스템 content 영역 내에서 거리·칼로리 줄 및 상태 텍스트가 잘리던 문제 수정
+- `splash_layout.xml`: 스플래시 화면 아이콘 하단에 "함께걸어요" 텍스트(22sp · bold · 흰색) 추가
+
+---
+
 ## [1.0.16] — 2026-05-28
 
 ### FCM 푸시 알림 연결 + 파티 달성 기준 수정

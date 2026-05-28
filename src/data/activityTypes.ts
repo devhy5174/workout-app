@@ -43,7 +43,7 @@ export const activityTypes: ActivityType[] = [
     type: "walker",
     emoji: "🚶",
     name: "산책러",
-    style: "걸음수 중심으로 가볍게 걷기",
+    style: "걸음수 + GPS 거리 · 가볍게 걷기",
     kcalPerMin: 3,
     gradient: "from-green-400 to-teal-400",
     bg: "bg-green-50",

@@ -12,4 +12,14 @@
         android:src="@mipmap/ic_launcher_foreground"
         android:contentDescription="함께걸어요 로고" />
 
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="함께걸어요"
+        android:textSize="22sp"
+        android:textStyle="bold"
+        android:textColor="#FFFFFF"
+        android:layout_marginTop="12dp"
+        android:letterSpacing="0.05" />
+
 </LinearLayout>

@@ -1100,6 +1100,19 @@ export default function Workout() {
                   {s.value}
                 </p>
                 <p className="text-[10px] text-gray-400">{s.unit}</p>
+                {actType === "walker" &&
+                  s.label === "거리" &&
+                  (state === "running" || state === "paused") && (
+                    <span
+                      className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full ${
+                        distanceSource === "gps"
+                          ? "bg-emerald-100 text-emerald-600"
+                          : "bg-gray-100 text-gray-400"
+                      }`}
+                    >
+                      {distanceSource === "gps" ? "📍 GPS" : "📍 추정"}
+                    </span>
+                  )}
               </div>
             ))}
           </div>
