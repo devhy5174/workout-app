@@ -8,6 +8,11 @@
 - `notify-push/index.ts`: `x-cron-secret` 전용이던 인증을 JWT `Authorization` 헤더도 허용하도록 수정 — 클라이언트에서 직접 호출 가능
 - `partyService.ts`: `getAchievedPartiesForUser` 파티 달성 배너 목표 계산을 `max_members`(최대 정원) → `members.length`(실제 가입 인원) 기준으로 수정
 - `CLAUDE.md`: Supabase 테이블 스키마 최신화 (`is_premium`, `premium_expires_at`, `source_type`, `source_id`, `source_date`, `frame_id`, `goal_type`, `target_distance`, `event_grants`, `events`, `fcm_tokens` 반영)
+- `MainActivity.java`: FCM 푸시 알림 채널 `"default"` 등록 (IMPORTANCE_HIGH) — 기존 `"workout_channel"`만 있어 FCM 메시지가 묻히던 문제 수정
+
+### DB 정책 변경 (Supabase Dashboard)
+
+- `community_posts` INSERT RLS에 `"파티 달성 자동 인증글"` 정책 추가 (`WITH CHECK (source_type = 'party_goal')`) — 파티원 누구나 PartyDetail 진입 시 목표 달성 자동 인증글을 올릴 수 있도록 허용, 기존 "본인만 작성" 정책은 일반 글에 그대로 유지
 
 ---
 

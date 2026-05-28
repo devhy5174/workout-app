@@ -125,6 +125,7 @@ npm run build && npx cap sync android
   - `source_type='party_goal'` / `source_id=partyId` / `source_date=오늘` DB 저장
   - unique index로 같은 파티·같은 날 중복 방지 (23505 조용히 스킵)
   - localStorage 빠른 사전차단 + active_sessions 갱신 시 실시간 달성 감지
+  - RLS: `community_posts` INSERT에 `"파티 달성 자동 인증글"` 정책 추가 필요 — 파티원 누구나 트리거 가능하도록 (`WITH CHECK (source_type = 'party_goal')`)
 
 ### ⚙️ 설정
 
