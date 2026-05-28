@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.0.16] — 2026-05-28
+
+### FCM 푸시 알림 연결 + 파티 달성 기준 수정
+
+- `notificationService.ts`: `createNotification()` 이후 `notify-fcm` Edge Function 호출 추가 — 목표 달성·스트릭 경고·식단 리마인더 알림이 인앱 저장에만 머물던 것을 실제 FCM 푸시로 발송되도록 수정
+- `notify-push/index.ts`: `x-cron-secret` 전용이던 인증을 JWT `Authorization` 헤더도 허용하도록 수정 — 클라이언트에서 직접 호출 가능
+- `partyService.ts`: `getAchievedPartiesForUser` 파티 달성 배너 목표 계산을 `max_members`(최대 정원) → `members.length`(실제 가입 인원) 기준으로 수정
+- `CLAUDE.md`: Supabase 테이블 스키마 최신화 (`is_premium`, `premium_expires_at`, `source_type`, `source_id`, `source_date`, `frame_id`, `goal_type`, `target_distance`, `event_grants`, `events`, `fcm_tokens` 반영)
+
+---
+
 ## [1.0.15] — 2026-05-27
 
 ### Android Foreground Service 배터리 최적화
