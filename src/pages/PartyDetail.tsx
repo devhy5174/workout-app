@@ -1197,7 +1197,8 @@ export default function PartyDetail() {
         party &&
         (() => {
           const { verb, emoji } = resolveActivityLabel(party.tags);
-          const previewBody = `파티장 ${userProfile?.nickname ?? "방장"}님이 "${party.name}" 운동을 시작했습니다. 같이 ${verb} ${emoji}`;
+          const previewTitle = `"${party.name}" 파티가 시작됐어요!`;
+          const previewBody = `${userProfile?.nickname ?? "방장"}님이 출발했어요! ${emoji} 우리도 얼른 가볼까요?`;
           return (
             <AlertModal
               icon={HiBell}
@@ -1212,7 +1213,7 @@ export default function PartyDetail() {
                     <span className="text-xl shrink-0">🔔</span>
                     <div className="flex flex-col gap-0.5">
                       <p className="text-xs font-extrabold text-gray-700">
-                        파티 운동이 시작됐어요!
+                        {previewTitle}
                       </p>
                       <p className="text-[11px] text-gray-400 leading-relaxed">
                         {previewBody}

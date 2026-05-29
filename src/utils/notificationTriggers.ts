@@ -73,8 +73,8 @@ export async function notifyGoalReached(params: {
   await createNotification({
     user_id: params.userId,
     type: "goal_reached",
-    title: "목표 달성! 🎯",
-    body: `오늘 ${label} 목표를 달성했어요! 정말 멋집니다. 내일도 함께 걸어요.`,
+    title: "🎯 목표 달성! 정말 대단해요!",
+    body: `오늘 ${label} 다 채웠어요 💪 내일도 함께해요!`,
     data: { goal_type: params.goalType, goal_value: params.goalValue },
     is_read: false,
   });

@@ -91,8 +91,8 @@ Deno.serve(async (req) => {
   const notifications = member_ids.map((userId) => ({
     user_id: userId,
     type: "party_started",
-    title: "파티 운동이 시작됐어요!",
-    body: `${leader_nickname}님이 "${party_name}" 운동을 시작했습니다. 같이 ${verb} ${emoji}`,
+    title: `"${party_name}" 파티가 시작됐어요!`,
+    body: `${leader_nickname}님이 출발했어요! ${emoji} 우리도 얼른 가볼까요?`,
     data: { party_id },
     is_read: false,
   }));
@@ -116,8 +116,8 @@ Deno.serve(async (req) => {
   const pushBody = JSON.stringify({
     userIds: member_ids,
     notification: {
-      title: "파티 운동이 시작됐어요!",
-      body: `${leader_nickname}님이 "${party_name}" 운동을 시작했습니다. 같이 ${verb} ${emoji}`,
+      title: `"${party_name}" 파티가 시작됐어요!`,
+      body: `${leader_nickname}님이 출발했어요! ${emoji} 우리도 얼른 가볼까요?`,
       data: { type: "party_started", party_id },
     },
   });

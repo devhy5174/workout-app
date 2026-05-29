@@ -99,8 +99,8 @@ Deno.serve(async (req) => {
           notifications = finalTargets.map((userId) => ({
             user_id: userId,
             type: "streak_warning",
-            title: "☀️ 오늘의 첫 걸음, 시작해볼까요?",
-            body: "아직 오늘 운동 기록이 없어요.\n10분 산책만으로도 하루가 달라집니다.",
+            title: "☀️ 오늘의 첫 걸음, 저랑 같이 시작해요!",
+            body: "아직 오늘 운동 기록이 없어요. 10분만 걸어도 하루가 달라진답니다 🐾",
             data: { schedule: "activity_reminder" },
             is_read: false,
           }));
@@ -139,8 +139,8 @@ Deno.serve(async (req) => {
           notifications = targets.map((userId) => ({
             user_id: userId,
             type: "diet_reminder",
-            title: "점심 후 10분 걷기 🌿",
-            body: "점심 식사 후 가볍게 걸으면 칼로리 소모에 큰 도움이 돼요!",
+            title: "🥗 밥 먹고 저랑 10분만 걸어요!",
+            body: "식사 후 가볍게 걸으면 혈당도 잡히고 기분도 좋아져요 🌿",
             data: { schedule: "diet_lunch" },
             is_read: false,
           }));
@@ -252,11 +252,11 @@ Deno.serve(async (req) => {
             return {
               user_id: userId,
               type: "streak_warning",
-              title: streak > 0 ? `${streak}일 스트릭 지켜요! 🔥` : "오늘 운동 잊지 마세요 🔥",
+              title: streak > 0 ? `🔥 ${streak}일 스트릭, 오늘 끊기면 아깝잖아요!` : "🚶 저랑 오늘 첫 기록 만들어볼까요?",
               body:
                 streak > 0
-                  ? `${streak}일 연속 달성 중! 오늘도 잠깐만 걸으면 스트릭이 이어져요.`
-                  : "오늘 아직 운동을 안 하셨어요. 잠깐이라도 걸어볼까요?",
+                  ? `딱 10분만 움직이면 ${streak}일 스트릭 지킬 수 있어요. 저 준비됐어요! 같이 나가요!`
+                  : "10분만 움직여도 오늘의 기록이 시작돼요. 함께해요!",
               data: { schedule: "streak_warning", streak },
               is_read: false,
             };
