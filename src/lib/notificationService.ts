@@ -73,7 +73,10 @@ export async function createNotification(
         data: notification.data ?? {},
       },
     },
-  }).catch(() => {});
+  }).then(({ data, error }) => {
+    if (error) console.error("[notify-fcm] invoke 오류:", error);
+    else console.log("[notify-fcm] invoke 결과:", JSON.stringify(data));
+  }).catch((e) => console.error("[notify-fcm] invoke 예외:", e));
 
   return { error: null };
 }

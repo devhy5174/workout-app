@@ -99,8 +99,8 @@ Deno.serve(async (req) => {
           notifications = finalTargets.map((userId) => ({
             user_id: userId,
             type: "streak_warning",
-            title: "오늘 운동 어때요? 🏃",
-            body: "아직 오늘 운동을 안 하셨어요. 잠깐이라도 걸어볼까요?",
+            title: "☀️ 오늘의 첫 걸음, 시작해볼까요?",
+            body: "아직 오늘 운동 기록이 없어요.\n10분 산책만으로도 하루가 달라집니다.",
             data: { schedule: "activity_reminder" },
             is_read: false,
           }));

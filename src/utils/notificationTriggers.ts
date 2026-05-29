@@ -74,7 +74,7 @@ export async function notifyGoalReached(params: {
     user_id: params.userId,
     type: "goal_reached",
     title: "목표 달성! 🎯",
-    body: `오늘 ${label} 목표를 달성했어요! 정말 대단해요!`,
+    body: `오늘 ${label} 목표를 달성했어요! 정말 멋집니다. 내일도 함께 걸어요.`,
     data: { goal_type: params.goalType, goal_value: params.goalValue },
     is_read: false,
   });
@@ -103,12 +103,12 @@ export async function notifyDietReminder(params: {
 }) {
   const title =
     params.mealType === "lunch"
-      ? "점심 식사 후 가볍게 걸어요 🌿"
-      : "저녁 식단 가이드 🌙";
+      ? "🥗 점심 후 10분 걷기"
+      : "🌙 오늘 운동한 만큼 건강하게";
   const body =
     params.mealType === "lunch"
-      ? "점심 먹고 10분만 걸으면 칼로리 소모에 큰 도움이 돼요!"
-      : "오늘 운동한 칼로리에 맞는 저녁 식단을 확인해보세요.";
+      ? "식사 후 가볍게 걸으면 혈당 관리와 칼로리 소모에 도움이 됩니다."
+      : "오늘 운동량에 맞는 저녁 식단을 확인해보세요.";
 
   await createNotification({
     user_id: params.userId,

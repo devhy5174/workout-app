@@ -1,5 +1,35 @@
 # Changelog
 
+## [1.0.19] — 2026-05-29
+
+### FCM 푸시 알림 파이프라인 전체 수정 (잠금화면 푸시 정상화)
+
+Firebase Console 테스트는 성공하지만 앱 기능으로 보낸 알림이 잠금화면/알림바에 표시되지 않던 문제를 다단계 디버깅으로 완전 해결.
+
+**원인 1 — `notify-fcm` CORS 핸들러 누락**
+- `notify-party-joined`, `notify-party-start`에는 OPTIONS 핸들러가 있었으나 `notify-fcm`에만 없었음
+- Capacitor WebView가 OPTIONS Preflight → 400 수신 → 실제 POST 차단
+- 수정: `notify-fcm/index.ts`에 `corsHeaders` + OPTIONS 즉시 반환 추가
+
+**원인 2 — `verify_jwt = false` 미적용 (`config.toml` 무시)**
+- `notify-fcm/config.toml`에 `verify_jwt = false`를 기록했으나 Supabase CLI가 배포 시 파일을 무시
+- `notify-party-start → notify-fcm` 서버-서버 호출이 `401 UNAUTHORIZED_INVALID_JWT_FORMAT`으로 차단
+- 수정: 모든 알림 Edge Function을 `--no-verify-jwt` 플래그로 재배포
+
+**원인 3 — FCM payload priority 오류**
+- `android.priority: "high"` (소문자) → FCM HTTP v1 API는 `"HIGH"` (대문자) 사용, 소문자는 NORMAL로 처리되어 도즈 모드에서 지연·무시
+- `android.notification.notification_priority` 누락 → 시스템 헤즈업/잠금화면 표시 안 됨
+- 수정: `priority: "HIGH"`, `notification_priority: "PRIORITY_HIGH"` 적용
+
+**디버깅 과정에서 추가한 로깅**
+- `notify-fcm`: OAuth2 토큰 발급 성공/실패, fcm_tokens 조회 건수, FCM payload 전체, 전송 결과 status/body
+- `notify-party-start`: 진입 로그, 파티원 수, notify-fcm fetch URL·응답 status/body
+
+**배포 대상 함수 (모두 `--no-verify-jwt`)**
+- `notify-fcm`, `notify-scheduled`, `notify-push`, `notify-party-joined`, `notify-party-start`
+
+---
+
 ## [1.0.18] — 2026-05-28
 
 ### 산책러 GPS 지도 + 알림 UI 수정 + 스플래시 텍스트

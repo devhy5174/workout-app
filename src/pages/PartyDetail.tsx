@@ -34,7 +34,10 @@ import type {
   PartyNotice,
 } from "../lib/partyService";
 import { supabase } from "../lib/supabase";
-import { notifyPartyStarted, resolveActivityLabel } from "../utils/notificationTriggers";
+import {
+  notifyPartyStarted,
+  resolveActivityLabel,
+} from "../utils/notificationTriggers";
 
 const timeSlotEmoji: Record<string, string> = {
   새벽: "🌅",
@@ -483,7 +486,8 @@ export default function PartyDetail() {
   const [alertSending, setAlertSending] = useState(false);
   const [showAlertConfirmModal, setShowAlertConfirmModal] = useState(false);
   const [showAlertSentModal, setShowAlertSentModal] = useState(false);
-  const [showAlertAlreadySentModal, setShowAlertAlreadySentModal] = useState(false);
+  const [showAlertAlreadySentModal, setShowAlertAlreadySentModal] =
+    useState(false);
   const [showGoalAchievedToast, setShowGoalAchievedToast] = useState(false);
 
   // 파티 목표 달성 자동 포스팅 (진입 시 + active_sessions 갱신 후 실시간 체크)
@@ -491,7 +495,9 @@ export default function PartyDetail() {
     async (p: Party, stats: PartyTodayStats, currentMembers: PartyMember[]) => {
       if (!user) return;
       const isDistance = (p.goal_type ?? "steps") === "distance";
-      const targetPerMember = isDistance ? (p.target_distance ?? 5) : (p.target_steps ?? 10000);
+      const targetPerMember = isDistance
+        ? (p.target_distance ?? 5)
+        : (p.target_steps ?? 10000);
       const totalTarget = targetPerMember * p.member_count;
       const current = isDistance ? stats.totalDistance : stats.totalSteps;
       if (totalTarget <= 0 || current < totalTarget) return;
@@ -653,8 +659,7 @@ export default function PartyDetail() {
   const handleSendStartAlert = async () => {
     if (!party || !user || alertSending) return;
     setShowAlertConfirmModal(false);
-    const memberIds = members
-      .map((m) => m.user_id);
+    const memberIds = members.map((m) => m.user_id);
     if (memberIds.length === 0) {
       setShowAlertSentModal(true);
       return;
@@ -671,7 +676,6 @@ export default function PartyDetail() {
     setAlertSending(false);
     setShowAlertSentModal(true);
   };
-
 
   const handleLeaderLeave = async () => {
     if (!party || !user) return;
@@ -888,91 +892,99 @@ export default function PartyDetail() {
             <p className="text-xs text-gray-300 animate-pulse">
               불러오는 중...
             </p>
-          ) : (() => {
-            const isDistance = (party.goal_type ?? "steps") === "distance";
-            const totalTarget = isDistance
-              ? (party.target_distance ?? 5) * party.member_count
-              : (party.target_steps ?? 10000) * party.member_count;
-            const current = isDistance
-              ? todayStats.totalDistance
-              : todayStats.totalSteps;
-            const pct = Math.min(
-              Math.round((current / Math.max(totalTarget, 0.01)) * 100),
-              100,
-            );
-            const mvpMember = todayStats.topMember
-              ? members.find((m) => m.user_id === todayStats.topMember!.user_id)
-              : null;
-            const mvpValue = isDistance
-              ? `${(mvpMember?.today_distance ?? 0).toFixed(2)}km`
-              : `${todayStats.topMember?.steps.toLocaleString() ?? 0}보`;
+          ) : (
+            (() => {
+              const isDistance = (party.goal_type ?? "steps") === "distance";
+              const totalTarget = isDistance
+                ? (party.target_distance ?? 5) * party.member_count
+                : (party.target_steps ?? 10000) * party.member_count;
+              const current = isDistance
+                ? todayStats.totalDistance
+                : todayStats.totalSteps;
+              const pct = Math.min(
+                Math.round((current / Math.max(totalTarget, 0.01)) * 100),
+                100,
+              );
+              const mvpMember = todayStats.topMember
+                ? members.find(
+                    (m) => m.user_id === todayStats.topMember!.user_id,
+                  )
+                : null;
+              const mvpValue = isDistance
+                ? `${(mvpMember?.today_distance ?? 0).toFixed(2)}km`
+                : `${todayStats.topMember?.steps.toLocaleString() ?? 0}보`;
 
-            return (
-              <>
-                <div className="flex items-center justify-between">
-                  <p className="text-xs font-bold text-gray-700">
-                    <span className="text-orange-500">
-                      {isDistance
-                        ? `${current.toFixed(2)}km`
-                        : current.toLocaleString() + "보"}
-                    </span>
-                    {" / "}
-                    {isDistance
-                      ? `${totalTarget}km`
-                      : totalTarget.toLocaleString() + "보"}
-                  </p>
-                  <p className="text-xs font-extrabold text-orange-400">{pct}%</p>
-                </div>
-                {!isDistance && todayStats.avgSteps > 0 && (
-                  <p className="text-[11px] text-gray-400 font-semibold">
-                    파티 평균{" "}
-                    <span className="text-orange-400 font-extrabold">
-                      {todayStats.avgSteps.toLocaleString()}보
-                    </span>
-                  </p>
-                )}
-                <div className="w-full h-2 bg-orange-100 rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-gradient-to-r from-orange-400 to-primary rounded-full transition-all duration-700"
-                    style={{ width: `${pct}%` }}
-                  />
-                </div>
-
-                {todayStats.topMember && (
-                  <div className="flex items-center gap-3 bg-amber-50 rounded-2xl px-4 py-3">
-                    <div className="relative flex-shrink-0">
-                      <div className="w-12 h-12 rounded-2xl bg-amber-100 flex items-center justify-center overflow-hidden">
-                        {mvpMember?.character_image ? (
-                          <img
-                            src={mvpMember.character_image}
-                            alt={todayStats.topMember.nickname}
-                            className="w-full h-full object-contain"
-                            draggable={false}
-                          />
-                        ) : (
-                          <span className="text-2xl">
-                            {mvpMember?.character_emoji ?? "🏃"}
-                          </span>
-                        )}
-                      </div>
-                      <span className="absolute -top-1.5 -right-1.5 text-base leading-none">
-                        🥇
+              return (
+                <>
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs font-bold text-gray-700">
+                      <span className="text-orange-500">
+                        {isDistance
+                          ? `${current.toFixed(2)}km`
+                          : current.toLocaleString() + "보"}
                       </span>
-                    </div>
-                    <div>
-                      <p className="text-[10px] font-extrabold text-amber-500 uppercase tracking-wide">
-                        오늘의 MVP
-                      </p>
-                      <p className="text-sm font-extrabold text-gray-800 leading-tight">
-                        {todayStats.topMember.nickname}
-                      </p>
-                      <p className="text-xs font-bold text-amber-500">{mvpValue}</p>
-                    </div>
+                      {" / "}
+                      {isDistance
+                        ? `${totalTarget}km`
+                        : totalTarget.toLocaleString() + "보"}
+                    </p>
+                    <p className="text-xs font-extrabold text-orange-400">
+                      {pct}%
+                    </p>
                   </div>
-                )}
-              </>
-            );
-          })()}
+                  {!isDistance && todayStats.avgSteps > 0 && (
+                    <p className="text-[11px] text-gray-400 font-semibold">
+                      파티 평균{" "}
+                      <span className="text-orange-400 font-extrabold">
+                        {todayStats.avgSteps.toLocaleString()}보
+                      </span>
+                    </p>
+                  )}
+                  <div className="w-full h-2 bg-orange-100 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-gradient-to-r from-orange-400 to-primary rounded-full transition-all duration-700"
+                      style={{ width: `${pct}%` }}
+                    />
+                  </div>
+
+                  {todayStats.topMember && (
+                    <div className="flex items-center gap-3 bg-amber-50 rounded-2xl px-4 py-3">
+                      <div className="relative flex-shrink-0">
+                        <div className="w-12 h-12 rounded-2xl bg-amber-100 flex items-center justify-center overflow-hidden">
+                          {mvpMember?.character_image ? (
+                            <img
+                              src={mvpMember.character_image}
+                              alt={todayStats.topMember.nickname}
+                              className="w-full h-full object-contain"
+                              draggable={false}
+                            />
+                          ) : (
+                            <span className="text-2xl">
+                              {mvpMember?.character_emoji ?? "🏃"}
+                            </span>
+                          )}
+                        </div>
+                        <span className="absolute -top-1.5 -right-1.5 text-base leading-none">
+                          🥇
+                        </span>
+                      </div>
+                      <div>
+                        <p className="text-[10px] font-extrabold text-amber-500 uppercase tracking-wide">
+                          오늘의 MVP
+                        </p>
+                        <p className="text-sm font-extrabold text-gray-800 leading-tight">
+                          {todayStats.topMember.nickname}
+                        </p>
+                        <p className="text-xs font-bold text-amber-500">
+                          {mvpValue}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </>
+              );
+            })()
+          )}
         </div>
 
         {/* 파티 멤버 활동 그리드 */}
@@ -1073,8 +1085,10 @@ export default function PartyDetail() {
           title="파티에 합류했어요!"
           message={
             <>
-              <span className="font-bold text-gray-700">"{party.name}"</span>의<br />
-              새 파티원이 되었어요!<br />
+              <span className="font-bold text-gray-700">"{party.name}"</span>의
+              <br />
+              새 파티원이 되었어요!
+              <br />
               함께 목표를 달성해봐요 💪
             </>
           }
@@ -1088,7 +1102,10 @@ export default function PartyDetail() {
           iconClass="text-primary"
           title="파티에 참가할까요?"
           message={
-            <><span className="font-bold text-gray-700">"{party.name}"</span> 파티에 참가해요</>
+            <>
+              <span className="font-bold text-gray-700">"{party.name}"</span>{" "}
+              파티에 참가해요
+            </>
           }
           confirmLabel="참가하기"
           onConfirm={handleJoinConfirm}
@@ -1101,7 +1118,10 @@ export default function PartyDetail() {
           iconClass="text-primary"
           title="파티를 나갈까요?"
           message={
-            <><span className="font-bold text-gray-700">"{party.name}"</span> 파티에서 나가게 돼요</>
+            <>
+              <span className="font-bold text-gray-700">"{party.name}"</span>{" "}
+              파티에서 나가게 돼요
+            </>
           }
           confirmLabel="나가기"
           onConfirm={handleLeaveConfirm}
@@ -1115,8 +1135,13 @@ export default function PartyDetail() {
           title="파티 정리할까요?"
           message={
             <>
-              <span className="font-bold text-gray-700">"{kickTarget.nickname}"</span> 님은<br />
-              7일 이상 활동하지 않은 멤버예요.<br />
+              <span className="font-bold text-gray-700">
+                "{kickTarget.nickname}"
+              </span>{" "}
+              님은
+              <br />
+              7일 이상 활동하지 않은 멤버예요.
+              <br />
               파티에서 정리하시겠어요?
             </>
           }
@@ -1126,62 +1151,86 @@ export default function PartyDetail() {
           zClass="z-[60]"
         />
       )}
-      {showLeaderLeaveModal && party && (() => {
-        const hasOthers = members.filter((m) => m.user_id !== user?.id).length > 0;
-        return (
-          <AlertModal
-            icon={HiUserGroup}
-            iconClass="text-yellow-400"
-            title={hasOthers ? "방장을 넘기고 나갈까요?" : "파티를 나갈까요?"}
-            message={
-              hasOthers ? (
+      {showLeaderLeaveModal &&
+        party &&
+        (() => {
+          const hasOthers =
+            members.filter((m) => m.user_id !== user?.id).length > 0;
+          return (
+            <AlertModal
+              icon={HiUserGroup}
+              iconClass="text-yellow-400"
+              title={hasOthers ? "방장을 넘기고 나갈까요?" : "파티를 나갈까요?"}
+              message={
+                hasOthers ? (
+                  <>
+                    <span className="font-bold text-gray-700">
+                      "{party.name}"
+                    </span>{" "}
+                    파티의
+                    <br />
+                    방장이 가장 오래된 멤버에게
+                    <br />
+                    자동으로 넘어가요.
+                  </>
+                ) : (
+                  <>
+                    혼자 남은 파티라
+                    <br />
+                    나가면{" "}
+                    <span className="font-bold text-gray-700">
+                      "{party.name}"
+                    </span>{" "}
+                    파티가
+                    <br />
+                    자동으로 해체돼요.
+                  </>
+                )
+              }
+              confirmLabel={hasOthers ? "넘기고 나가기" : "해체하고 나가기"}
+              onConfirm={handleLeaderLeave}
+              onCancel={() => setShowLeaderLeaveModal(false)}
+            />
+          );
+        })()}
+      {showAlertConfirmModal &&
+        party &&
+        (() => {
+          const { verb, emoji } = resolveActivityLabel(party.tags);
+          const previewBody = `파티장 ${userProfile?.nickname ?? "방장"}님이 "${party.name}" 운동을 시작했습니다. 같이 ${verb} ${emoji}`;
+          return (
+            <AlertModal
+              icon={HiBell}
+              iconClass="text-yellow-400"
+              title="시작 알림을 보낼까요?"
+              message={
                 <>
-                  <span className="font-bold text-gray-700">"{party.name}"</span> 파티의<br />
-                  방장이 가장 오래된 멤버에게<br />
-                  자동으로 넘어가요.
-                </>
-              ) : (
-                <>
-                  혼자 남은 파티라<br />
-                  나가면 <span className="font-bold text-gray-700">"{party.name}"</span> 파티가<br />
-                  자동으로 해체돼요.
-                </>
-              )
-            }
-            confirmLabel={hasOthers ? "넘기고 나가기" : "해체하고 나가기"}
-            onConfirm={handleLeaderLeave}
-            onCancel={() => setShowLeaderLeaveModal(false)}
-          />
-        );
-      })()}
-      {showAlertConfirmModal && party && (() => {
-        const { verb, emoji } = resolveActivityLabel(party.tags);
-        const previewBody = `${userProfile?.nickname ?? "방장"}님이 "${party.name}" 운동을 시작했습니다. 같이 ${verb} ${emoji}`;
-        return (
-          <AlertModal
-            icon={HiBell}
-            iconClass="text-yellow-400"
-            title="시작 알림을 보낼까요?"
-            message={
-              <>
-                <span className="text-gray-500">멤버들에게 이런 알림이 전송돼요</span>
-                <div className="mt-3 w-full bg-gray-50 rounded-2xl px-4 py-3 flex items-start gap-3 text-left">
-                  <span className="text-xl shrink-0">🔔</span>
-                  <div className="flex flex-col gap-0.5">
-                    <p className="text-xs font-extrabold text-gray-700">파티 운동이 시작됐어요!</p>
-                    <p className="text-[11px] text-gray-400 leading-relaxed">{previewBody}</p>
+                  <span className="text-gray-500">
+                    멤버들에게 이런 알림이 전송돼요
+                  </span>
+                  <div className="mt-3 w-full bg-gray-50 rounded-2xl px-4 py-3 flex items-start gap-3 text-left">
+                    <span className="text-xl shrink-0">🔔</span>
+                    <div className="flex flex-col gap-0.5">
+                      <p className="text-xs font-extrabold text-gray-700">
+                        파티 운동이 시작됐어요!
+                      </p>
+                      <p className="text-[11px] text-gray-400 leading-relaxed">
+                        {previewBody}
+                      </p>
+                    </div>
                   </div>
-                </div>
-                <span className="text-xs text-gray-300 mt-2 block">오늘 하루 1번만 보낼 수 있어요</span>
-              </>
-            }
-            confirmLabel="보내기"
-            onConfirm={handleSendStartAlert}
-            onCancel={() => setShowAlertConfirmModal(false)}
-            zClass="z-[60]"
-          />
-        );
-      })()}
+                  <span className="text-xs text-gray-300 mt-2 block">
+                    오늘 하루 1번만 보낼 수 있어요
+                  </span>
+                </>
+              }
+              confirmLabel="보내기"
+              onConfirm={handleSendStartAlert}
+              onCancel={() => setShowAlertConfirmModal(false)}
+              zClass="z-[60]"
+            />
+          );
+        })()}
       {showAlertSentModal && (
         <AlertModal
           icon={HiBell}
@@ -1189,8 +1238,11 @@ export default function PartyDetail() {
           title="알림을 보냈어요! ⚡"
           message={
             <>
-              멤버들에게 시작 알림이 전송됐어요.<br />
-              <span className="text-xs text-gray-300 mt-1 block">내일 다시 보낼 수 있어요</span>
+              멤버들에게 시작 알림이 전송됐어요.
+              <br />
+              <span className="text-xs text-gray-300 mt-1 block">
+                내일 다시 보낼 수 있어요
+              </span>
             </>
           }
           confirmLabel="확인"
@@ -1205,8 +1257,11 @@ export default function PartyDetail() {
           title="오늘 이미 보냈어요"
           message={
             <>
-              시작 알림은 하루에 한 번만 보낼 수 있어요.<br />
-              <span className="text-xs text-gray-300 mt-1 block">내일 다시 보낼 수 있어요</span>
+              시작 알림은 하루에 한 번만 보낼 수 있어요.
+              <br />
+              <span className="text-xs text-gray-300 mt-1 block">
+                내일 다시 보낼 수 있어요
+              </span>
             </>
           }
           confirmLabel="확인"
@@ -1221,9 +1276,12 @@ export default function PartyDetail() {
           title="파티 목표 달성! 🎉"
           message={
             <>
-              오늘 목표를 모두 채웠어요!<br />
-              파티의 인증 글이<br />
-              <span className="font-bold text-gray-700">인증 피드</span>에 올라갔어요 🏅
+              오늘 목표를 모두 채웠어요!
+              <br />
+              파티의 인증 글이
+              <br />
+              <span className="font-bold text-gray-700">인증 피드</span>에
+              올라갔어요 🏅
             </>
           }
           confirmLabel="확인"

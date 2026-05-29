@@ -23,6 +23,7 @@ function resolveActivityLabel(tags: string[]): { verb: string; emoji: string } {
 }
 
 Deno.serve(async (req) => {
+  console.log("[notify-party-start] 진입", req.method);
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
@@ -61,7 +62,9 @@ Deno.serve(async (req) => {
   }
 
   const { party_id, party_name, leader_nickname, member_ids, tags } = body;
+  console.log(`[notify-party-start] 파티=${party_id} 파티원수=${member_ids?.length ?? 0}`);
   if (!party_id || !party_name || !leader_nickname || !member_ids?.length) {
+    console.warn("[notify-party-start] 필수 필드 누락 → 400");
     return new Response("Missing required fields", { status: 400, headers: corsHeaders });
   }
 
@@ -99,11 +102,13 @@ Deno.serve(async (req) => {
     .insert(notifications);
 
   if (insertError) {
+    console.error("[notify-party-start] notifications 삽입 실패:", insertError.message);
     return new Response(JSON.stringify({ error: insertError.message }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
+  console.log(`[notify-party-start] notifications 삽입 성공 ${notifications.length}건`);
 
   // FCM 푸시 발송 (앱 종료/백그라운드에서도 수신)
   const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
@@ -122,17 +127,23 @@ Deno.serve(async (req) => {
     ...(cronSecret ? { "x-cron-secret": cronSecret } : {}),
   };
   // FCM + 웹 푸시 동시 발송
+  const fcmUrl = `${supabaseUrl}/functions/v1/notify-fcm`;
+  console.log(`[notify-party-start] notify-fcm 호출 시작 url=${fcmUrl} 대상=${member_ids.length}명`);
+
   await Promise.allSettled([
-    fetch(`${supabaseUrl}/functions/v1/notify-fcm`, {
+    fetch(fcmUrl, {
       method: "POST",
       headers: pushHeaders,
       body: pushBody,
-    }).catch((e) => console.warn("[notify-party-start] FCM call failed:", e)),
+    }).then(async (r) => {
+      const resBody = await r.text();
+      console.log(`[notify-party-start] notify-fcm 응답 status=${r.status} body=${resBody}`);
+    }).catch((e) => console.error("[notify-party-start] notify-fcm fetch 예외:", String(e))),
     fetch(`${supabaseUrl}/functions/v1/notify-push`, {
       method: "POST",
       headers: pushHeaders,
       body: pushBody,
-    }).catch((e) => console.warn("[notify-party-start] push call failed:", e)),
+    }).catch((e) => console.warn("[notify-party-start] notify-push fetch 예외:", String(e))),
   ]);
 
   return new Response(JSON.stringify({ sent: notifications.length }), {
