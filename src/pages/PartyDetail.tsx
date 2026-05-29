@@ -1196,7 +1196,7 @@ export default function PartyDetail() {
       {showAlertConfirmModal &&
         party &&
         (() => {
-          const { verb, emoji } = resolveActivityLabel(party.tags);
+          const { emoji } = resolveActivityLabel(party.tags);
           const previewTitle = `"${party.name}" 파티가 시작됐어요!`;
           const previewBody = `${userProfile?.nickname ?? "방장"}님이 출발했어요! ${emoji} 우리도 얼른 가볼까요?`;
           return (
