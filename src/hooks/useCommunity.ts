@@ -20,7 +20,22 @@ export type { CommunityPost };
 function mergeWithFakes(realPosts: CommunityPost[]): CommunityPost[] {
   const realIds = new Set(realPosts.map((p) => p.id));
   const fakesToAdd = FAKE_COMMUNITY_POSTS.filter((p) => !realIds.has(p.id));
-  return [...realPosts, ...fakesToAdd].sort(
+
+  // 날짜별 가짜 게시글 1개만 노출 (하루에 한 명만 올라오는 것처럼)
+  // 날짜 해시로 매일 다른 게시글이 선택되도록 함
+  const byDate = new Map<string, CommunityPost[]>();
+  for (const p of fakesToAdd) {
+    const dateKey = p.created_at.slice(0, 10);
+    if (!byDate.has(dateKey)) byDate.set(dateKey, []);
+    byDate.get(dateKey)!.push(p);
+  }
+  const oncePerDay = [...byDate.entries()].map(([dateKey, group]) => {
+    // 날짜 문자열을 숫자로 변환해 그날마다 다른 인덱스 선택
+    const seed = dateKey.replace(/-/g, "").split("").reduce((acc, c) => acc + c.charCodeAt(0), 0);
+    return group[seed % group.length];
+  });
+
+  return [...realPosts, ...oncePerDay].sort(
     (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
   );
 }

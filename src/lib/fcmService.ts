@@ -3,6 +3,11 @@ import { PushNotifications } from "@capacitor/push-notifications";
 import { supabase } from "./supabase";
 
 let isRegistered = false;
+let _navigate: ((path: string) => void) | null = null;
+
+export function setFCMNavigate(fn: (path: string) => void) {
+  _navigate = fn;
+}
 
 export async function registerFCMToken(userId: string): Promise<void> {
   if (!Capacitor.isNativePlatform()) return;
@@ -44,6 +49,8 @@ export async function registerFCMToken(userId: string): Promise<void> {
 
     PushNotifications.addListener("pushNotificationActionPerformed", (action) => {
       console.log("[FCM] 알림 클릭:", action.notification.data);
+      const path = action.notification.data?.path as string | undefined;
+      if (path && _navigate) _navigate(path);
     });
 
     await PushNotifications.register();

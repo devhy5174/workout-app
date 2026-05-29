@@ -25,10 +25,19 @@ import ResetPassword from "../pages/ResetPassword";
 import NotificationSettings from "../pages/NotificationSettings";
 import PrivacyPolicy from "../pages/PrivacyPolicy";
 import Terms from "../pages/Terms";
+import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { useUser } from "../context/UserContext";
 import { EventsProvider } from "../context/EventsContext";
 import { NoticesProvider } from "../context/NoticesContext";
 import LoadingScreen from "../components/ui/LoadingScreen";
+import { setFCMNavigate } from "../lib/fcmService";
+
+function FCMNavigateSetup() {
+  const navigate = useNavigate();
+  useEffect(() => { setFCMNavigate(navigate); }, [navigate]);
+  return null;
+}
 
 function AuthGuard({ children }: { children: React.ReactNode }) {
   const { user, isLoading } = useUser();
@@ -61,6 +70,7 @@ export default function AppRouter() {
     <NoticesProvider>
     <EventsProvider>
     <BrowserRouter>
+      <FCMNavigateSetup />
       <Routes>
         <Route path="/auth" element={<Auth />} />
         <Route path="/reset-password" element={<ResetPassword />} />

@@ -141,7 +141,7 @@ Deno.serve(async (req) => {
             type: "diet_reminder",
             title: "🥗 밥 먹고 저랑 10분만 걸어요!",
             body: "식사 후 가볍게 걸으면 혈당도 잡히고 기분도 좋아져요 🌿",
-            data: { schedule: "diet_lunch" },
+            data: { schedule: "diet_lunch", path: "/diet" },
             is_read: false,
           }));
         }
@@ -187,7 +187,7 @@ Deno.serve(async (req) => {
               type: "diet_reminder",
               title: "오늘 운동 성공! 저녁 식단 가이드 🌙",
               body: `오늘 ${kcal}kcal 소모했어요. 맞춤 저녁 식단을 확인해보세요!`,
-              data: { schedule: "diet_dinner", burned_kcal: kcal },
+              data: { schedule: "diet_dinner", burned_kcal: kcal, path: "/diet" },
               is_read: false,
             };
           });

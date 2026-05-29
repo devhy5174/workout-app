@@ -115,7 +115,7 @@ export async function notifyDietReminder(params: {
     type: "diet_reminder",
     title,
     body,
-    data: { meal_type: params.mealType },
+    data: { meal_type: params.mealType, path: "/diet" },
     is_read: false,
   });
 }
