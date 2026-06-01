@@ -1,5 +1,52 @@
 # Changelog
 
+## [Unreleased] — 2026-06-01
+
+### 업적 배지 시스템 신규 추가
+
+#### 신규 파일
+- `src/data/achievements.ts` — 업적 정의 24개 (카테고리 8종 · 난이도 4단계)
+- `src/lib/achievementStatsService.ts` — 통계 계산 순수함수 + Supabase 쿼리 분리
+- `src/hooks/useAchievements.ts` — 오케스트레이터 훅 (로컬 + 원격 통계 조합)
+- `src/pages/Achievements.tsx` — 2열 배지 그리드 + 카테고리 탭 + 상세 바텀시트
+
+#### 마이페이지 연동
+- 내정보 탭 버튼 2개 → 3개 (활동유형 / 캐릭터 / **업적달성**)
+- 업적달성 버튼에 달성 수 실시간 표시 (예: `3/24`)
+
+#### 배지 UI 디자인
+- 난이도별 원형 그라데이션 배경 (쉬움=초록 / 보통=파랑 / 어려움=주황 / 레전드=보라)
+- 달성 → 골드 링 + 우측 하단 ✓ 마크, 미달성 → 그레이스케일 + 자물쇠 오버레이
+- `hidden: true` 업적: 달성 전까지 `???`로 표시
+
+#### 업적 조건 연결 현황
+
+| 조건 | 데이터 출처 |
+|------|------------|
+| 운동 기록 전체 (걸음수·스트릭·시간대 등) | `workoutRecords` 로컬 계산 |
+| 계절별 운동 (`season_workout`) | `workoutRecords.date` 월 추출, DB 불필요 |
+| 해금 말풍선 수 (`unlock_count`) | `unlockItems` 조건 로컬 재계산 |
+| 파티 MVP 횟수 (`party_mvp`) | `app_users.party_mvp_count` 컬럼 |
+| 파티 참가·목표 달성 횟수 | `party_members` / `community_posts` Supabase |
+| 인증글 수·받은 응원 수 | `community_posts` Supabase |
+| 날씨별 운동 (`weather_workout`) | `workout_history.weather_condition` 컬럼 |
+| 프리미엄 가입 | `userProfile.is_premium` |
+
+#### DB 마이그레이션 필요 (Supabase SQL Editor에서 순서대로 실행)
+```
+supabase/workout_weather.sql     — workout_history.weather_condition 컬럼
+supabase/party_mvp_count.sql     — app_users.party_mvp_count 컬럼 + RPC 함수
+```
+
+#### 기타 수정
+- 운동 저장 시 세션스토리지 날씨 캐시 읽어 `weather_condition` 함께 저장
+- 파티 목표 달성 시 MVP 유저 `party_mvp_count` 자동 증가 (RPC 경유, fire-and-forget)
+- 날씨 위젯: Nominatim 역지오코딩으로 한국어 지역명 표시 + 긴 이름 말줄임
+- 프리미엄 말풍선 애니메이션: 흰 배경에서도 보이도록 골드 글로우로 변경
+- Step 페이지 칭호 조건 아래 진행도 게이지 추가
+
+---
+
 ## [1.0.21] — 2026-06-01
 
 ### 운동 기록 중복 저장 버그 수정 + 자정 날짜 변경 자동 저장

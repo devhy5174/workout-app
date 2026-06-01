@@ -816,10 +816,10 @@ type 값: `streak_warning` · `activity_reminder` · `diet_lunch` · `diet_dinne
 | `party_goal_success` | ✅ | `community_posts` (source_type='party_goal') |
 | `post_create` | ✅ | `community_posts` Supabase 쿼리 |
 | `post_likes` | ✅ | `community_posts.cheers` 합산 |
-| `party_mvp` | ⏳ | 파티별 1위 횟수 — 미구현 |
-| `weather_workout` | ⏳ | 날씨 기록 저장 구조 미구현 |
-| `season_workout` | ⏳ | 시즌 기록 저장 구조 미구현 |
-| `unlock_count` | ⏳ | 해금 아이템 수 연동 미구현 |
+| `party_mvp` | ✅ | `app_users.party_mvp_count` — 파티 목표 달성 시 RPC로 자동 증가 |
+| `weather_workout` | ✅ | `workout_history.weather_condition` — 운동 저장 시 날씨 캐시에서 읽어 저장 |
+| `season_workout` | ✅ | `workoutRecords.date` 월 추출 (로컬, DB 불필요) |
+| `unlock_count` | ✅ | `unlockItems` 조건 로컬 재계산 (DB 불필요) |
 
 ---
 
@@ -869,11 +869,15 @@ case "new_condition_type":
 
 ---
 
-### 🔮 미구현 항목 (TODO)
+### 🗄️ DB 마이그레이션 (Supabase SQL Editor에서 순서대로 실행)
 
-- **party_mvp**: 파티 종료 시점에 1위 유저 ID를 `workout_history` 또는 별도 컬럼에 저장하는 구조 필요
-- **weather_workout / season_workout**: 운동 저장 시 날씨 코드 또는 시즌 값을 `workout_history`에 함께 저장해야 집계 가능
-- **unlock_count**: 현재 `unlockItems.ts`에서 해금 여부를 판단하는 로직을 `achievementStatsService.ts`로 연결
+```
+supabase/workout_weather.sql     — workout_history.weather_condition 컬럼 추가
+supabase/party_mvp_count.sql     — app_users.party_mvp_count 컬럼 + increment_party_mvp_count RPC 함수
+```
+
+마이그레이션 실행 전까지 `weather_workout` / `party_mvp` 업적은 진행률 0으로 표시됩니다.  
+실행 후 신규 운동·파티 달성분부터 누적됩니다.
 
 ---
 
