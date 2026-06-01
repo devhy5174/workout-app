@@ -49,7 +49,7 @@ export default function WeatherWidget({
   return (
     <div className="bg-white rounded-full px-3 py-1.5 shadow-sm flex items-center gap-0.5">
       <WeatherIcon code={weather.code} isDay={weather.isDay} />
-      <span className="text-xs font-bold text-gray-600 ml-0.5">
+      <span className="text-xs font-bold text-gray-600 ml-0.5 max-w-[80px] truncate">
         {weather.city}
       </span>
       <span

@@ -102,17 +102,20 @@ body {
 @keyframes premium-bubble-shine {
   0%,
   100% {
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+    filter: brightness(1) saturate(1);
   }
   50% {
     box-shadow:
-      0 0 16px 6px rgba(255, 255, 255, 0.55),
-      0 2px 8px rgba(0, 0, 0, 0.1);
+      0 0 0 2px rgba(251, 191, 36, 0.7),
+      0 0 10px 4px rgba(251, 191, 36, 0.4),
+      0 0 20px 8px rgba(251, 191, 36, 0.15);
+    filter: brightness(1.15) saturate(1.25);
   }
 }
 
 .animate-premium-bubble {
-  animation: premium-bubble-shine 2s ease-in-out infinite;
+  animation: premium-bubble-shine 1.8s ease-in-out infinite;
 }
 
 @keyframes card-bg-pulse {

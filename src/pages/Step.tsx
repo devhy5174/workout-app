@@ -618,9 +618,40 @@ export default function Step() {
                             {item.condition?.monthlyAverageStep
                               ? `월 평균 ${item.condition.monthlyAverageStep.toLocaleString()}보 필요`
                               : item.condition?.consecutiveDays
-                                ? `${consecutiveStreak} / ${item.condition.consecutiveDays}일 연속 운동`
+                                ? `${item.condition.consecutiveDays}일 연속 운동 필요`
                                 : item.description}
                           </p>
+                          {/* 해금 진행 게이지 — 잠긴 아이템 + 조건 있을 때만 표시 */}
+                          {!item.unlocked && (item.condition?.monthlyAverageStep || item.condition?.consecutiveDays) && (() => {
+                            const current = item.condition?.monthlyAverageStep
+                              ? monthlyAverageSteps
+                              : consecutiveStreak;
+                            const target = item.condition?.monthlyAverageStep
+                              ? item.condition.monthlyAverageStep
+                              : item.condition!.consecutiveDays!;
+                            const pct = Math.min((current / target) * 100, 100);
+                            const label = item.condition?.monthlyAverageStep
+                              ? `${monthlyAverageSteps.toLocaleString()} / ${target.toLocaleString()}보`
+                              : `${consecutiveStreak} / ${target}일`;
+                            return (
+                              <div className="mt-2">
+                                <div className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                                  <div
+                                    className="h-full rounded-full transition-all duration-700"
+                                    style={{
+                                      width: `${pct}%`,
+                                      background: "var(--color-primary)",
+                                      opacity: 0.5,
+                                    }}
+                                  />
+                                </div>
+                                <p className="text-[10px] text-gray-400 mt-0.5">
+                                  {label}
+                                  {pct >= 100 ? " ✓" : ` (${Math.floor(pct)}%)`}
+                                </p>
+                              </div>
+                            );
+                          })()}
                         </div>
                         {isSelectable ? (
                           isSelected ? (

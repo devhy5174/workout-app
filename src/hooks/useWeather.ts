@@ -43,16 +43,38 @@ export function useWeather() {
       }
     } catch {}
 
-    const fetchWeather = async (latitude: number, longitude: number) => {
+    // Nominatim 역지오코딩으로 한국어 지역명 반환 (동 > 구 > 시 우선순위)
+    const fetchKoreanCity = async (lat: number, lon: number): Promise<string> => {
       try {
         const res = await fetch(
-          `https://api.openweathermap.org/data/2.5/weather?lat=${latitude}&lon=${longitude}&appid=${API_KEY}&units=metric&lang=kr`,
+          `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&accept-language=ko`,
+          { headers: { "User-Agent": "togetherwalk-app" } },
         );
+        if (!res.ok) return "";
+        const d = await res.json();
+        const a = d.address ?? {};
+        return (
+          a.suburb ?? a.quarter ?? a.borough ??
+          a.city_district ?? a.county ?? a.city ?? ""
+        );
+      } catch {
+        return "";
+      }
+    };
+
+    const fetchWeather = async (latitude: number, longitude: number) => {
+      try {
+        const [res, korCity] = await Promise.all([
+          fetch(
+            `https://api.openweathermap.org/data/2.5/weather?lat=${latitude}&lon=${longitude}&appid=${API_KEY}&units=metric&lang=kr`,
+          ),
+          fetchKoreanCity(latitude, longitude),
+        ]);
         if (!res.ok) return;
         const d = await res.json();
         const now = Date.now();
         const data: WeatherData = {
-          city: d.name,
+          city: korCity || d.name,
           temp: Math.round(d.main.temp),
           code: d.weather[0].id,
           isDay: now > d.sys.sunrise * 1000 && now < d.sys.sunset * 1000,
