@@ -1,5 +1,7 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { IoFootsteps, IoLocationSharp, IoFlame } from "react-icons/io5";
+import { useAchievements } from "../../hooks/useAchievements";
 import { useUser } from "../../context/UserContext";
 import { useActivityType } from "../../context/ActivityTypeContext";
 import { useCharacter } from "../../context/CharacterContext";
@@ -411,6 +413,8 @@ function CharacterSheet({ onClose }: { onClose: () => void }) {
 
 // ── 내정보 탭 ───────────────────────────────────────────
 export default function InfoTab() {
+  const navigate = useNavigate();
+  const { unlockedCount, total } = useAchievements();
   const { userProfile, updateProfile, userGoal, deleteGoal, workoutRecords } =
     useUser();
   const { selectedActivityType } = useActivityType();
@@ -506,28 +510,42 @@ export default function InfoTab() {
             </p>
           )}
         </div>
-        <div className="mt-1 grid w-full grid-cols-2 gap-2">
+        <div className="mt-1 grid w-full grid-cols-3 gap-2">
           <button
             onClick={() => setShowActivityTypeSheet(true)}
-            className="px-4 py-2 rounded-2xl text-sm font-bold text-white shadow-sm active:scale-95 transition-all"
+            className="px-2 py-2 rounded-2xl text-xs font-bold text-white shadow-sm active:scale-95 transition-all"
             style={{
               background:
                 "linear-gradient(135deg, var(--color-primary), var(--color-secondary))",
             }}
             aria-label="활동유형 변경하기"
           >
-            활동유형 변경
+            활동유형
           </button>
           <button
             onClick={() => setShowCharacterSheet(true)}
-            className="px-4 py-2 rounded-2xl text-sm font-bold border-2 bg-white shadow-sm active:scale-95 transition-all"
+            className="px-2 py-2 rounded-2xl text-xs font-bold border-2 bg-white shadow-sm active:scale-95 transition-all"
             style={{
               borderColor: "var(--color-primary)",
               color: "var(--color-primary)",
             }}
             aria-label="캐릭터 변경하기"
           >
-            캐릭터 변경
+            캐릭터
+          </button>
+          <button
+            onClick={() => navigate("/achievements")}
+            className="px-2 py-2 rounded-2xl text-xs font-bold border-2 bg-white shadow-sm active:scale-95 transition-all flex flex-col items-center gap-0.5"
+            style={{
+              borderColor: "var(--color-primary)",
+              color: "var(--color-primary)",
+            }}
+            aria-label="업적 보기"
+          >
+            <span>업적달성</span>
+            <span className="text-[9px] font-semibold opacity-70">
+              {unlockedCount}/{total}
+            </span>
           </button>
         </div>
       </div>
