@@ -512,6 +512,90 @@ export function getAllFakeUsersToday(now: Date = new Date()): FakeUser[] {
 export const FAKE_ACTIVE_USERS = getAllFakeUsersToday();
 
 // ─────────────────────────────────────────────────────────
+// 탑3 랭킹 보완용 — 실유저 3명 미만 시 채우기
+// ─────────────────────────────────────────────────────────
+
+/**
+ * 이번 주 월요일부터 오늘(dow)까지 누적 걸음수 반환
+ * weeklySteps 인덱스: [일=0, 월=1, 화=2, 수=3, 목=4, 금=5, 토=6]
+ * 일요일(dow=0)은 한 주의 마지막 날이므로 전체 합산
+ */
+function weeklyStepsSoFar(
+  weeklySteps: [number, number, number, number, number, number, number],
+  dow: number,
+): number {
+  if (dow === 0) return weeklySteps.reduce((a, b) => a + b, 0); // 일요일 = 전체
+  let total = 0;
+  for (let i = 1; i <= dow; i++) total += weeklySteps[i]; // 월(1) ~ 오늘
+  return total;
+}
+
+/** 탑3 빈자리를 채울 페이크 유저 후보 (걸음수 내림차순) */
+export function getFakeTop3Candidates(
+  period: "weekly" | "daily",
+  now: Date = new Date(),
+): Array<{
+  rank: number;
+  user_id: string;
+  nickname: string;
+  steps: number;
+  character_id: string | null;
+}> {
+  const dow = now.getDay();
+  return FAKE_USER_PROFILES.filter((u) => u.activeSlots.length > 0)
+    .map((u) => ({
+      rank: 0,
+      user_id: u.id,
+      nickname: u.nickname,
+      steps:
+        period === "weekly"
+          ? weeklyStepsSoFar(u.weeklySteps, dow)
+          : u.weeklySteps[dow],
+      character_id: u.character_id,
+    }))
+    .sort((a, b) => b.steps - a.steps);
+}
+
+// ─────────────────────────────────────────────────────────
+// 파티현황 랭킹 보완용 — 실파티 3개 미만 시 채우기
+// ─────────────────────────────────────────────────────────
+
+const FAKE_PARTY_DATA = [
+  { id: "fake-party-001", name: "저녁 러너스",   emoji: "🌙", weeklyValue: 52400, dailyValue: 7200, leaderNickname: "밤달리기" },
+  { id: "fake-party-002", name: "새벽런 클럽",   emoji: "🌅", weeklyValue: 48200, dailyValue: 6800, leaderNickname: "새벽런너92" },
+  { id: "fake-party-003", name: "파워워킹단",    emoji: "💪", weeklyValue: 38900, dailyValue: 5400, leaderNickname: "파워워킹장인" },
+  { id: "fake-party-004", name: "아침 산책 모임", emoji: "☀️", weeklyValue: 31200, dailyValue: 4300, leaderNickname: "sooah_fit" },
+  { id: "fake-party-005", name: "주말 등산 클럽", emoji: "⛰️", weeklyValue: 27500, dailyValue: 3800, leaderNickname: "산오르는사람" },
+];
+
+/** 파티현황 빈자리를 채울 페이크 파티 후보 (value 내림차순)
+ *  주간 값은 오늘 요일 기준 일할 계산 (월요일 = 1/7, 일요일 = 7/7)
+ */
+export function getFakePartyHighlights(
+  period: "weekly" | "daily",
+  now: Date = new Date(),
+): Array<{
+  id: string;
+  name: string;
+  emoji: string;
+  value: number;
+  leaderNickname: string | null;
+}> {
+  const dow = now.getDay();
+  const daysElapsed = dow === 0 ? 7 : dow; // 일=7, 월=1 … 토=6
+  return FAKE_PARTY_DATA.map((p) => ({
+    id: p.id,
+    name: p.name,
+    emoji: p.emoji,
+    value:
+      period === "weekly"
+        ? Math.round((p.weeklyValue * daysElapsed) / 7)
+        : p.dailyValue,
+    leaderNickname: p.leaderNickname,
+  })).sort((a, b) => b.value - a.value);
+}
+
+// ─────────────────────────────────────────────────────────
 // 파티 미리보기용 파생 데이터
 // ─────────────────────────────────────────────────────────
 

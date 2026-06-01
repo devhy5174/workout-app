@@ -123,7 +123,7 @@ export default function Home() {
     myPartyWeeklyRank,
     isLoading: highlightsLoading,
   } = usePartyHighlights(user?.id);
-  const [partyTab, setPartyTab] = useState<"daily" | "weekly">("daily");
+  const [partyTab, setPartyTab] = useState<"daily" | "weekly">("weekly");
 
   const activityTypeName = selectedActivityType?.name ?? null;
 
@@ -212,7 +212,7 @@ export default function Home() {
   const displayedText = useTypingEffect(bubbleMsg);
 
   const [activeUsers, setActiveUsers] = useState<DisplayUser[]>([]);
-  const [top3Tab, setTop3Tab] = useState<"daily" | "weekly">("daily");
+  const [top3Tab, setTop3Tab] = useState<"daily" | "weekly">("weekly");
   const {
     top3,
     todayTop3,
