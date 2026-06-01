@@ -781,6 +781,102 @@ type 값: `streak_warning` · `activity_reminder` · `diet_lunch` · `diet_dinne
 
 ---
 
+## 🏅 업적 배지 시스템 (Achievement System)
+
+유저가 운동·파티·인증 활동을 통해 배지를 수집하는 컬렉션 시스템입니다.  
+보상(칭호·말풍선·프레임) 없이 배지 수집 자체가 목적이며, 달성 진행률을 실시간으로 표시합니다.
+
+---
+
+### 📦 파일 구조
+
+| 파일 | 역할 |
+|------|------|
+| `src/data/achievements.ts` | 업적 정의 배열 (`ACHIEVEMENTS`) + 타입 |
+| `src/lib/achievementStatsService.ts` | `AchievementStats` 타입 · Supabase 쿼리 · `computeCurrentValue()` 순수함수 |
+| `src/hooks/useAchievements.ts` | 오케스트레이터 훅 — 로컬 통계 + 원격 통계 조합 → progress 반환 |
+| `src/pages/Achievements.tsx` | 업적 배지 UI (2열 그리드 · 카테고리 필터 · 상세 바텀시트) |
+
+진입점: 마이페이지 > 내정보 탭 > **업적달성** 버튼
+
+---
+
+### 📡 데이터 연결 현황
+
+| 조건 타입 | 연결 상태 | 데이터 출처 |
+|-----------|-----------|-------------|
+| `first_workout` | ✅ | `workoutRecords.length` |
+| `total_steps` | ✅ | `workoutRecords` 합산 |
+| `daily_steps` | ✅ | `workoutRecords` 날짜별 최대값 |
+| `streak_days` | ✅ | `userProfile.streak` |
+| `time_workout` (06~08시, 22~24시) | ✅ | `workoutRecords.created_at` 시간 필터 |
+| `return_after_days` | ✅ | `workoutRecords` 날짜 간격 계산 |
+| `premium_join` | ✅ | `userProfile.is_premium` |
+| `party_join` | ✅ | `party_members` Supabase 쿼리 |
+| `party_goal_success` | ✅ | `community_posts` (source_type='party_goal') |
+| `post_create` | ✅ | `community_posts` Supabase 쿼리 |
+| `post_likes` | ✅ | `community_posts.cheers` 합산 |
+| `party_mvp` | ⏳ | 파티별 1위 횟수 — 미구현 |
+| `weather_workout` | ⏳ | 날씨 기록 저장 구조 미구현 |
+| `season_workout` | ⏳ | 시즌 기록 저장 구조 미구현 |
+| `unlock_count` | ⏳ | 해금 아이템 수 연동 미구현 |
+
+---
+
+### ➕ 새 업적 추가하는 법
+
+**1. 기존 조건 타입 사용 시** → `src/data/achievements.ts`에 항목만 추가
+
+```typescript
+{
+  id: "total_200000_steps",        // 고유 ID
+  category: "walking",
+  difficulty: "hard",
+  icon: "🦶",
+  name: "20만 보 돌파",
+  description: "누적 200,000보를 걸었어요",
+  condition: { type: "total_steps", target: 200000 },
+  // reward 필드는 추후 Supabase 보상 연동 시 활용 (현재 UI에서 미표시)
+},
+```
+
+**2. 새 조건 타입 추가 시** (3단계)
+
+```typescript
+// Step 1: src/data/achievements.ts — AchievementConditionType에 타입 추가
+export type AchievementConditionType =
+  | ... (기존)
+  | "new_condition_type";  // ← 추가
+
+// Step 2: src/lib/achievementStatsService.ts — AchievementStats 타입에 필드 추가
+export type AchievementStats = {
+  ... (기존)
+  newStatField: number;  // ← 추가
+};
+
+// Step 3: src/lib/achievementStatsService.ts — computeCurrentValue() switch에 case 추가
+case "new_condition_type":
+  return stats.newStatField;
+
+// + 데이터 소스가 Supabase라면 fetchRemoteStats() 쿼리에도 추가
+```
+
+**3. hidden 업적** — 조건 달성 전까지 이름/설명이 `???`로 표시됨
+
+```typescript
+{ ..., hidden: true }
+```
+
+---
+
+### 🔮 미구현 항목 (TODO)
+
+- **party_mvp**: 파티 종료 시점에 1위 유저 ID를 `workout_history` 또는 별도 컬럼에 저장하는 구조 필요
+- **weather_workout / season_workout**: 운동 저장 시 날씨 코드 또는 시즌 값을 `workout_history`에 함께 저장해야 집계 가능
+- **unlock_count**: 현재 `unlockItems.ts`에서 해금 여부를 판단하는 로직을 `achievementStatsService.ts`로 연결
+
+---
+
 ## 🥑 식단 관리 탭 (Diet Management)
 
 사용자의 실제 신체 정보와 당일 운동 소모 칼로리를 기반으로, 맞춤형 하루 3끼 식단을 가이드하고 프리미엄 구독 모델(Freemium)을 유기적으로 연결한 핵심 기능 페이지입니다.

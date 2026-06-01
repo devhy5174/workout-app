@@ -1,3 +1,15 @@
+// src/hooks/useAchievements.ts
+//
+// ─── 업적 오케스트레이터 훅 ──────────────────────────────────────────────────
+//
+// 이 훅은 "조합"만 담당합니다. 실제 계산·쿼리 로직은 건드릴 필요 없습니다.
+//   - 로컬 통계 (workoutRecords·userProfile) → buildLocalStats()
+//   - 원격 통계 (Supabase)                  → fetchRemoteStats()
+//   - 진행값 계산                            → computeCurrentValue()
+//
+// ✅ 원격 통계 추가 시
+//   fetchRemoteStats() 에 쿼리 추가 → 자동으로 여기 progress에 반영됨
+
 import { useState, useEffect, useMemo } from "react";
 import { useUser } from "../context/UserContext";
 import { ACHIEVEMENTS, type Achievement } from "../data/achievements";

@@ -1,3 +1,23 @@
+// src/lib/achievementStatsService.ts
+//
+// ─── 업적 통계 서비스 ──────────────────────────────────────────────────────────
+//
+// 역할 분리:
+//   buildLocalStats()      → workoutRecords·userProfile 에서 동기적으로 계산 (Supabase 불필요)
+//   fetchRemoteStats()     → 파티·인증 데이터를 Supabase에서 조회
+//   computeCurrentValue()  → Achievement + AchievementStats → 현재 진행값 (순수함수)
+//
+// ✅ 새 데이터 소스 추가 시
+//   1. AchievementStats 에 필드 추가
+//   2. 로컬 계산이면 buildLocalStats(), Supabase면 fetchRemoteStats() 에 쿼리 추가
+//   3. computeCurrentValue() switch 에 case 추가
+//
+// ⏳ 미구현 항목 (current = 0 고정)
+//   - party_mvp       : 파티 종료 시 1위 유저를 별도 컬럼/테이블에 저장해야 집계 가능
+//   - weather_workout : workout_history 저장 시 weather_code 컬럼 추가 필요
+//   - season_workout  : workout_history 저장 시 season 컬럼 추가 필요
+//   - unlock_count    : unlockItems.ts 해금 여부를 여기로 연결 필요
+
 import { supabase } from "./supabase";
 import type { WorkoutRecord } from "./workoutService";
 import type { AppUser } from "../context/UserContext";

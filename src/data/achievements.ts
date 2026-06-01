@@ -1,4 +1,23 @@
 // src/data/achievements.ts
+//
+// ─── 업적 정의 파일 ────────────────────────────────────────────────────────────
+// 이 파일에서만 업적 데이터를 관리합니다. UI·계산 로직은 건드릴 필요 없습니다.
+//
+// ✅ 기존 조건 타입으로 업적 추가할 때
+//   → ACHIEVEMENTS 배열에 항목만 추가 (AchievementConditionType 확인 후 사용)
+//
+// ✅ 새로운 조건 타입이 필요할 때 (3단계)
+//   1. AchievementConditionType 에 타입 추가
+//   2. src/lib/achievementStatsService.ts 의 AchievementStats 에 필드 추가
+//   3. src/lib/achievementStatsService.ts 의 computeCurrentValue() switch 에 case 추가
+//
+// ✅ hidden: true
+//   → 달성 전까지 이름·설명을 "???" 로 숨김. 달성 시 자동 공개.
+//
+// ✅ reward 필드
+//   → 현재 UI에서 표시 안 함 (배지 수집 방식).
+//   → 추후 Supabase user_achievements 테이블 연동 시 보상 자동 지급에 활용 예정.
+//   → rewardId 는 src/data/unlockItems.ts 의 id 와 매핑해야 실제 아이템 해금 가능.
 
 export type AchievementCategory =
   | "walking"
