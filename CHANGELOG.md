@@ -1,5 +1,36 @@
 # Changelog
 
+## [1.0.21] — 2026-06-01
+
+### 운동 기록 중복 저장 버그 수정 + 자정 날짜 변경 자동 저장
+
+#### 버그 수정: 운동 기록 중복 저장 (`Workout.tsx`)
+
+목표 달성 시 자동 완료 경로에서 `WorkoutNative.stopWorkout()`이 호출되지 않아 Android Foreground Service가 계속 실행 상태로 남는 문제를 수정.
+
+**재현 경로:**
+1. 목표 달성 → `performSave()` 완료, `isSaved.current = true`
+2. 화면 이탈 → 컴포넌트 언마운트 → `isSaved.current` 초기화
+3. 화면 재진입 → `restoreFromNative()`가 실행 중 서비스를 감지 → `setState("running")`
+4. `goalProgress >= 100` effect 재발동 → `performSave()` 재호출 → **중복 저장**
+
+**수정 내용:**
+- 목표 달성 effect에 `WorkoutNative.stopWorkout()` 추가 — 서비스를 즉시 종료해 재마운트 시 running 복원을 차단
+
+#### 신규 기능: 자정 날짜 변경 자동 저장
+
+며칠간 운동 트래커를 종료하지 않을 경우 모든 걸음수가 종료한 날짜 하나에 합산되던 문제를 해결.
+
+**수정 내용:**
+- `WK_KEY.startDate` (`wk_start_date`) 추가 — 운동 시작 날짜를 localStorage에 영속 저장
+- `formatDateIso()` 모듈 레벨 헬퍼 추출
+- `performSave()`에 `overrideDate` 파라미터 추가 — 자동 저장 시 실제 운동 날짜로 기록
+- 1초 타이머에 자정 감지 로직 추가:
+  - 현재 날짜 ≠ `wk_start_date` 이면 서비스 최종 걸음수 수집 → `stopWorkout()` → `performSave(date: 시작날짜)` → `setState("done")`
+  - 앱 강제종료 후 다음 날 재실행 시에도 localStorage에서 시작 날짜를 복원해 동작
+
+---
+
 ## [1.0.20] — 2026-05-29
 
 ### 알림 문구 전면 개선 — 캐릭터 1인칭 대화체

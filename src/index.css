@@ -2,7 +2,8 @@
 @tailwind components;
 @tailwind utilities;
 
-html, body {
+html,
+body {
   overscroll-behavior: none;
 }
 
@@ -22,34 +23,60 @@ html, body {
 }
 
 @keyframes gentle-bounce {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-6px); }
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
 }
 
 @keyframes bubble-fade {
-  0%, 100% { opacity: 0.45; }
-  50% { opacity: 1; }
+  0%,
+  100% {
+    opacity: 0.45;
+  }
+  50% {
+    opacity: 1;
+  }
 }
 
 @keyframes dot-pulse {
-  0%, 100% { opacity: 0.2; transform: scale(0.8); }
-  50% { opacity: 1; transform: scale(1.1); }
+  0%,
+  100% {
+    opacity: 0.2;
+    transform: scale(0.8);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.1);
+  }
 }
 
 @keyframes marquee-scroll {
-  from { transform: translateX(0); }
-  to { transform: translateX(-50%); }
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
 }
 
 .marquee-track {
-  animation: marquee-scroll 22s linear infinite;
+  animation: marquee-scroll 16s linear infinite;
   display: inline-block;
   white-space: nowrap;
 }
 
 @keyframes buddy-float {
-  0%, 100% { transform: translateY(0px); }
-  50% { transform: translateY(-6px); }
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
 }
 
 .buddy-float {
@@ -61,20 +88,26 @@ html, body {
 }
 
 @keyframes border-glow {
-  0%, 100% {
+  0%,
+  100% {
     box-shadow: 0 0 0 0 transparent;
   }
   50% {
-    box-shadow: 0 0 10px 3px var(--color-primary), inset 0 0 6px 0 var(--color-primary-light);
+    box-shadow:
+      0 0 10px 3px var(--color-primary),
+      inset 0 0 6px 0 var(--color-primary-light);
   }
 }
 
 @keyframes premium-bubble-shine {
-  0%, 100% {
+  0%,
+  100% {
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
   }
   50% {
-    box-shadow: 0 0 16px 6px rgba(255, 255, 255, 0.55), 0 2px 8px rgba(0, 0, 0, 0.1);
+    box-shadow:
+      0 0 16px 6px rgba(255, 255, 255, 0.55),
+      0 2px 8px rgba(0, 0, 0, 0.1);
   }
 }
 
@@ -83,8 +116,13 @@ html, body {
 }
 
 @keyframes card-bg-pulse {
-  0%, 100% { opacity: 0; }
-  50% { opacity: 1; }
+  0%,
+  100% {
+    opacity: 0;
+  }
+  50% {
+    opacity: 1;
+  }
 }
 
 .animate-card-bg-pulse {
@@ -92,8 +130,14 @@ html, body {
 }
 
 @keyframes cheer-float-up {
-  0%   { opacity: 1; transform: translateX(-50%) translateY(0); }
-  100% { opacity: 0; transform: translateX(-50%) translateY(-22px); }
+  0% {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-22px);
+  }
 }
 
 .animate-cheer-float {
@@ -153,6 +197,4 @@ html, body {
     --color-primary-light: #e0f2fe;
     --color-ring-track: #e2e8f0;
   }
-
 }
-

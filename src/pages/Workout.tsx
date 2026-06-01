@@ -38,6 +38,12 @@ const WK_KEY = {
   resumeAt: "wk_resume_at",
   stepsAt: "wk_steps_at",
   activityType: "wk_activity_type",
+  startDate: "wk_start_date", // 자정 날짜 변경 감지용 — 앱 종료 후 재실행 시에도 유지
+};
+
+const formatDateIso = (d: Date) => {
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 };
 
 // 활동 유형별 분당 걸음수
@@ -172,6 +178,7 @@ export default function Workout() {
 
   const isSaved = useRef(false);
   const lastSavedAt = useRef<number>(0);
+  const workoutStartDateRef = useRef<string>("");
   const wakeLockRef = useRef<WakeLockSentinel | null>(null);
   const stepsRef = useRef(steps);
   const isRestoredSessionRef = useRef(false);
@@ -285,10 +292,31 @@ export default function Workout() {
   const durationDiet =
     elapsedMin >= 30 ? DIET_BY_DURATION.protein : DIET_BY_DURATION.light;
 
+  // 운동 시작 날짜 기록 — 자정 날짜 변경 감지에 사용
+  // localStorage에도 저장해 앱 강제종료 후 재실행 시에도 시작 날짜 유지
+  useEffect(() => {
+    if (state === "running" && !workoutStartDateRef.current) {
+      // 앱 재실행 시 저장된 시작 날짜 복원 (없으면 오늘 날짜로 신규 기록)
+      const persisted = localStorage.getItem(WK_KEY.startDate);
+      const today = formatDateIso(new Date());
+      const startDate = persisted ?? today;
+      workoutStartDateRef.current = startDate;
+      localStorage.setItem(WK_KEY.startDate, startDate);
+    }
+    if (state === "idle") {
+      workoutStartDateRef.current = "";
+      // clearWorkoutSession이 WK_KEY 전체를 지우므로 별도 제거 불필요
+    }
+  }, [state]);
+
   // 목표 달성 시 자동 완료 + 1회 저장
+  // 서비스도 함께 종료해야 재마운트 시 중복 저장 방지 가능
   useEffect(() => {
     if (state === "running" && goalProgress >= 100) {
       setState("done");
+      if (isNative() && !estimationMode) {
+        WorkoutNative.stopWorkout().catch(() => {});
+      }
       performSave();
     }
   }, [state, goalProgress]);
@@ -298,9 +326,11 @@ export default function Workout() {
   };
 
   // overrideSteps/overrideElapsed: handleStop에서 서비스 종료 전 가져온 정확한 값
+  // overrideDate: 자정 자동 저장 시 실제 운동 날짜(어제 날짜)를 지정
   const performSave = async (
     overrideSteps?: number,
     overrideElapsed?: number,
+    overrideDate?: string,
   ) => {
     if (isSaved.current) return;
     const now = Date.now();
@@ -356,9 +386,7 @@ export default function Workout() {
       tip: charDiet?.tip,
     });
 
-    const today = new Date();
-    const pad = (n: number) => String(n).padStart(2, "0");
-    const todayIso = `${today.getFullYear()}-${pad(today.getMonth() + 1)}-${pad(today.getDate())}`;
+    const todayIso = overrideDate ?? formatDateIso(new Date());
 
     // 평균 페이스 (분/km) — GPS 거리 기준, 없으면 추정 거리 기준
     const avgPace =
@@ -708,12 +736,39 @@ export default function Workout() {
     return () => clearInterval(id);
   }, [state, selectedActivityType, estimationMode]);
 
-  // 타이머 (1초마다)
+  // 타이머 (1초마다) + 자정 날짜 변경 자동 저장
   useEffect(() => {
     if (state !== "running") return;
-    const id = setInterval(() => setElapsed((prev) => prev + 1), 1000);
+    const id = setInterval(() => {
+      setElapsed((prev) => prev + 1);
+
+      // 자정 감지: 운동 시작일과 현재 날짜가 다르면 자동 저장 후 종료
+      const savedStart = workoutStartDateRef.current;
+      if (!savedStart) return;
+      const todayStr = formatDateIso(new Date());
+      if (todayStr === savedStart) return;
+
+      workoutStartDateRef.current = ""; // 재진입 방지
+      (async () => {
+        let serviceSteps: number | undefined;
+        let serviceElapsed: number | undefined;
+        if (isNative() && !estimationMode) {
+          try {
+            const status = await WorkoutNative.getStatus();
+            if (status.isRunning) {
+              serviceSteps = status.steps;
+              serviceElapsed = status.elapsed;
+            }
+          } catch {}
+          WorkoutNative.stopWorkout().catch(() => {});
+        }
+        setState("done");
+        // savedStart(어제 날짜)로 저장해 날짜별 기록이 올바르게 분리되도록 함
+        await performSave(serviceSteps, serviceElapsed, savedStart);
+      })();
+    }, 1000);
     return () => clearInterval(id);
-  }, [state]);
+  }, [state]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // GPS 우선 거리 (steps 기반 추정의 fallback)
   const effectiveDistance =

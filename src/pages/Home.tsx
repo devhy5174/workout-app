@@ -10,7 +10,7 @@ import { getRandomMessage, getWeatherMessage } from "../data/characterMessages";
 import { useWeather } from "../hooks/useWeather";
 import { getActiveSessions } from "../lib/sessionService";
 import { getAvatarCharacterById } from "../data/avatarCharacters";
-import { getLiveFakeUsers } from "../data/fakeUsers";
+import { getAllFakeUsersToday } from "../data/fakeUsers";
 import { useWeeklyTop3 } from "../hooks/useWeeklyTop3";
 import { usePartyHighlights } from "../hooks/usePartyHighlights";
 import { PartyHighlightTicker } from "../components/ui/PartyHighlightTicker";
@@ -238,11 +238,11 @@ export default function Home() {
         }));
       } catch {}
 
-      if (realUsers.length >= 8) {
-        setActiveUsers(realUsers.slice(0, 8));
-      } else {
-        const needed = 8 - realUsers.length;
-        const liveFakes = getLiveFakeUsers();
+      // 실유저는 전원 표시, 페이크로 부족분 채움 (페이크 max 8)
+      const MAX_FAKE = 8;
+      const needed = Math.max(0, MAX_FAKE - realUsers.length);
+      if (needed > 0) {
+        const liveFakes = getAllFakeUsersToday();
         const shuffledFake = [...liveFakes]
           .sort(() => Math.random() - 0.5)
           .slice(0, needed)
@@ -255,6 +255,8 @@ export default function Home() {
             title: null,
           }));
         setActiveUsers([...realUsers, ...shuffledFake]);
+      } else {
+        setActiveUsers(realUsers); // 실유저 8명 이상 — 전원 표시, 페이크 없음
       }
     }
     buildActiveUsers();

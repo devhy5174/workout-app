@@ -1,21 +1,31 @@
-# Add project specific ProGuard rules here.
-# You can control the set of applied configuration files using the
-# proguardFiles setting in build.gradle.
-#
-# For more details, see
-#   http://developer.android.com/guide/developing/tools/proguard.html
+# ── Crash 스택 추적을 위한 라인 정보 보존 ──────────────────────────────
+-keepattributes SourceFile,LineNumberTable
+-keepattributes *Annotation*
 
-# If your project uses WebView with JS, uncomment the following
-# and specify the fully qualified class name to the JavaScript interface
-# class:
-#-keepclassmembers class fqcn.of.javascript.interface.for.webview {
-#   public *;
-#}
+# ── Capacitor 코어 ─────────────────────────────────────────────────────
+-keep class com.getcapacitor.** { *; }
+-keep @com.getcapacitor.annotation.CapacitorPlugin class * { *; }
 
-# Uncomment this to preserve the line number information for
-# debugging stack traces.
-#-keepattributes SourceFile,LineNumberTable
+# ── 이 앱 패키지 (커스텀 플러그인 포함) ──────────────────────────────
+-keep class com.togetherwalk.app.** { *; }
 
-# If you keep the line number information, uncomment this to
-# hide the original source file name.
-#-renamesourcefileattribute SourceFile
+# ── Firebase / GMS ─────────────────────────────────────────────────────
+-keep class com.google.firebase.** { *; }
+-keep class com.google.android.gms.** { *; }
+-dontwarn com.google.firebase.**
+-dontwarn com.google.android.gms.**
+
+# ── WebView JavaScript Interface ────────────────────────────────────────
+-keepclassmembers class * {
+    @android.webkit.JavascriptInterface <methods>;
+}
+
+# ── Kotlin coroutines ───────────────────────────────────────────────────
+-keepclassmembernames class kotlinx.** {
+    volatile <fields>;
+}
+-dontwarn kotlinx.coroutines.**
+
+# ── AndroidX / Jetpack ─────────────────────────────────────────────────
+-keep class androidx.** { *; }
+-dontwarn androidx.**
