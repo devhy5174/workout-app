@@ -960,3 +960,13 @@ export async function fetchTrendingParties(): Promise<PartyHighlight[]> {
     };
   });
 }
+
+
+// 파티 목표 달성 시 MVP 유저의 party_mvp_count 증가
+// supabase/party_mvp_count.sql 의 RPC 함수 사용 (SECURITY DEFINER로 RLS 우회)
+export async function incrementPartyMvpCount(mvpUserId: string): Promise<void> {
+  const { error } = await supabase.rpc("increment_party_mvp_count", {
+    target_user_id: mvpUserId,
+  });
+  if (error) console.warn("[incrementPartyMvpCount] 실패:", error.message);
+}

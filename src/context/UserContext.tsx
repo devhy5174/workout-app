@@ -41,6 +41,7 @@ export type AppUser = {
   title: string | null;
   nickname_changed_at: string | null;
   streak: number | null;
+  party_mvp_count: number | null;
 };
 
 type UserContextValue = {

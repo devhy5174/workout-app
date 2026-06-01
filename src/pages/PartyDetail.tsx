@@ -24,6 +24,7 @@ import {
   sendPartyNotice,
   deletePartyNotice,
   leavePartyAsLeader,
+  incrementPartyMvpCount,
 } from "../lib/partyService";
 import { postPartyGoalAchieved } from "../lib/communityService";
 import { localDateStr } from "../utils/streak";
@@ -514,7 +515,13 @@ export default function PartyDetail() {
         totalDistance: stats.totalDistance,
         memberNicknames: currentMembers.map((m) => m.nickname),
       });
-      if (posted) setShowGoalAchievedToast(true);
+      if (posted) {
+        setShowGoalAchievedToast(true);
+        // MVP 유저 카운트 증가 (fire-and-forget)
+        if (stats.topMember?.user_id) {
+          incrementPartyMvpCount(stats.topMember.user_id).catch(() => {});
+        }
+      }
     },
     [user],
   );

@@ -30,6 +30,19 @@ import { useTodayStats } from "../hooks/useTodayStats";
 import { useYesterdayPace } from "../hooks/useYesterdayPace";
 import { notifyGoalReached } from "../utils/notificationTriggers";
 import WorkoutNative, { isNative } from "../lib/workoutNative";
+import { codeToCondition } from "../hooks/useWeather";
+
+// 세션스토리지에 캐시된 날씨에서 조건 문자열 추출 (API 재호출 없음)
+function getCachedWeatherCondition(): string | undefined {
+  try {
+    const raw = sessionStorage.getItem("weather_cache_v1");
+    if (!raw) return undefined;
+    const { code, temp } = JSON.parse(raw);
+    return codeToCondition(code, temp);
+  } catch {
+    return undefined;
+  }
+}
 
 const WK_KEY = {
   state: "wk_state",
@@ -423,6 +436,7 @@ export default function Workout() {
       distance_source: finalDistanceSource,
       avg_pace: avgPace,
       route_points: routePoints,
+      weather_condition: getCachedWeatherCondition(),
     });
 
     if (saveResult.error) {

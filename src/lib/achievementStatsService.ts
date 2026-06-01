@@ -4,55 +4,64 @@
 //
 // 역할 분리:
 //   buildLocalStats()      → workoutRecords·userProfile 에서 동기적으로 계산 (Supabase 불필요)
-//   fetchRemoteStats()     → 파티·인증 데이터를 Supabase에서 조회
+//   fetchRemoteStats()     → 파티·인증·날씨 데이터를 Supabase에서 조회
 //   computeCurrentValue()  → Achievement + AchievementStats → 현재 진행값 (순수함수)
 //
 // ✅ 새 데이터 소스 추가 시
 //   1. AchievementStats 에 필드 추가
 //   2. 로컬 계산이면 buildLocalStats(), Supabase면 fetchRemoteStats() 에 쿼리 추가
 //   3. computeCurrentValue() switch 에 case 추가
-//
-// ⏳ 미구현 항목 (current = 0 고정)
-//   - party_mvp       : 파티 종료 시 1위 유저를 별도 컬럼/테이블에 저장해야 집계 가능
-//   - weather_workout : workout_history 저장 시 weather_code 컬럼 추가 필요
-//   - season_workout  : workout_history 저장 시 season 컬럼 추가 필요
-//   - unlock_count    : unlockItems.ts 해금 여부를 여기로 연결 필요
 
 import { supabase } from "./supabase";
+import { unlockItems } from "../data/unlockItems";
 import type { WorkoutRecord } from "./workoutService";
 import type { AppUser } from "../context/UserContext";
 import type { Achievement } from "../data/achievements";
 
 // ── 모든 업적 계산에 필요한 통합 통계 타입 ──────────────────
 export type AchievementStats = {
-  // 운동 (로컬 workoutRecords에서 계산)
+  // 운동 (로컬)
   totalWorkouts: number;
   totalSteps: number;
   maxDailySteps: number;
   streak: number;
-  morningWorkouts: number;        // 06~08시
-  nightWorkouts: number;          // 22~24시
+  morningWorkouts: number;
+  nightWorkouts: number;
   hasReturnedAfter30Days: boolean;
   isPremium: boolean;
+  // 계절 (로컬 — workoutRecords.date 기준)
+  summerWorkouts: number;   // 6~8월
+  winterWorkouts: number;   // 12~2월
+  // 꾸미기 해금 (로컬 — unlockItems 조건 계산)
+  unlockedBubbleCount: number;
+  // 파티 MVP (로컬 — userProfile.party_mvp_count, supabase/party_mvp_count.sql 필요)
+  partyMvpCount: number;
   // 파티 (Supabase)
   partyJoinCount: number;
-  partyGoalSuccessCount: number;  // community_posts source_type='party_goal'
-  partyMvpCount: number;          // 추후 구현 예정
+  partyGoalSuccessCount: number;
   // 커뮤니티 (Supabase)
   postCount: number;
   totalCheersReceived: number;
-  // 꾸미기 해금 (추후)
-  unlockedBubbleCount: number;
+  // 날씨 (Supabase — supabase/workout_weather.sql 필요)
+  rainWorkouts: number;
+  snowWorkouts: number;
 };
+
+type LocalStats = Omit<
+  AchievementStats,
+  "partyJoinCount" | "partyGoalSuccessCount" | "postCount" | "totalCheersReceived" | "rainWorkouts" | "snowWorkouts"
+>;
+
+type RemoteStats = Pick<
+  AchievementStats,
+  "partyJoinCount" | "partyGoalSuccessCount" | "postCount" | "totalCheersReceived" | "rainWorkouts" | "snowWorkouts"
+>;
 
 // ── 로컬 데이터만으로 계산 가능한 통계 (동기, 순수함수) ─────
 export function buildLocalStats(
   workoutRecords: WorkoutRecord[],
   userProfile: AppUser | null,
-): Omit<
-  AchievementStats,
-  "partyJoinCount" | "partyGoalSuccessCount" | "partyMvpCount" | "postCount" | "totalCheersReceived" | "unlockedBubbleCount"
-> {
+): LocalStats {
   const totalWorkouts = workoutRecords.length;
   const totalSteps = workoutRecords.reduce((s, r) => s + (r.steps ?? 0), 0);
 
@@ -84,30 +93,61 @@ export function buildLocalStats(
     return false;
   })();
 
+  // 계절별 운동 수 (한국 기준: 여름 6~8월, 겨울 12~2월)
+  const summerWorkouts = workoutRecords.filter((r) => {
+    const month = new Date(r.date).getMonth() + 1;
+    return month >= 6 && month <= 8;
+  }).length;
+
+  const winterWorkouts = workoutRecords.filter((r) => {
+    const month = new Date(r.date).getMonth() + 1;
+    return month === 12 || month <= 2;
+  }).length;
+
+  // 해금된 말풍선 수 — unlockItems 조건 로컬 계산
+  const streak = userProfile?.streak ?? 0;
+  const isPremium = (userProfile as any)?.is_premium ?? false;
+  const monthlyAvgSteps = totalWorkouts > 0 ? Math.round(totalSteps / totalWorkouts) : 0;
+
+  const unlockedBubbleCount = unlockItems.filter((item) => {
+    if (item.type !== "activeBubble") return false;
+    if (item.premium && !isPremium) return false;
+    if (!item.condition) return true;
+    if (item.condition.monthlyAverageStep !== undefined) {
+      return monthlyAvgSteps >= item.condition.monthlyAverageStep;
+    }
+    if (item.condition.consecutiveDays !== undefined) {
+      return streak >= item.condition.consecutiveDays;
+    }
+    return true;
+  }).length;
+
   return {
     totalWorkouts,
     totalSteps,
     maxDailySteps,
-    streak: userProfile?.streak ?? 0,
+    streak,
     morningWorkouts: countByHour(6, 8),
     nightWorkouts: countByHour(22, 24),
     hasReturnedAfter30Days,
-    isPremium: (userProfile as any)?.is_premium ?? false,
+    isPremium,
+    summerWorkouts,
+    winterWorkouts,
+    unlockedBubbleCount,
+    partyMvpCount: userProfile?.party_mvp_count ?? 0,
   };
 }
 
 // ── Supabase에서 가져와야 하는 통계 ─────────────────────────
-export async function fetchRemoteStats(
-  userId: string,
-): Promise<Pick<AchievementStats, "partyJoinCount" | "partyGoalSuccessCount" | "partyMvpCount" | "postCount" | "totalCheersReceived" | "unlockedBubbleCount">> {
-  const [partyRes, goalPostRes, postRes] = await Promise.all([
+export async function fetchRemoteStats(userId: string): Promise<RemoteStats> {
+  const [partyRes, goalPostRes, postRes, weatherRes] = await Promise.all([
     // 파티 참가 횟수
     supabase
       .from("party_members")
       .select("id", { count: "exact", head: true })
       .eq("user_id", userId),
 
-    // 파티 목표 달성 인증글 수 (party_goal 타입 포스트)
+    // 파티 목표 달성 인증글 수
     supabase
       .from("community_posts")
       .select("id", { count: "exact", head: true })
@@ -119,6 +159,13 @@ export async function fetchRemoteStats(
       .from("community_posts")
       .select("cheers")
       .eq("user_id", userId),
+
+    // 날씨별 운동 수 (supabase/workout_weather.sql 마이그레이션 필요)
+    supabase
+      .from("workout_history")
+      .select("weather_condition")
+      .eq("user_id", userId)
+      .in("weather_condition", ["rainy", "snow"]),
   ]);
 
   const postCount = postRes.data?.length ?? 0;
@@ -126,14 +173,20 @@ export async function fetchRemoteStats(
     (sum, r) => sum + (r.cheers ?? 0),
     0,
   );
+  const rainWorkouts = (weatherRes.data ?? []).filter(
+    (r) => r.weather_condition === "rainy",
+  ).length;
+  const snowWorkouts = (weatherRes.data ?? []).filter(
+    (r) => r.weather_condition === "snow",
+  ).length;
 
   return {
     partyJoinCount: partyRes.count ?? 0,
     partyGoalSuccessCount: goalPostRes.count ?? 0,
-    partyMvpCount: 0, // 추후: 파티별 1위 횟수 계산 필요
     postCount,
     totalCheersReceived,
-    unlockedBubbleCount: 0, // 추후: unlock 시스템 연동
+    rainWorkouts,
+    snowWorkouts,
   };
 }
 
@@ -155,8 +208,7 @@ export function computeCurrentValue(
     case "streak_days":
       return stats.streak;
     case "time_workout": {
-      const { startHour = 0, endHour = 24 } = meta ?? {};
-      // 아침(06~08) or 밤(22~24)
+      const { startHour = 0 } = meta ?? {};
       if (startHour === 6) return stats.morningWorkouts;
       if (startHour === 22) return stats.nightWorkouts;
       return 0;
@@ -165,6 +217,17 @@ export function computeCurrentValue(
       return stats.hasReturnedAfter30Days ? target : 0;
     case "premium_join":
       return stats.isPremium ? 1 : 0;
+    case "season_workout": {
+      const { season } = meta ?? {};
+      if (season === "summer") return stats.summerWorkouts;
+      if (season === "winter") return stats.winterWorkouts;
+      return 0;
+    }
+    case "unlock_count": {
+      const { unlockType } = meta ?? {};
+      if (unlockType === "speechBubble") return stats.unlockedBubbleCount;
+      return 0;
+    }
     case "party_join":
       return stats.partyJoinCount;
     case "party_goal_success":
@@ -175,11 +238,12 @@ export function computeCurrentValue(
       return stats.postCount;
     case "post_likes":
       return stats.totalCheersReceived;
-    case "unlock_count":
-      return stats.unlockedBubbleCount;
-    case "weather_workout":
-    case "season_workout":
-      return 0; // 날씨/시즌 기록 저장 구조 미구현
+    case "weather_workout": {
+      const { weather } = meta ?? {};
+      if (weather === "rain") return stats.rainWorkouts;
+      if (weather === "snow") return stats.snowWorkouts;
+      return 0;
+    }
     default:
       return 0;
   }

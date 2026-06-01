@@ -50,6 +50,8 @@ export type WorkoutRecord = {
   distance_source?: "estimated" | "gps";
   avg_pace?: number;                // 평균 페이스 (분/km, 소수)
   route_points?: { lat: number; lng: number; timestamp: number }[];  // GPS 경로
+  // 날씨 (supabase/workout_weather.sql 마이그레이션 후 활성화)
+  weather_condition?: string;       // rainy | snow | sunny | cloudy | hot | cold
 };
 
 export type UserGoal = {
@@ -77,7 +79,7 @@ export async function saveWorkoutRecord(
     if (error.code === "42703" || error.message?.includes("column")) {
       console.warn("[workout_history] GPS 컬럼 없음 — supabase/gps_columns.sql 실행 필요. GPS 필드 제외 후 재시도.");
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const { gps_distance: _g, distance_source: _s, avg_pace: _p, route_points: _r, ...fallback } = record;
+      const { gps_distance: _g, distance_source: _s, avg_pace: _p, route_points: _r, weather_condition: _w, ...fallback } = record;
       const { data: fd, error: fe } = await supabase
         .from("workout_history")
         .insert({ ...fallback, user_id: userId })
