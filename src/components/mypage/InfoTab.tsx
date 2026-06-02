@@ -534,7 +534,7 @@ export default function InfoTab() {
             캐릭터
           </button>
           <button
-            onClick={() => navigate("/achievements")}
+            onClick={() => navigate("/achievements-image")}
             className="px-2 py-2 rounded-2xl text-xs font-bold border-2 bg-white shadow-sm active:scale-95 transition-all flex flex-col items-center gap-0.5"
             style={{
               borderColor: "var(--color-primary)",

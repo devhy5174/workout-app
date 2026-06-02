@@ -31,17 +31,17 @@ const REMOTE_STATS_DEFAULTS: Pick<
   AchievementStats,
   | "partyJoinCount"
   | "partyGoalSuccessCount"
-  | "partyMvpCount"
   | "postCount"
   | "totalCheersReceived"
-  | "unlockedBubbleCount"
+  | "rainWorkouts"
+  | "snowWorkouts"
 > = {
   partyJoinCount: 0,
   partyGoalSuccessCount: 0,
-  partyMvpCount: 0,
   postCount: 0,
   totalCheersReceived: 0,
-  unlockedBubbleCount: 0,
+  rainWorkouts: 0,
+  snowWorkouts: 0,
 };
 
 export function useAchievements() {
