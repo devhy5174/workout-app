@@ -6,7 +6,11 @@ import { BadgeSprite } from "../ui/BadgeSprite";
 import AlertModal from "../ui/AlertModal";
 
 type Character = { image: string; [key: string]: unknown };
-type UserProfile = { nickname?: string | null; title?: string | null; [key: string]: unknown };
+type UserProfile = {
+  nickname?: string | null;
+  title?: string | null;
+  [key: string]: unknown;
+};
 
 type Props = {
   userId: string | undefined;
@@ -35,8 +39,14 @@ export default function CharacterBadgeArea({
   const [selectedBadgeId, setSelectedBadgeId] = useState<string | null>(null);
   const placementRef = useRef<HTMLDivElement>(null);
 
-  const { progress: achievementProgress, newlyUnlocked, dismissNewlyUnlocked } = useAchievements();
-  const unlockedBadges = achievementProgress.filter((p) => p.isUnlocked).map((p) => p.achievement);
+  const {
+    progress: achievementProgress,
+    newlyUnlocked,
+    dismissNewlyUnlocked,
+  } = useAchievements();
+  const unlockedBadges = achievementProgress
+    .filter((p) => p.isUnlocked)
+    .map((p) => p.achievement);
   const { equipped, place, remove } = useEquippedBadges(userId);
 
   const currentBadgePopup = newlyUnlocked[0] ?? null;
@@ -44,10 +54,16 @@ export default function CharacterBadgeArea({
   const handleAreaTap = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!editMode || !selectedBadgeId || !placementRef.current) return;
     const rect = placementRef.current.getBoundingClientRect();
-    const halfW = (BADGE_SIZE / 2) / rect.width;
-    const halfH = (BADGE_SIZE / 2) / rect.height;
-    const x = Math.max(halfW, Math.min(1 - halfW, (e.clientX - rect.left) / rect.width));
-    const y = Math.max(halfH, Math.min(1 - halfH, (e.clientY - rect.top) / rect.height));
+    const halfW = BADGE_SIZE / 2 / rect.width;
+    const halfH = BADGE_SIZE / 2 / rect.height;
+    const x = Math.max(
+      halfW,
+      Math.min(1 - halfW, (e.clientX - rect.left) / rect.width),
+    );
+    const y = Math.max(
+      halfH,
+      Math.min(1 - halfH, (e.clientY - rect.top) / rect.height),
+    );
     place(selectedBadgeId, x, y);
     setSelectedBadgeId(null);
   };
@@ -64,12 +80,20 @@ export default function CharacterBadgeArea({
             <div className="flex flex-col items-center gap-3 py-1">
               <BadgeSprite achievementId={currentBadgePopup.id} size={96} />
               <div className="text-center">
-                <p className="text-base font-extrabold text-gray-800">{currentBadgePopup.name}</p>
-                <p className="text-xs text-gray-500 mt-1">{currentBadgePopup.description}</p>
+                <p className="text-base font-extrabold text-gray-800">
+                  {currentBadgePopup.name}
+                </p>
+                <p className="text-xs text-gray-500 mt-1">
+                  {currentBadgePopup.description}
+                </p>
               </div>
             </div>
           }
-          confirmLabel={newlyUnlocked.length > 1 ? `확인 (${newlyUnlocked.length - 1}개 더)` : "확인"}
+          confirmLabel={
+            newlyUnlocked.length > 1
+              ? `확인 (${newlyUnlocked.length - 1}개 더)`
+              : "확인"
+          }
           onConfirm={dismissNewlyUnlocked}
         />
       )}
@@ -96,7 +120,11 @@ export default function CharacterBadgeArea({
               remove(badge.id);
             }}
           >
-            <BadgeSprite achievementId={badge.id} size={BADGE_SIZE} className="drop-shadow-md" />
+            <BadgeSprite
+              achievementId={badge.id}
+              size={BADGE_SIZE}
+              className="drop-shadow-md"
+            />
             {editMode && (
               <div className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center pointer-events-none">
                 <span className="text-white text-[8px] font-bold">✕</span>
@@ -116,7 +144,10 @@ export default function CharacterBadgeArea({
         {/* 편집/완료 버튼 */}
         {!editMode ? (
           <button
-            onClick={(e) => { e.stopPropagation(); setEditMode(true); }}
+            onClick={(e) => {
+              e.stopPropagation();
+              setEditMode(true);
+            }}
             className="absolute bottom-3 right-3 z-20 w-8 h-8 rounded-full bg-white/80 shadow-md flex items-center justify-center active:scale-95"
             aria-label="배지 배치 편집"
           >
@@ -124,7 +155,11 @@ export default function CharacterBadgeArea({
           </button>
         ) : (
           <button
-            onClick={(e) => { e.stopPropagation(); setEditMode(false); setSelectedBadgeId(null); }}
+            onClick={(e) => {
+              e.stopPropagation();
+              setEditMode(false);
+              setSelectedBadgeId(null);
+            }}
             className="absolute top-3 right-3 z-20 px-3 py-1 rounded-full text-white text-xs font-bold shadow-md"
             style={{ background: "var(--color-primary)" }}
           >
@@ -138,7 +173,9 @@ export default function CharacterBadgeArea({
             {displayedText}
             <span
               className={`inline-block w-[2px] h-[1em] bg-gray-500 align-middle ml-[1px] transition-opacity duration-300 ${
-                displayedText.length < bubbleMsg.length ? "animate-pulse" : "opacity-0"
+                displayedText.length < bubbleMsg.length
+                  ? "animate-pulse"
+                  : "opacity-0"
               }`}
             />
           </p>
@@ -174,8 +211,12 @@ export default function CharacterBadgeArea({
               {userProfile?.nickname ?? "운동왕"}님!
             </p>
           </div>
-          <span className="absolute top-5 right-5 text-xl animate-bounce">✨</span>
-          <span className="absolute bottom-20 left-1 text-lg animate-bounce delay-150">✨</span>
+          <span className="absolute top-5 right-5 text-xl animate-bounce">
+            ✨
+          </span>
+          <span className="absolute bottom-20 left-1 text-lg animate-bounce delay-150">
+            ✨
+          </span>
         </div>
       </div>
 
@@ -188,14 +229,20 @@ export default function CharacterBadgeArea({
               : "배치할 배지를 선택하세요"}
           </p>
           {unlockedBadges.length === 0 ? (
-            <p className="text-xs text-gray-400 py-2 text-center">아직 획득한 배지가 없어요</p>
+            <p className="text-xs text-gray-400 py-2 text-center">
+              아직 획득한 배지가 없어요
+            </p>
           ) : (
-            <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
+            <div className="flex gap-2 overflow-x-auto p-2 scrollbar-hide">
               {unlockedBadges.map((achievement) => (
                 <button
                   key={achievement.id}
                   onClick={() =>
-                    setSelectedBadgeId(achievement.id === selectedBadgeId ? null : achievement.id)
+                    setSelectedBadgeId(
+                      achievement.id === selectedBadgeId
+                        ? null
+                        : achievement.id,
+                    )
                   }
                   className={`shrink-0 rounded-full overflow-hidden transition-all active:scale-95 ${
                     selectedBadgeId === achievement.id ? "scale-110" : ""
