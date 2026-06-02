@@ -1,5 +1,25 @@
 # Changelog
 
+## [1.0.23] — 2026-06-02
+
+### 긴급 크래시 수정 (hotfix)
+
+#### 앱 시작 즉시 강제 종료 — Galaxy A20 등 전 기기
+- **원인:** `@capgo/capacitor-health` 플러그인(Kotlin 1.9.25)이 `androidx.activity:1.11.0`이 요구하는 Kotlin 2.0.21과 버전 충돌 → `NoClassDefFoundError: SpillingKt` → 앱 시작 즉시 크래시
+- **경위:** v1.0.15(5월 22일) Health Connect 실험적 연동 당시 추가된 패키지가 이후 HC 기능을 제거한 뒤에도 잔류
+- **수정:** `@capgo/capacitor-health` 패키지 완전 제거, `healthConnectService.ts` 및 `patch-capacitor-health.sh` 삭제
+
+#### 운동 시작 불가 — Android 14+ 기기
+- **원인:** `WorkoutService.startForeground(id, notification)` 호출 시 서비스 타입 미지정 → Android 14+(API 34) + targetSdk 36 환경에서 예외 → 서비스 즉시 중단 → 운동 시작 안 됨
+- **수정:** `Build.VERSION_CODES.UPSIDE_DOWN_CAKE` 이상에서 `FOREGROUND_SERVICE_TYPE_LOCATION` 명시
+
+#### AndroidManifest 정리
+- `foregroundServiceType="health|location"` → `"location"` (`health` 타입은 API 34+ 전용)
+- `FOREGROUND_SERVICE_HEALTH` 권한 제거
+- `android.permission.health.READ_STEPS` 권한 제거
+
+---
+
 ## [Unreleased] — 2026-06-02
 
 ### 업적 배지 이미지화 + 홈화면 배지 장착 시스템

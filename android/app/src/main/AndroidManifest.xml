@@ -35,7 +35,7 @@
 
         <service
             android:name=".WorkoutService"
-            android:foregroundServiceType="health|location"
+            android:foregroundServiceType="location"
             android:exported="false" />
 
         <!-- FCM 기본 알림 채널 (백그라운드 알림 표시에 필수) -->
@@ -60,15 +60,11 @@
     <!-- Permissions -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_HEALTH" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
     <uses-permission android:name="android.permission.ACTIVITY_RECOGNITION" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
-
-    <!-- Health Connect: 걸음수만 사용 -->
-    <uses-permission android:name="android.permission.health.READ_STEPS" />
 
     <!-- capgo 플러그인 자동 주입 권한 제거 (미사용) -->
     <uses-permission android:name="android.permission.health.WRITE_STEPS" tools:node="remove" />

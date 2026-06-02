@@ -6,6 +6,7 @@ import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
+import android.content.pm.ServiceInfo;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -197,7 +198,12 @@ public class WorkoutService extends Service implements SensorEventListener {
                 }
                 startGpsTracking();
                 try {
-                    startForeground(NOTIF_ID, buildNotification());
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                        startForeground(NOTIF_ID, buildNotification(),
+                            ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION);
+                    } else {
+                        startForeground(NOTIF_ID, buildNotification());
+                    }
                 } catch (Exception e) {
                     stopSelf();
                     return START_NOT_STICKY;
