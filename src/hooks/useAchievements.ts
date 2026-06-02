@@ -10,7 +10,7 @@
 // ✅ 원격 통계 추가 시
 //   fetchRemoteStats() 에 쿼리 추가 → 자동으로 여기 progress에 반영됨
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { useUser } from "../context/UserContext";
 import { ACHIEVEMENTS, type Achievement } from "../data/achievements";
 import {
@@ -77,5 +77,43 @@ export function useAchievements() {
 
   const unlockedCount = progress.filter((p) => p.isUnlocked).length;
 
-  return { progress, unlockedCount, total: ACHIEVEMENTS.length, isLoading };
+  // 새로 달성된 배지 감지 — localStorage로 이전 달성 목록과 비교
+  const seenKey = `achievements_seen_${userId ?? "guest"}`;
+  const initDone = useRef(false);
+  const [newlyUnlocked, setNewlyUnlocked] = useState<Achievement[]>([]);
+
+  useEffect(() => {
+    if (isLoading) return;
+    const currentIds = progress.filter((p) => p.isUnlocked).map((p) => p.achievement.id);
+    const seen: string[] = JSON.parse(localStorage.getItem(seenKey) ?? "[]");
+
+    if (!initDone.current) {
+      // 첫 로드: 현재 달성 목록을 기준으로 초기화 (팝업 없음)
+      initDone.current = true;
+      if (seen.length === 0 && currentIds.length > 0) {
+        localStorage.setItem(seenKey, JSON.stringify(currentIds));
+      }
+      return;
+    }
+
+    const fresh = progress.filter(
+      (p) => p.isUnlocked && !seen.includes(p.achievement.id)
+    );
+    if (fresh.length > 0) {
+      setNewlyUnlocked(fresh.map((p) => p.achievement));
+      localStorage.setItem(seenKey, JSON.stringify(currentIds));
+    }
+  }, [isLoading, progress]);
+
+  // 첫 번째 배지만 제거 — 여러 개면 다음 배지가 자동으로 팝업
+  const dismissNewlyUnlocked = () => setNewlyUnlocked((prev) => prev.slice(1));
+
+  return {
+    progress,
+    unlockedCount,
+    total: ACHIEVEMENTS.length,
+    isLoading,
+    newlyUnlocked,
+    dismissNewlyUnlocked,
+  };
 }

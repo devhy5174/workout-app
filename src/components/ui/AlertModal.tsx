@@ -1,7 +1,7 @@
 import type { ComponentType, ReactNode } from "react";
 
 interface AlertModalProps {
-  icon: ComponentType<{ className?: string }>;
+  icon?: ComponentType<{ className?: string }>;
   iconClass?: string;
   title: string;
   message: ReactNode;
@@ -28,7 +28,7 @@ export default function AlertModal({
       className={`fixed inset-0 bg-black/40 ${zClass} flex items-center justify-center px-6`}
     >
       <div className="w-full max-w-sm bg-white rounded-3xl p-7 flex flex-col items-center gap-4 shadow-xl">
-        <Icon className={`text-5xl ${iconClass}`} />
+        {Icon && <Icon className={`text-5xl ${iconClass}`} />}
         <p className="font-extrabold text-gray-800 text-lg text-center">
           {title}
         </p>
