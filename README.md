@@ -793,11 +793,25 @@ type 값: `streak_warning` · `activity_reminder` · `diet_lunch` · `diet_dinne
 | 파일 | 역할 |
 |------|------|
 | `src/data/achievements.ts` | 업적 정의 배열 (`ACHIEVEMENTS`) + 타입 |
+| `src/data/achievementsWithImages.ts` | 배지 이미지 매핑 데이터 (`spriteIndex` → 파일 순서) |
 | `src/lib/achievementStatsService.ts` | `AchievementStats` 타입 · Supabase 쿼리 · `computeCurrentValue()` 순수함수 |
 | `src/hooks/useAchievements.ts` | 오케스트레이터 훅 — 로컬 통계 + 원격 통계 조합 → progress 반환 |
-| `src/pages/Achievements.tsx` | 업적 배지 UI (2열 그리드 · 카테고리 필터 · 상세 바텀시트) |
+| `src/hooks/useEquippedBadges.ts` | 홈화면 장착 배지 상태 관리 (localStorage, 최대 8개) |
+| `src/pages/AchievementsImage.tsx` | 업적 배지 UI (2열 그리드 · 카테고리 필터 · 상세 바텀시트) |
+| `src/components/ui/BadgeSprite.tsx` | 배지 이미지 렌더링 공유 컴포넌트 |
+| `src/assets/images/badges/` | 배지 개별 이미지 `badge_01.webp ~ badge_25.webp` (1024×1024) |
+| `scripts/split-badges.mjs` | 스프라이트 시트 → 개별 PNG 분리 스크립트 (Sharp 사용) |
 
-진입점: 마이페이지 > 내정보 탭 > **업적달성** 버튼
+진입점: 마이페이지 > 내정보 탭 > **업적달성** 버튼 (`/achievements`)
+
+#### 홈화면 배지 장착
+캐릭터 영역 우측 하단 ✏️ 버튼 → 편집 모드 → 배지 선택 → 원하는 위치 탭 → 부착  
+배지는 캐릭터·말풍선 뒤에 렌더링되며 위치는 localStorage에 저장됨
+
+#### 배지 이미지 교체 방법
+1. `src/assets/images/badges.png` 교체 (5×5 그리드, 셀 250×250, 1px 간격 → 1254×1254)
+2. `node scripts/split-badges.mjs` 실행 → `badges/` 폴더에 PNG 생성
+3. Sharp로 WebP 변환 후 trim+resize 적용
 
 ---
 

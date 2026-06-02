@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useNotices } from "../context/NoticesContext";
 import { useActivityType } from "../context/ActivityTypeContext";
@@ -31,6 +31,10 @@ import { NotificationDrawer } from "../components/notifications/NotificationDraw
 import { useEvents } from "../hooks/useEvents";
 import { createNotification } from "../lib/notificationService";
 import { useSettings } from "../hooks/useSettings";
+import { useAchievements } from "../hooks/useAchievements";
+import { useEquippedBadges } from "../hooks/useEquippedBadges";
+import { BadgeSprite } from "../components/ui/BadgeSprite";
+import { HiPencil } from "react-icons/hi";
 
 type DisplayUser = {
   nickname: string;
@@ -148,6 +152,30 @@ export default function Home() {
   }, [workoutRecords]);
   const workoutDays = weekWorkouts.filter(Boolean).length;
   const [showStreakInfo, setShowStreakInfo] = useState(false);
+
+  // 배지 장착
+  const [editMode, setEditMode] = useState(false);
+  const [selectedBadgeId, setSelectedBadgeId] = useState<string | null>(null);
+  const placementRef = useRef<HTMLDivElement>(null);
+  const { progress: achievementProgress } = useAchievements();
+  const unlockedBadges = achievementProgress
+    .filter((p) => p.isUnlocked)
+    .map((p) => p.achievement);
+  const { equipped, place, remove } = useEquippedBadges(user?.id);
+
+  const BADGE_SIZE = 90;
+
+  const handleAreaTap = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!editMode || !selectedBadgeId || !placementRef.current) return;
+    const rect = placementRef.current.getBoundingClientRect();
+    // 배지가 컨테이너 밖으로 나가지 않도록 배지 반지름만큼 여백 확보
+    const halfW = (BADGE_SIZE / 2) / rect.width;
+    const halfH = (BADGE_SIZE / 2) / rect.height;
+    const x = Math.max(halfW, Math.min(1 - halfW, (e.clientX - rect.left) / rect.width));
+    const y = Math.max(halfH, Math.min(1 - halfH, (e.clientY - rect.top) / rect.height));
+    place(selectedBadgeId, x, y);
+    setSelectedBadgeId(null);
+  };
 
   // 페이지 로드마다 캐릭터에 맞는 랜덤 메시지
   const activityType = selectedActivityType?.type ?? "walker";
@@ -440,8 +468,74 @@ export default function Home() {
       )}
 
       {/* 캐릭터 + 말풍선 */}
-      <div className="flex flex-col items-center px-6 pt-4 pb-2 mb-3">
-        <div className="relative bg-white rounded-2xl px-5 py-3 shadow-md mb-2 min-w-[180px]">
+      <div
+        ref={placementRef}
+        className="relative w-full flex flex-col items-center px-6 pt-4 pb-2 mb-3"
+        onClick={handleAreaTap}
+      >
+        {/* 장착 배지 레이어 (캐릭터 뒤) */}
+        {equipped.map((badge) => (
+          <div
+            key={badge.id}
+            className="absolute z-0"
+            style={{
+              left: `${badge.x * 100}%`,
+              top: `${badge.y * 100}%`,
+              transform: "translate(-50%, -50%)",
+            }}
+            onClick={(e) => {
+              if (!editMode) return;
+              e.stopPropagation();
+              remove(badge.id);
+            }}
+          >
+            <BadgeSprite
+              achievementId={badge.id}
+              size={90}
+              className="drop-shadow-md"
+            />
+            {editMode && (
+              <div className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center pointer-events-none">
+                <span className="text-white text-[8px] font-bold">✕</span>
+              </div>
+            )}
+          </div>
+        ))}
+
+        {/* 편집 모드 테두리 */}
+        {editMode && (
+          <div
+            className="absolute inset-0 rounded-3xl border-2 border-dashed pointer-events-none z-20"
+            style={{ borderColor: "var(--color-primary)", opacity: 0.5 }}
+          />
+        )}
+
+        {/* 편집 버튼 / 완료 버튼 */}
+        {!editMode ? (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setEditMode(true);
+            }}
+            className="absolute bottom-3 right-3 z-20 w-8 h-8 rounded-full bg-white/80 shadow-md flex items-center justify-center active:scale-95"
+            aria-label="배지 배치 편집"
+          >
+            <HiPencil size={14} className="text-gray-400" />
+          </button>
+        ) : (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setEditMode(false);
+              setSelectedBadgeId(null);
+            }}
+            className="absolute top-3 right-3 z-20 px-3 py-1 rounded-full text-white text-xs font-bold shadow-md"
+            style={{ background: "var(--color-primary)" }}
+          >
+            완료
+          </button>
+        )}
+        <div className="relative z-10 bg-white rounded-2xl px-5 py-3 shadow-md mb-2 min-w-[180px]">
           <p className="text-sm font-bold text-gray-700 text-center">
             {displayedText}
             <span
@@ -459,7 +553,7 @@ export default function Home() {
             border-t-[12px] border-t-white"
           />
         </div>
-        <div className="relative mt-4 flex flex-col items-center">
+        <div className="relative z-10 mt-4 flex flex-col items-center">
           <div
             onClick={handleCharacterTap}
             className="w-56 h-56 rounded-full bg-white shadow-xl flex items-center justify-center overflow-hidden border border-white/80 cursor-pointer active:scale-95 transition-transform duration-150"
@@ -497,6 +591,47 @@ export default function Home() {
           </span>
         </div>
       </div>
+
+      {/* 편집 모드: 배지 선택 패널 */}
+      {editMode && (
+        <div className="mx-4 mb-3 bg-white rounded-2xl p-3 shadow-sm">
+          <p className="text-[10px] font-bold text-gray-400 mb-2">
+            {selectedBadgeId
+              ? "위 영역을 탭해서 배치하세요 • 배치된 배지를 탭하면 제거"
+              : "배치할 배지를 선택하세요"}
+          </p>
+          {unlockedBadges.length === 0 ? (
+            <p className="text-xs text-gray-400 py-2 text-center">
+              아직 획득한 배지가 없어요
+            </p>
+          ) : (
+            <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
+              {unlockedBadges.map((achievement) => (
+                <button
+                  key={achievement.id}
+                  onClick={() =>
+                    setSelectedBadgeId(
+                      achievement.id === selectedBadgeId
+                        ? null
+                        : achievement.id,
+                    )
+                  }
+                  className={`shrink-0 rounded-full overflow-hidden transition-all active:scale-95 ${
+                    selectedBadgeId === achievement.id ? "scale-110" : ""
+                  }`}
+                  style={
+                    selectedBadgeId === achievement.id
+                      ? { boxShadow: "0 0 0 3px var(--color-primary)" }
+                      : {}
+                  }
+                >
+                  <BadgeSprite achievementId={achievement.id} size={44} />
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* 실시간 운동 중 전광판 */}
       {activeUsers.length > 0 && (

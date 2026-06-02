@@ -21,8 +21,7 @@ import PartyDetail from "../pages/PartyDetail";
 import MyPage from "../pages/MyPage";
 import WorkoutDetail from "../components/mypage/WorkoutDetail";
 import Admin from "../pages/Admin";
-import Achievements from "../pages/Achievements";
-import AchievementsImage from "../pages/AchievementsImage";
+import Achievements from "../pages/AchievementsImage";
 import ResetPassword from "../pages/ResetPassword";
 import NotificationSettings from "../pages/NotificationSettings";
 import PrivacyPolicy from "../pages/PrivacyPolicy";
@@ -100,7 +99,6 @@ export default function AppRouter() {
           <Route path="/settings" element={<Settings />} />
           <Route path="/settings/notifications" element={<NotificationSettings />} />
           <Route path="/achievements" element={<Achievements />} />
-          <Route path="/achievements-image" element={<AchievementsImage />} />
           <Route path="/admin" element={<Admin />} />
           <Route path="/workout" element={<Workout />} />
         </Route>
