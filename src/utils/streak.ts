@@ -37,6 +37,27 @@ export function calcConsecutiveStreak(dates: string[]): number {
   return count;
 }
 
+// 이벤트 시작일 기준 연속 스트릭 — sinceDate 이전 기록은 무시
+export function calcStreakSince(dates: string[], sinceDate: string): number {
+  if (dates.length === 0) return 0;
+  const set = new Set(dates.filter((d) => d >= sinceDate));
+  const today = localDateStr(new Date());
+  const yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
+  const yesterdayStr = localDateStr(yesterday);
+
+  const startStr = set.has(today) ? today : set.has(yesterdayStr) ? yesterdayStr : null;
+  if (!startStr || startStr < sinceDate) return 0;
+
+  let count = 0;
+  const d = new Date(startStr);
+  while (set.has(localDateStr(d)) && localDateStr(d) >= sinceDate) {
+    count++;
+    d.setDate(d.getDate() - 1);
+  }
+  return count;
+}
+
 // 월~금 기준 연속 스트릭. 토일은 패스(끊기지 않음).
 export function calculateStreak(history: string[]): number {
   const set = new Set(history);

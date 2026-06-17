@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import type { IconType } from "react-icons";
 import { HiLockClosed } from "react-icons/hi";
@@ -36,6 +36,7 @@ import {
 import { CATEGORY_META } from "../data/events";
 import type { AppEvent } from "../data/events";
 import { autoGrantFixedEvent } from "../lib/eventService";
+import { calcStreakSince } from "../utils/streak";
 import AlertModal from "../components/ui/AlertModal";
 import { IoInformationCircle, IoFootsteps } from "react-icons/io5";
 
@@ -383,6 +384,41 @@ export default function Step() {
     useEvents();
   const [eventSubTab, setEventSubTab] = useState<"active" | "past">("active");
 
+  // 1000보 이상인 날짜 목록 (이벤트 시작일 기준 streak 계산용)
+  const qualifiedStepDates = useMemo(() => {
+    const stepsByDate: Record<string, number> = {};
+    for (const r of workoutRecords) {
+      stepsByDate[r.date] = (stepsByDate[r.date] ?? 0) + r.steps;
+    }
+    return Object.entries(stepsByDate)
+      .filter(([, steps]) => steps >= 1000)
+      .map(([date]) => date);
+  }, [workoutRecords]);
+
+  // eventOnly 아이템의 진행률 — 연결된 이벤트 조건 기준
+  const eventProgressMap = new Map<string, { current: number; target: number; label: string }>();
+  for (const ev of activeEvents) {
+    let current = 0;
+    let label = "";
+    if (ev.category === "streak") {
+      // 이벤트 시작일 이후 연속 일수만 카운트
+      const eventStreak = calcStreakSince(qualifiedStepDates, ev.startDate);
+      current = eventStreak;
+      label = `${eventStreak} / ${ev.conditionValue}일`;
+    } else if (ev.category === "personal") {
+      if (ev.conditionType === "avg_steps") {
+        current = monthlyAverageSteps;
+        label = `평균 ${monthlyAverageSteps.toLocaleString()} / ${ev.conditionValue.toLocaleString()}보`;
+      } else {
+        current = totalSteps;
+        label = `${totalSteps.toLocaleString()} / ${ev.conditionValue.toLocaleString()}보`;
+      }
+    }
+    const prog = { current, target: ev.conditionValue, label };
+    if (ev.reward.bubbleId) eventProgressMap.set(ev.reward.bubbleId, prog);
+    if (ev.reward.titleText) eventProgressMap.set(`title:${ev.reward.titleText}`, prog);
+  }
+
   const today = new Date().toISOString().slice(0, 10);
   const pastEvents = events
     .filter((e) => e.isActive && !e.isFixed && e.endDate < today)
@@ -393,18 +429,19 @@ export default function Step() {
     streak: pastEvents.filter((e) => e.category === "streak"),
   } as const;
 
-  // 고정 streak 이벤트 조건 달성 시 자동 지급
+  // 고정 streak 이벤트 조건 달성 시 자동 지급 (이벤트 시작일 기준 streak 사용)
   const autoGrantedRef = useRef<Set<string>>(new Set());
   useEffect(() => {
     if (!user) return;
     byCategory.streak.forEach((event) => {
       if (!event.isFixed) return;
-      if (consecutiveStreak < event.conditionValue) return;
+      const eventStreak = calcStreakSince(qualifiedStepDates, event.startDate);
+      if (eventStreak < event.conditionValue) return;
       if (autoGrantedRef.current.has(event.id)) return;
       autoGrantedRef.current.add(event.id);
       autoGrantFixedEvent(event.id, user.id, event.reward);
     });
-  }, [byCategory.streak, consecutiveStreak, user]);
+  }, [byCategory.streak, qualifiedStepDates, user]);
 
   const { isPremium, trialDaysLeft, startTrial } = usePremium();
   const { selectedBubbleId, setSelectedBubbleId } = useActiveBubble();
@@ -424,7 +461,7 @@ export default function Step() {
     await updateProfile({ title: next });
   };
 
-  const normalItems = itemsWithStatus.filter((i) => i.category === "normal");
+  const normalItems = itemsWithStatus.filter((i) => i.category === "normal" || i.category === "event");
   const premiumItems = unlockItems.filter((i) => i.category === "premium");
 
   const togglePremiumItem = (type: string, id: string) => {
@@ -501,7 +538,7 @@ export default function Step() {
               <StreakChallengeCard
                 key={event.id}
                 event={event}
-                streak={consecutiveStreak}
+                streak={calcStreakSince(qualifiedStepDates, event.startDate)}
               />
             ))}
           </>
@@ -621,6 +658,22 @@ export default function Step() {
                                 ? `${item.condition.consecutiveDays}일 연속 운동 필요`
                                 : item.description}
                           </p>
+                          {/* 이벤트 전용 진행 게이지 */}
+                          {!item.unlocked && item.eventOnly && (() => {
+                            const prog = eventProgressMap.get(item.id) ?? eventProgressMap.get(`title:${item.name}`);
+                            if (!prog) return null;
+                            const pct = Math.min((prog.current / prog.target) * 100, 100);
+                            return (
+                              <div className="mt-2">
+                                <div className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                                  <div className="h-full rounded-full transition-all duration-700" style={{ width: `${pct}%`, background: "var(--color-primary)", opacity: 0.5 }} />
+                                </div>
+                                <p className="text-[10px] text-gray-400 mt-0.5">
+                                  {prog.label}{pct >= 100 ? " ✓" : ` (${Math.floor(pct)}%)`}
+                                </p>
+                              </div>
+                            );
+                          })()}
                           {/* 해금 진행 게이지 — 잠긴 아이템 + 조건 있을 때만 표시 */}
                           {!item.unlocked && (item.condition?.monthlyAverageStep || item.condition?.consecutiveDays) && (() => {
                             const current = item.condition?.monthlyAverageStep
@@ -669,11 +722,16 @@ export default function Step() {
                           </span>
                         ) : (
                           <span className="flex-shrink-0 text-xs text-gray-400 font-bold">
-                            {item.condition?.monthlyAverageStep
-                              ? `${item.condition.monthlyAverageStep.toLocaleString()}보`
-                              : item.condition?.consecutiveDays
-                                ? `${consecutiveStreak}/${item.condition.consecutiveDays}일`
-                                : ""}
+                            {item.eventOnly
+                              ? (() => {
+                                  const prog = eventProgressMap.get(item.id) ?? eventProgressMap.get(`title:${item.name}`);
+                                  return prog ? `${prog.current}/${prog.target}${prog.label.includes("일") ? "일" : "보"}` : "";
+                                })()
+                              : item.condition?.monthlyAverageStep
+                                ? `${item.condition.monthlyAverageStep.toLocaleString()}보`
+                                : item.condition?.consecutiveDays
+                                  ? `${consecutiveStreak}/${item.condition.consecutiveDays}일`
+                                  : ""}
                           </span>
                         )}
                       </div>
@@ -683,6 +741,74 @@ export default function Step() {
               </div>
             );
           })}
+
+        {/* ── 이벤트 한정 보상 (동적) ── */}
+        {tab === "step" && (() => {
+          const grantedBubbleSet = new Set(grantedBubbleIds);
+          const grantedTitleSet = new Set(grantedTitles);
+          const unlockItemIds = new Set(unlockItems.map((i) => i.id));
+
+          const dynItems = activeEvents.flatMap((ev) => {
+            const rows: { key: string; kind: "bubble" | "title"; bubbleId?: string; titleText?: string; ev: typeof ev; unlocked: boolean }[] = [];
+            const { reward } = ev;
+            if ((reward.type === "bubble" || reward.type === "both") && reward.bubbleId && !unlockItemIds.has(reward.bubbleId)) {
+              rows.push({ key: `b-${ev.id}`, kind: "bubble", bubbleId: reward.bubbleId, ev, unlocked: grantedBubbleSet.has(reward.bubbleId) });
+            }
+            if ((reward.type === "title" || reward.type === "both") && reward.titleText && !grantedTitleSet.has(reward.titleText)) {
+              rows.push({ key: `t-${ev.id}`, kind: "title", titleText: reward.titleText, ev, unlocked: false });
+            }
+            return rows;
+          });
+
+          if (dynItems.length === 0) return null;
+          return (
+            <div>
+              <p className="text-xs font-bold text-gray-500 px-1 mb-2 flex items-center gap-1.5">
+                <HiSparkles className="text-sm text-amber-400" />
+                이벤트 한정 보상
+              </p>
+              <div className="flex flex-col gap-2">
+                {dynItems.map((item) => {
+                  const prog = eventProgressMap.get(item.bubbleId ?? "") ?? eventProgressMap.get(`title:${item.titleText ?? ""}`);
+                  const pct = prog ? Math.min((prog.current / prog.target) * 100, 100) : 0;
+                  const rightLabel = prog
+                    ? `${prog.current}/${prog.target}${prog.label.includes("일") ? "일" : "보"}`
+                    : "";
+
+                  const bubble = item.kind === "bubble" ? BUBBLE_PREVIEWS[item.bubbleId!] : null;
+
+                  return (
+                    <div key={item.key} className="rounded-2xl shadow-sm px-5 py-4 flex items-center gap-4 bg-white border-2 border-transparent">
+                      <div className="w-11 h-11 rounded-2xl flex items-center justify-center flex-shrink-0 opacity-40">
+                        {bubble ? (
+                          <div className="flex flex-col items-center">
+                            <div className={`${bubble.colorClass} ${bubble.darkText ? "text-stone-800" : "text-white"} text-[7px] font-extrabold px-1.5 py-1.5 rounded-full whitespace-nowrap leading-none`}>{bubble.text}</div>
+                            <div className={`w-2 h-2 ${bubble.colorClass} rotate-45 rounded-[1px] -mt-1`} />
+                          </div>
+                        ) : (
+                          <HiStar className="text-xl text-gray-300" />
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-bold text-sm text-gray-400">{bubble ? bubble.text : item.titleText}</p>
+                        <p className="text-xs text-gray-400 mt-0.5">{item.ev.title} 이벤트 보상</p>
+                        {prog && (
+                          <div className="mt-2">
+                            <div className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                              <div className="h-full rounded-full transition-all duration-700" style={{ width: `${pct}%`, background: "var(--color-primary)", opacity: 0.5 }} />
+                            </div>
+                            <p className="text-[10px] text-gray-400 mt-0.5">{prog.label}{pct >= 100 ? " ✓" : ` (${Math.floor(pct)}%)`}</p>
+                          </div>
+                        )}
+                      </div>
+                      <span className="flex-shrink-0 text-xs text-gray-400 font-bold">{rightLabel}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })()}
 
         {/* ── 이벤트 보상 칭호 ── */}
         {tab === "step" && grantedTitles.length > 0 && (
