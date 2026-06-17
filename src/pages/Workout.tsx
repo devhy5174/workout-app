@@ -29,6 +29,7 @@ import { DIET_BY_CHARACTER } from "../data/characterWorkoutDiet";
 import { useTodayStats } from "../hooks/useTodayStats";
 import { useYesterdayPace } from "../hooks/useYesterdayPace";
 import { notifyGoalReached } from "../utils/notificationTriggers";
+import { checkAndGrantEventRewards } from "../lib/eventService";
 import WorkoutNative, { isNative } from "../lib/workoutNative";
 import { codeToCondition } from "../hooks/useWeather";
 
@@ -446,6 +447,9 @@ export default function Workout() {
       console.error("운동 저장 실패 — Supabase 에러:", saveResult.error);
       return;
     }
+
+    // 이벤트 달성 자동 지급 (fire-and-forget)
+    if (user) checkAndGrantEventRewards(user.id).catch(() => {});
 
     // 목표 달성 알림 (fire-and-forget)
     if (goalProgress >= 100 && user && userGoal) {

@@ -370,3 +370,8 @@ export async function grantEventReward(
   });
   return !error;
 }
+
+// 운동 저장 후 활성 이벤트 조건 체크 → 달성 시 자동 지급 (Supabase RPC)
+export async function checkAndGrantEventRewards(userId: string): Promise<void> {
+  await supabase.rpc("check_and_grant_event_rewards", { p_user_id: userId });
+}

@@ -159,7 +159,6 @@ function EventFormSheet({
       return setError("말풍선을 선택해주세요.");
     if ((rewardType === "title" || rewardType === "both") && !titleText.trim())
       return setError("칭호 텍스트를 입력해주세요.");
-
     onSave({
       title: title.trim(),
       description: description.trim(),
