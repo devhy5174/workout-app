@@ -32,6 +32,7 @@ import { useEvents } from "../hooks/useEvents";
 import { createNotification } from "../lib/notificationService";
 import { useSettings } from "../hooks/useSettings";
 import CharacterBadgeArea from "../components/home/CharacterBadgeArea";
+import { isNotificationPermissionDenied } from "../lib/fcmService";
 
 type DisplayUser = {
   nickname: string;
@@ -154,6 +155,7 @@ export default function Home() {
   const activityType = selectedActivityType?.type ?? "walker";
   const { weather, condition: weatherCondition } = useWeather();
   const [notifOpen, setNotifOpen] = useState(false);
+  const [showNotiPermWarn, setShowNotiPermWarn] = useState(false);
   const {
     notifications,
     unreadCount,
@@ -166,6 +168,18 @@ export default function Home() {
   const { settings } = useSettings();
 
   // 새 이벤트 → 알림 자동 생성 (유저당 1회, 이벤트 ID 기준)
+  // 알림 권한 거부 시 세션 1회 경고
+  useEffect(() => {
+    if (!user) return;
+    if (sessionStorage.getItem("noti_perm_warn_shown")) return;
+    isNotificationPermissionDenied().then((denied) => {
+      if (denied) {
+        setShowNotiPermWarn(true);
+        sessionStorage.setItem("noti_perm_warn_shown", "1");
+      }
+    });
+  }, [user]);
+
   useEffect(() => {
     if (!user) return;
     if (!settings.eventNotification) return;
@@ -352,6 +366,22 @@ export default function Home() {
 
   return (
     <div className="flex flex-col h-full overflow-y-auto pb-20 bg-bg">
+      {showNotiPermWarn && (
+        <AlertModal
+          icon={HiBell}
+          iconClass="text-gray-400"
+          title="알림이 꺼져 있어요"
+          message={
+            <span>
+              알림 권한이 없으면 <strong className="text-gray-700">운동 트래킹 실시간 기록</strong>이 제대로 반영되지 않을 수 있어요.{"\n\n"}
+              주기적으로 오는 알림만 끄고 싶다면 앱 내{" "}
+              <strong className="text-gray-700">설정 → 알림</strong>에서 원하는 항목만 끌 수 있어요.
+            </span>
+          }
+          confirmLabel="확인"
+          onConfirm={() => setShowNotiPermWarn(false)}
+        />
+      )}
       {showStreakInfo && (
         <AlertModal
           icon={IoFootsteps}

@@ -60,6 +60,16 @@ export async function registerFCMToken(userId: string): Promise<void> {
   }
 }
 
+export async function isNotificationPermissionDenied(): Promise<boolean> {
+  if (!Capacitor.isNativePlatform()) return false;
+  try {
+    const result = await PushNotifications.checkPermissions();
+    return result.receive === "denied";
+  } catch {
+    return false;
+  }
+}
+
 export async function unregisterFCMToken(userId: string): Promise<void> {
   if (!Capacitor.isNativePlatform()) return;
   try {

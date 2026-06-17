@@ -166,6 +166,21 @@ export default function NotificationSettings() {
         {/* 기기 푸시 */}
         <PushPermissionCard userId={user?.id ?? null} />
 
+        {/* 운동 트래커 필수 안내 */}
+        <div className="bg-amber-50 border border-amber-200 rounded-2xl px-4 py-3.5 flex items-start gap-3">
+          <HiLightningBolt size={18} className="text-amber-500 flex-shrink-0 mt-0.5" />
+          <div>
+            <p className="text-sm font-extrabold text-amber-700">기기 알림 권한은 꼭 켜두세요</p>
+            <p className="text-xs text-amber-600 mt-1 leading-relaxed">
+              운동 트래커(잠금화면 실시간 걸음수·칼로리 기록)는 기기 알림 권한이 있어야 작동해요.{" "}
+              알림 권한이 꺼지면 트래커가 잠금화면에 표시되지 않아요.
+            </p>
+            <p className="text-xs text-amber-500 mt-1.5 leading-relaxed">
+              주기적 알림만 끄고 싶다면 아래 항목에서 원하는 것만 개별 설정하세요.
+            </p>
+          </div>
+        </div>
+
         {/* 운동 알림 */}
         <NotificationGroup
           icon={<HiBell size={16} className="text-white" />}
