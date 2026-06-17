@@ -47,6 +47,9 @@ export function useUnlockItems(
         // 이벤트 보상으로 지급된 아이템은 조건 무관 해금
         if (grantedSet.has(item.id)) return { ...item, unlocked: true };
 
+        // 이벤트 전용 아이템 — 지급 전까지 잠김
+        if (item.eventOnly) return { ...item, unlocked: false };
+
         const { condition } = item;
         if (!condition) return { ...item, unlocked: true };
         let unlocked = true;

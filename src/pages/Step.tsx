@@ -373,7 +373,7 @@ export default function Step() {
     Record<string, string>
   >({});
   const { user, workoutRecords, userProfile, updateProfile } = useUser();
-  const { grantedBubbleIds, grantedTitles } = useEventGrants(user?.id);
+  const { grantedBubbleIds, grantedTitles, refresh: refreshGrants } = useEventGrants(user?.id);
   const {
     itemsWithStatus,
     totalSteps,
@@ -406,12 +406,20 @@ export default function Step() {
       current = eventStreak;
       label = `${eventStreak} / ${ev.conditionValue}일`;
     } else if (ev.category === "personal") {
+      // 이벤트 기간 내 날짜별 걸음수 집계
+      const stepsByDate: Record<string, number> = {};
+      for (const r of workoutRecords) {
+        if (r.date < ev.startDate || r.date > ev.endDate) continue;
+        stepsByDate[r.date] = (stepsByDate[r.date] ?? 0) + r.steps;
+      }
+      const dateCount = Object.keys(stepsByDate).length;
+      const periodTotal = Object.values(stepsByDate).reduce((s, v) => s + v, 0);
       if (ev.conditionType === "avg_steps") {
-        current = monthlyAverageSteps;
-        label = `평균 ${monthlyAverageSteps.toLocaleString()} / ${ev.conditionValue.toLocaleString()}보`;
+        current = dateCount > 0 ? Math.round(periodTotal / dateCount) : 0;
+        label = `평균 ${current.toLocaleString()} / ${ev.conditionValue.toLocaleString()}보`;
       } else {
-        current = totalSteps;
-        label = `${totalSteps.toLocaleString()} / ${ev.conditionValue.toLocaleString()}보`;
+        current = periodTotal;
+        label = `${periodTotal.toLocaleString()} / ${ev.conditionValue.toLocaleString()}보`;
       }
     }
     const prog = { current, target: ev.conditionValue, label };
@@ -439,7 +447,7 @@ export default function Step() {
       if (eventStreak < event.conditionValue) return;
       if (autoGrantedRef.current.has(event.id)) return;
       autoGrantedRef.current.add(event.id);
-      autoGrantFixedEvent(event.id, user.id, event.reward);
+      autoGrantFixedEvent(event.id, user.id, event.reward).then(() => refreshGrants());
     });
   }, [byCategory.streak, qualifiedStepDates, user]);
 
@@ -754,6 +762,7 @@ export default function Step() {
             if ((reward.type === "bubble" || reward.type === "both") && reward.bubbleId && !unlockItemIds.has(reward.bubbleId)) {
               rows.push({ key: `b-${ev.id}`, kind: "bubble", bubbleId: reward.bubbleId, ev, unlocked: grantedBubbleSet.has(reward.bubbleId) });
             }
+            // 칭호는 지급 후 "이벤트 보상 칭호" 섹션으로 이동하므로 미지급분만 표시
             if ((reward.type === "title" || reward.type === "both") && reward.titleText && !grantedTitleSet.has(reward.titleText)) {
               rows.push({ key: `t-${ev.id}`, kind: "title", titleText: reward.titleText, ev, unlocked: false });
             }
@@ -771,28 +780,33 @@ export default function Step() {
                 {dynItems.map((item) => {
                   const prog = eventProgressMap.get(item.bubbleId ?? "") ?? eventProgressMap.get(`title:${item.titleText ?? ""}`);
                   const pct = prog ? Math.min((prog.current / prog.target) * 100, 100) : 0;
-                  const rightLabel = prog
-                    ? `${prog.current}/${prog.target}${prog.label.includes("일") ? "일" : "보"}`
-                    : "";
-
                   const bubble = item.kind === "bubble" ? BUBBLE_PREVIEWS[item.bubbleId!] : null;
+                  const isSelected = item.kind === "bubble" && selectedBubbleId === item.bubbleId;
 
                   return (
-                    <div key={item.key} className="rounded-2xl shadow-sm px-5 py-4 flex items-center gap-4 bg-white border-2 border-transparent">
-                      <div className="w-11 h-11 rounded-2xl flex items-center justify-center flex-shrink-0 opacity-40">
+                    <div
+                      key={item.key}
+                      onClick={item.unlocked && item.kind === "bubble" ? () => setSelectedBubbleId(item.bubbleId!) : undefined}
+                      className={`rounded-2xl shadow-sm px-5 py-4 flex items-center gap-4 border-2 transition-all ${
+                        item.unlocked && item.kind === "bubble" ? "cursor-pointer active:scale-[0.98]" : ""
+                      } ${
+                        isSelected ? "bg-white border-primary/30" : item.unlocked ? "bg-white border-transparent" : "bg-gray-50 border-transparent"
+                      }`}
+                    >
+                      <div className={`w-11 h-11 rounded-2xl flex items-center justify-center flex-shrink-0 ${item.unlocked ? "" : "opacity-40"}`}>
                         {bubble ? (
                           <div className="flex flex-col items-center">
                             <div className={`${bubble.colorClass} ${bubble.darkText ? "text-stone-800" : "text-white"} text-[7px] font-extrabold px-1.5 py-1.5 rounded-full whitespace-nowrap leading-none`}>{bubble.text}</div>
                             <div className={`w-2 h-2 ${bubble.colorClass} rotate-45 rounded-[1px] -mt-1`} />
                           </div>
                         ) : (
-                          <HiStar className="text-xl text-gray-300" />
+                          <HiStar className={`text-xl ${item.unlocked ? "text-amber-400" : "text-gray-300"}`} />
                         )}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="font-bold text-sm text-gray-400">{bubble ? bubble.text : item.titleText}</p>
+                        <p className={`font-bold text-sm ${item.unlocked ? "text-gray-800" : "text-gray-400"}`}>{bubble ? bubble.text : item.titleText}</p>
                         <p className="text-xs text-gray-400 mt-0.5">{item.ev.title} 이벤트 보상</p>
-                        {prog && (
+                        {!item.unlocked && prog && (
                           <div className="mt-2">
                             <div className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden">
                               <div className="h-full rounded-full transition-all duration-700" style={{ width: `${pct}%`, background: "var(--color-primary)", opacity: 0.5 }} />
@@ -801,7 +815,17 @@ export default function Step() {
                           </div>
                         )}
                       </div>
-                      <span className="flex-shrink-0 text-xs text-gray-400 font-bold">{rightLabel}</span>
+                      {item.unlocked && item.kind === "bubble" ? (
+                        isSelected ? (
+                          <span className="flex-shrink-0 bg-primary/10 text-primary text-xs font-bold px-3 py-1.5 rounded-full">적용됨 ✓</span>
+                        ) : (
+                          <span className="flex-shrink-0 bg-green-100 text-green-600 text-xs font-bold px-3 py-1.5 rounded-full">선택하기</span>
+                        )
+                      ) : !item.unlocked ? (
+                        <span className="flex-shrink-0 text-xs text-gray-400 font-bold">
+                          {prog ? `${prog.current}/${prog.target}${prog.label.includes("일") ? "일" : "보"}` : ""}
+                        </span>
+                      ) : null}
                     </div>
                   );
                 })}

@@ -171,6 +171,27 @@ export async function createPost(
   return { data: mergePost(row, profileMap, {}), error: null };
 }
 
+export async function updatePostContent(
+  postId: string,
+  userId: string,
+  input: { text: string; tags: string[]; steps?: number; frame_id?: string | null },
+): Promise<{ data: CommunityPost | null; error: string | null }> {
+  const { data: row, error } = await supabase
+    .from("community_posts")
+    .update({
+      text: input.text,
+      tags: input.tags,
+      steps: input.steps ?? 0,
+      frame_id: input.frame_id ?? null,
+    })
+    .eq("id", postId)
+    .select("*")
+    .single();
+  if (error || !row) return { data: null, error: error?.message ?? "수정 실패" };
+  const profileMap = await fetchProfileMap([userId]);
+  return { data: mergePost(row, profileMap, {}), error: null };
+}
+
 // 파티 목표 달성 자동 포스팅
 // 중복 방지: localStorage(빠른 사전차단) + DB unique index (source_type, source_id, source_date)
 export async function postPartyGoalAchieved(params: {

@@ -4,6 +4,7 @@ import {
   getPosts,
   getMyPosts,
   createPost,
+  updatePostContent,
   deletePost,
   addCheer,
   removeCheer,
@@ -176,9 +177,30 @@ export function useCommunity() {
     }
   };
 
+  const todayPost = myPosts.find(
+    (p) => !p.source_type && p.created_at.slice(0, 10) === new Date().toISOString().slice(0, 10),
+  ) ?? null;
+
   const submitPost = async (data: { text: string; tags: string[]; frame_id?: string | null }) => {
     if (!user) return { error: "로그인이 필요합니다." };
     const { steps } = await fetchTodayStats(user.id);
+
+    if (todayPost) {
+      // 오늘 이미 올린 글이 있으면 수정
+      const { data: updated, error } = await updatePostContent(todayPost.id, user.id, {
+        text: data.text,
+        tags: data.tags,
+        steps,
+        frame_id: data.frame_id ?? null,
+      });
+      if (error || !updated) return { error };
+      const updater = (prev: CommunityPost[]) =>
+        prev.map((p) => (p.id === todayPost.id ? updated : p));
+      setPosts(updater);
+      setMyPosts(updater);
+      return { error: null, updated: true };
+    }
+
     const { data: newPost, error } = await createPost(
       { text: data.text, tags: data.tags, steps, frame_id: data.frame_id ?? null },
       user.id,
@@ -186,7 +208,7 @@ export function useCommunity() {
     if (error || !newPost) return { error };
     setPosts((prev) => [newPost, ...prev]);
     setMyPosts((prev) => [newPost, ...prev]);
-    return { error: null };
+    return { error: null, updated: false };
   };
 
   const removePost = async (postId: string) => {
@@ -213,6 +235,7 @@ export function useCommunity() {
   return {
     posts,
     myPosts,
+    todayPost,
     isLoading,
     isLoadingMore,
     hasMore,

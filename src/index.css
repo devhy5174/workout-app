@@ -107,15 +107,31 @@ body {
   }
   50% {
     box-shadow:
-      0 0 0 2px rgba(251, 191, 36, 0.7),
-      0 0 10px 4px rgba(251, 191, 36, 0.4),
-      0 0 20px 8px rgba(251, 191, 36, 0.15);
+      0 0 8px 3px rgba(251, 191, 36, 0.4),
+      0 0 18px 7px rgba(251, 191, 36, 0.15);
     filter: brightness(1.15) saturate(1.25);
   }
 }
 
 .animate-premium-bubble {
   animation: premium-bubble-shine 1.8s ease-in-out infinite;
+}
+
+@keyframes exclusive-bubble-shine {
+  0%, 100% {
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+    filter: brightness(1) saturate(1);
+  }
+  50% {
+    box-shadow:
+      0 0 8px 3px rgba(245, 158, 11, 0.35),
+      0 0 18px 7px rgba(245, 158, 11, 0.12);
+    filter: brightness(1.12) saturate(1.2);
+  }
+}
+
+.animate-exclusive-bubble {
+  animation: exclusive-bubble-shine 1.8s ease-in-out infinite;
 }
 
 @keyframes card-bg-pulse {

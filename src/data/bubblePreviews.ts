@@ -85,6 +85,12 @@ export const DEFAULT_PARTY_BUBBLE: BubblePreview = {
   premium: false,
 };
 
+export function getBubbleAnimClass(bubble: BubblePreview): string {
+  if (bubble.exclusive) return "animate-exclusive-bubble";
+  if (bubble.premium) return "animate-premium-bubble";
+  return "";
+}
+
 export function resolveBubblePreview(
   activeBubbleId: string | null | undefined,
 ): BubblePreview {

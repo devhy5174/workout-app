@@ -2,7 +2,7 @@
 
 export type UnlockItemType = "title" | "activeBubble" | "postFrame" | "premium";
 
-export type UnlockCategory = "normal" | "premium" | "season";
+export type UnlockCategory = "normal" | "premium" | "season" | "event";
 
 export interface UnlockCondition {
   monthlyAverageStep?: number;
@@ -19,6 +19,7 @@ export interface UnlockItem {
   premiumOnly?: boolean; // 일반 목록에 표시하되 프리미엄 전용 배지 표시
   preview?: string;
   condition?: UnlockCondition;
+  eventOnly?: boolean; // 이벤트 보상으로만 해금 (기본 잠김)
 }
 
 export const unlockItems: UnlockItem[] = [
@@ -158,6 +159,18 @@ export const unlockItems: UnlockItem[] = [
     name: "오로라 프레임",
     description: "보랏빛 오로라 인증카드 프레임",
     premium: true,
+  },
+
+  // =========================
+  // EVENT — 이벤트 한정
+  // =========================
+  {
+    id: "founder_bubble",
+    type: "activeBubble",
+    category: "event",
+    name: "창립 멤버 👑",
+    description: "창립 멤버 이벤트 달성 한정 말풍선",
+    eventOnly: true,
   },
 
   // =========================

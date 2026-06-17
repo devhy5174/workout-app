@@ -21,18 +21,23 @@ interface CommunityWriteModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSubmit?: (data: { text: string; tags: string[] }) => void;
+  initialText?: string;
+  isEdit?: boolean;
 }
 
 export default function CommunityWriteModal({
   isOpen,
   onClose,
   onSubmit,
+  initialText = "",
+  isEdit = false,
 }: CommunityWriteModalProps) {
   const [text, setText] = useState("");
 
   useEffect(() => {
-    if (!isOpen) setText("");
-  }, [isOpen]);
+    if (isOpen) setText(initialText);
+    else setText("");
+  }, [isOpen, initialText]);
 
   if (!isOpen) return null;
 
@@ -70,10 +75,10 @@ export default function CommunityWriteModal({
         <div className="flex items-center justify-between mb-5">
           <div>
             <h2 className="text-[20px] font-bold text-stone-800 flex items-center gap-2">
-              운동 인증하기
+              {isEdit ? "오늘 인증 수정하기" : "운동 인증하기"}
             </h2>
             <p className="text-[12px] text-stone-400 mt-1">
-              오늘의 움직임을 함께 공유해보세요
+              {isEdit ? "내용을 수정하면 오늘 인증글이 업데이트돼요" : "오늘의 움직임을 함께 공유해보세요"}
             </p>
           </div>
           <button
@@ -175,7 +180,7 @@ export default function CommunityWriteModal({
                 }
           }
         >
-          인증 올리기
+          {isEdit ? "수정하기" : "인증 올리기"}
         </button>
       </div>
     </div>

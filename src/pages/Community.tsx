@@ -335,6 +335,7 @@ export default function CommunityPage() {
   const {
     posts,
     myPosts,
+    todayPost,
     cheeredIds,
     toggleCheer,
     submitPost,
@@ -435,20 +436,20 @@ export default function CommunityPage() {
               className="w-full bg-white rounded-3xl p-5 mb-4 border border-stone-100 shadow-sm flex items-center justify-between active:scale-[0.99] transition-all duration-150"
             >
               <div className="flex items-center gap-3">
-                <div className="w-11 h-11 rounded-2xl bg-orange-100 flex items-center justify-center">
-                  <span className="text-xl">👣</span>
+                <div className={`w-11 h-11 rounded-2xl flex items-center justify-center ${todayPost ? "bg-green-50" : "bg-orange-100"}`}>
+                  <span className="text-xl">{todayPost ? "✅" : "👣"}</span>
                 </div>
                 <div className="text-left">
                   <p className="text-sm font-semibold text-stone-700">
-                    오늘의 운동 기록 남기기
+                    {todayPost ? "오늘 인증 완료! 수정하기" : "오늘의 운동 기록 남기기"}
                   </p>
                   <p className="text-[12px] text-stone-400 mt-0.5">
-                    오늘의 움직임을 가볍게 기록해보세요
+                    {todayPost ? "내용을 바꾸고 싶으면 눌러보세요" : "오늘의 움직임을 가볍게 기록해보세요"}
                   </p>
                 </div>
               </div>
-              <div className="text-[var(--color-primary)] text-xl font-light">
-                +
+              <div className={`text-xl font-light ${todayPost ? "text-green-400" : "text-[var(--color-primary)]"}`}>
+                {todayPost ? "✎" : "+"}
               </div>
             </button>
 
@@ -595,6 +596,8 @@ export default function CommunityPage() {
       <CommunityWriteModal
         isOpen={writeModalOpen}
         onClose={closeWriteModal}
+        isEdit={!!todayPost}
+        initialText={todayPost?.text ?? ""}
         onSubmit={async (data) => {
           await submitPost({ text: data.text, tags: data.tags, frame_id: selectedFrameId });
           closeWriteModal();
