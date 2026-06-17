@@ -185,7 +185,7 @@ export default function NotificationSettings() {
         <NotificationGroup
           icon={<HiBell size={16} className="text-white" />}
           title="운동 기능 알림"
-          description="유산소 운동 자극 및 트래커 알림 전체"
+          description="유산소 운동 목표 및 스트릭 관련 알림 전체"
           masterKey="workoutNotification"
           settings={settings}
           toggleNotification={toggleNotification}
