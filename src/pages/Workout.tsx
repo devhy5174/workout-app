@@ -30,6 +30,8 @@ import { useTodayStats } from "../hooks/useTodayStats";
 import { useYesterdayPace } from "../hooks/useYesterdayPace";
 import { notifyGoalReached } from "../utils/notificationTriggers";
 import { checkAndGrantEventRewards } from "../lib/eventService";
+import { BUBBLE_PREVIEWS } from "../data/bubblePreviews";
+import { HiSparkles } from "react-icons/hi2";
 import WorkoutNative, { isNative } from "../lib/workoutNative";
 import { codeToCondition } from "../hooks/useWeather";
 
@@ -170,6 +172,7 @@ export default function Workout() {
   const yesterdayPace = useYesterdayPace(user?.id ?? null, elapsed, steps);
   const [showStartModal, setShowStartModal] = useState(false);
   const [showModal, setShowModal] = useState(false);
+  const [newlyGranted, setNewlyGranted] = useState<{ bubbleId?: string; titleText?: string }[]>([]);
 
   const [pendingId, setPendingId] = useState<number>(() => selectedId ?? 1);
 
@@ -448,8 +451,12 @@ export default function Workout() {
       return;
     }
 
-    // 이벤트 달성 자동 지급 (fire-and-forget)
-    if (user) checkAndGrantEventRewards(user.id).catch(() => {});
+    // 이벤트 달성 자동 지급 — 신규 지급 항목 있으면 팝업
+    if (user) {
+      checkAndGrantEventRewards(user.id)
+        .then((grants) => { if (grants.length > 0) setNewlyGranted(grants); })
+        .catch(() => {});
+    }
 
     // 목표 달성 알림 (fire-and-forget)
     if (goalProgress >= 100 && user && userGoal) {
@@ -1878,6 +1885,29 @@ export default function Workout() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* ── 이벤트 보상 해금 팝업 ── */}
+      {newlyGranted.length > 0 && (
+        <AlertModal
+          icon={HiSparkles}
+          iconClass="text-amber-400"
+          title="아이템 해금! 🎉"
+          message={
+            <span>
+              {newlyGranted.map((g, i) => {
+                const label = g.bubbleId
+                  ? (BUBBLE_PREVIEWS[g.bubbleId]?.text ?? "말풍선 보상")
+                  : (g.titleText ?? "칭호 보상");
+                return <span key={i} className="block font-bold text-primary">{label}</span>;
+              })}
+              <span className="block mt-1">보상이 해금됐어요!</span>
+            </span>
+          }
+          confirmLabel="확인"
+          onConfirm={() => setNewlyGranted([])}
+          zClass="z-[100]"
+        />
       )}
     </div>
   );

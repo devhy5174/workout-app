@@ -369,6 +369,7 @@ export default function Step() {
     isPremiumStepsTab(tabFromUrl) ? tabFromUrl : "step",
   );
   const [selectedPlan, setSelectedPlan] = useState<PlanType>("annual");
+  const [unlockedPopup, setUnlockedPopup] = useState<{ eventTitle: string; rewardLabel: string } | null>(null);
   const [activePremiumItems, setActivePremiumItems] = useState<
     Record<string, string>
   >({});
@@ -447,7 +448,14 @@ export default function Step() {
       if (eventStreak < event.conditionValue) return;
       if (autoGrantedRef.current.has(event.id)) return;
       autoGrantedRef.current.add(event.id);
-      autoGrantFixedEvent(event.id, user.id, event.reward).then(() => refreshGrants());
+      autoGrantFixedEvent(event.id, user.id, event.reward).then((isNew) => {
+        refreshGrants();
+        if (!isNew) return;
+        const rewardLabel = event.reward.bubbleId
+          ? (BUBBLE_PREVIEWS[event.reward.bubbleId]?.text ?? "말풍선 보상")
+          : (event.reward.titleText ?? "칭호 보상");
+        setUnlockedPopup({ eventTitle: event.title, rewardLabel });
+      });
     });
   }, [byCategory.streak, qualifiedStepDates, user]);
 
@@ -1311,6 +1319,24 @@ export default function Step() {
           </div>
         )}
       </div>
+
+      {/* ── 해금 팝업 ── */}
+      {unlockedPopup && (
+        <AlertModal
+          icon={HiSparkles}
+          iconClass="text-amber-400"
+          title="아이템 해금! 🎉"
+          message={
+            <span>
+              <span className="font-bold text-gray-700">{unlockedPopup.eventTitle}</span> 달성!{"\n"}
+              <span className="font-bold text-primary">{unlockedPopup.rewardLabel}</span> 보상이 해금됐어요
+            </span>
+          }
+          confirmLabel="확인"
+          onConfirm={() => setUnlockedPopup(null)}
+          zClass="z-[100]"
+        />
+      )}
     </div>
   );
 }

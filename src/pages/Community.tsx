@@ -1,8 +1,10 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import CommunityWriteModal from "../components/CommunityWriteModal";
 import AlertModal from "../components/ui/AlertModal";
 import { HiTrash } from "react-icons/hi";
 import { PiHandsClappingFill } from "react-icons/pi";
+import { MdDirectionsRun } from "react-icons/md";
 import { useCommunity } from "../hooks/useCommunity";
 import { getCardById, type SensoryCard } from "../lib/communityService";
 import { getAvatarCharacterById } from "../data/avatarCharacters";
@@ -10,6 +12,7 @@ import { getCharacterById } from "../data/activityTypes";
 import { useUser } from "../context/UserContext";
 import { useActiveFrame } from "../context/ActiveFrameContext";
 import { resolvePostFrame } from "../data/postFrames";
+import { fetchTodayStats } from "../lib/workoutService";
 
 // ─── 타입 ─────────────────────────────────────────────────
 
@@ -329,7 +332,9 @@ export default function CommunityPage() {
   const [filterTags] = useState<string[]>([]);
   const [writeModalOpen, setWriteModalOpen] = useState(false);
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
+  const [noStepsAlert, setNoStepsAlert] = useState(false);
 
+  const navigate = useNavigate();
   const { user } = useUser();
   const { selectedFrameId } = useActiveFrame();
   const {
@@ -376,7 +381,20 @@ export default function CommunityPage() {
       ? enrichedPosts
       : enrichedPosts.filter((p) => p.tags.some((t) => filterTags.includes(t)));
 
-  const openWriteModal = () => setWriteModalOpen(true);
+  const openWriteModal = async () => {
+    // 오늘 이미 인증글 있으면 걸음수 체크 없이 수정 모드로 바로 열기
+    if (todayPost) {
+      setWriteModalOpen(true);
+      return;
+    }
+    if (!user) return;
+    const { steps } = await fetchTodayStats(user.id);
+    if (steps === 0) {
+      setNoStepsAlert(true);
+      return;
+    }
+    setWriteModalOpen(true);
+  };
   const closeWriteModal = () => setWriteModalOpen(false);
 
   return (
@@ -575,6 +593,20 @@ export default function CommunityPage() {
           </>
         )}
       </div>
+
+      {/* ── 걸음수 없음 안내 ── */}
+      {noStepsAlert && (
+        <AlertModal
+          icon={MdDirectionsRun}
+          iconClass="text-primary"
+          title="아직 오늘 운동 기록이 없어요"
+          message="걸음수가 0보예요. 먼저 운동하고 인증해보세요!"
+          confirmLabel="운동하러 가기"
+          onConfirm={() => { setNoStepsAlert(false); navigate("/workout"); }}
+          cancelLabel="취소"
+          onCancel={() => setNoStepsAlert(false)}
+        />
+      )}
 
       {/* ── 삭제 확인 모달 ── */}
       {deleteTargetId !== null && (

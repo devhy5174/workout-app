@@ -330,11 +330,12 @@ export async function fetchUserEventGrants(
 }
 
 // 고정 이벤트 자동 지급 (조건 달성 시 유저가 직접 self-grant)
+// 새로 지급됐으면 true, 이미 지급된 적 있으면 false 반환
 export async function autoGrantFixedEvent(
   eventId: string,
   userId: string,
   reward: { type: string; bubbleId?: string; titleText?: string },
-): Promise<void> {
+): Promise<boolean> {
   const { data: existing } = await supabase
     .from("event_grants")
     .select("id")
@@ -351,7 +352,9 @@ export async function autoGrantFixedEvent(
       title_text: reward.titleText ?? null,
       granted_by: userId,
     });
+    return true;
   }
+  return false;
 }
 
 export async function grantEventReward(
@@ -372,6 +375,23 @@ export async function grantEventReward(
 }
 
 // 운동 저장 후 활성 이벤트 조건 체크 → 달성 시 자동 지급 (Supabase RPC)
-export async function checkAndGrantEventRewards(userId: string): Promise<void> {
+// 신규 지급된 항목 반환 (팝업 표시용)
+export async function checkAndGrantEventRewards(
+  userId: string,
+): Promise<{ bubbleId?: string; titleText?: string }[]> {
+  const before = await fetchUserEventGrants(userId);
   await supabase.rpc("check_and_grant_event_rewards", { p_user_id: userId });
+  const after = await fetchUserEventGrants(userId);
+
+  const beforeBubbles = new Set(before.grantedBubbleIds);
+  const beforeTitles = new Set(before.grantedTitles);
+
+  const newGrants: { bubbleId?: string; titleText?: string }[] = [];
+  for (const id of after.grantedBubbleIds) {
+    if (!beforeBubbles.has(id)) newGrants.push({ bubbleId: id });
+  }
+  for (const t of after.grantedTitles) {
+    if (!beforeTitles.has(t)) newGrants.push({ titleText: t });
+  }
+  return newGrants;
 }
