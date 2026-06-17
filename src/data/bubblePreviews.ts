@@ -28,8 +28,9 @@ export const BUBBLE_PREVIEWS: Record<string, BubblePreview> = {
   founder_bubble: {
     text: "창립 멤버 👑",
     colorClass: "bg-gradient-to-r from-yellow-500 via-amber-400 to-yellow-600",
-    premium: true,
+    premium: false,
     exclusive: true,
+    darkText: true,
   },
 
   // ── 프리미엄 전용 ──────────────────────────────

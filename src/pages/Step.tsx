@@ -24,7 +24,7 @@ import { useUnlockItems } from "../hooks/useUnlockItems";
 import { useEventGrants } from "../hooks/useEventGrants";
 import { unlockItems } from "../data/unlockItems";
 import type { UnlockItemType } from "../data/unlockItems";
-import { BUBBLE_PREVIEWS } from "../data/bubblePreviews";
+import { BUBBLE_PREVIEWS, getBubbleAnimClass } from "../data/bubblePreviews";
 import { POST_FRAMES } from "../data/postFrames";
 import { useActiveFrame } from "../context/ActiveFrameContext";
 import {
@@ -233,10 +233,20 @@ function StreakChallengeCard({
         }`}
       >
         <div className="flex flex-col items-center flex-shrink-0">
-          <div className="bg-gradient-to-r from-amber-400 to-orange-500 text-white text-[9px] font-extrabold px-2 py-1 rounded-full whitespace-nowrap leading-tight">
-            {rewardLabel}
-          </div>
-          <div className="w-2 h-2 bg-amber-500 rotate-45 rounded-[1px] -mt-1" />
+          {(() => {
+            const bubble = event.reward.bubbleId ? BUBBLE_PREVIEWS[event.reward.bubbleId] : null;
+            const bgClass = bubble?.colorClass ?? "bg-gradient-to-r from-amber-400 to-orange-500";
+            const textClass = bubble?.darkText ? "text-stone-800" : "text-white";
+            const animClass = bubble ? getBubbleAnimClass(bubble) : "";
+            return (
+              <>
+                <div className={`relative z-10 ${bgClass} ${textClass} ${animClass} text-[9px] font-extrabold px-2 py-1 rounded-full whitespace-nowrap leading-tight`}>
+                  {rewardLabel}
+                </div>
+                <div className={`relative w-2 h-2 ${bgClass} rotate-45 rounded-[1px] -mt-1`} />
+              </>
+            );
+          })()}
         </div>
         <div className="flex-1 min-w-0">
           <p
@@ -937,7 +947,7 @@ export default function Step() {
               </p>
               <div className="flex flex-wrap gap-x-3 gap-y-3">
                 {Object.entries(BUBBLE_PREVIEWS)
-                  .filter(([, v]) => v.premium)
+                  .filter(([, v]) => v.premium && !v.exclusive)
                   .map(([id, bubble]) => (
                     <div key={id} className="flex flex-col items-center">
                       <div
