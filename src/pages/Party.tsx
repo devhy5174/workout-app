@@ -488,7 +488,7 @@ function RankingModal({
 
   useEffect(() => {
     getPartyMembers(party.id).then((data) => {
-      setMembers(data.sort((a, b) => b.weekly_steps - a.weekly_steps));
+      setMembers(data.sort((a, b) => b.today_steps - a.today_steps));
       setLoading(false);
     });
   }, [party.id]);
@@ -497,7 +497,7 @@ function RankingModal({
     if (!kickTarget) return;
     await onKick(party.id, kickTarget.user_id);
     const updated = await getPartyMembers(party.id);
-    setMembers(updated.sort((a, b) => b.weekly_steps - a.weekly_steps));
+    setMembers(updated.sort((a, b) => b.today_steps - a.today_steps));
     setKickTarget(null);
   };
 
@@ -560,7 +560,7 @@ function RankingModal({
                     )}
                   </p>
                   <p className="text-xs font-extrabold text-primary flex-shrink-0">
-                    {m.weekly_steps.toLocaleString()} 보
+                    {m.today_steps.toLocaleString()} 보
                   </p>
                   {isLeader && m.user_id !== currentUserId && (
                     <button
@@ -577,7 +577,7 @@ function RankingModal({
           )}
 
           <p className="text-xs text-gray-400 text-center">
-            이번 주 누적 걸음 수 기준
+            오늘 걸음 수 기준
           </p>
         </div>
       </div>
