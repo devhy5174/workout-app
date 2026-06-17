@@ -52,6 +52,7 @@ const WK_KEY = {
   stepsAt: "wk_steps_at",
   activityType: "wk_activity_type",
   startDate: "wk_start_date", // 자정 날짜 변경 감지용 — 앱 종료 후 재실행 시에도 유지
+  isSaved: "wk_is_saved",    // 리마운트 후 중복 저장 방지
 };
 
 const formatDateIso = (d: Date) => {
@@ -346,10 +347,12 @@ export default function Workout() {
     overrideDate?: string,
   ) => {
     if (isSaved.current) return;
+    if (localStorage.getItem(WK_KEY.isSaved) === "1") return;
     const now = Date.now();
     if (now - lastSavedAt.current < 60_000) return;
     isSaved.current = true;
     lastSavedAt.current = now;
+    localStorage.setItem(WK_KEY.isSaved, "1");
 
     const finalSteps = overrideSteps ?? stepsRef.current;
     const currentElapsedRef = overrideElapsed ?? elapsedRef.current;

@@ -1,5 +1,16 @@
 # Changelog
 
+## [Unreleased] — 2026-06-17
+
+### 버그 수정
+
+#### 운동 기록 중복 저장 방지 (`Workout.tsx`)
+- **원인:** `isSaved` 플래그가 `useRef`로만 관리되어 컴포넌트 언마운트(탭 이탈) 후 재마운트 시 `false`로 초기화됨. Android Foreground Service는 계속 실행 중이므로 `restoreFromNative()`가 상태를 "running"으로 복구 → `performSave()`가 재호출되어 중복 저장 발생
+- **재현 조건:** 운동을 오랜 시간(수 시간) 유지하면서 다른 탭으로 이동했다가 복귀하는 행동 반복 시
+- **수정:** `WK_KEY.isSaved ("wk_is_saved")` 키 추가. `performSave` 진입 시 localStorage 플래그도 함께 확인하고, 통과 시 즉시 `"1"`로 세팅. `clearWorkoutSession()`이 `WK_KEY` 전체를 삭제하므로 다음 운동 시작 시 자동 초기화됨
+
+---
+
 ## [1.0.23] — 2026-06-02
 
 ### 긴급 크래시 수정 (hotfix)

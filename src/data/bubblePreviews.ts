@@ -7,6 +7,8 @@ export interface BubblePreview {
   premium: boolean;
   /** true → 배경이 밝아 텍스트를 어둡게 표시 */
   darkText?: boolean;
+  /** true → 이벤트 한정 희소 말풍선 */
+  exclusive?: boolean;
 }
 
 export const BUBBLE_PREVIEWS: Record<string, BubblePreview> = {
@@ -20,6 +22,14 @@ export const BUBBLE_PREVIEWS: Record<string, BubblePreview> = {
     text: "꾸준한 30일 🏆",
     colorClass: "bg-gradient-to-r from-amber-400 to-orange-500",
     premium: false,
+  },
+
+  // ── 이벤트 한정 (희소) ─────────────────────────
+  founder_bubble: {
+    text: "창립 멤버 👑",
+    colorClass: "bg-gradient-to-r from-yellow-500 via-amber-400 to-yellow-600",
+    premium: true,
+    exclusive: true,
   },
 
   // ── 프리미엄 전용 ──────────────────────────────
