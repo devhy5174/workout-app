@@ -951,12 +951,12 @@ export default function Step() {
                   .map(([id, bubble]) => (
                     <div key={id} className="flex flex-col items-center">
                       <div
-                        className={`${bubble.colorClass} animate-premium-bubble ${bubble.darkText ? "text-stone-800" : "text-white"} text-[9px] font-extrabold px-2 py-1 rounded-full whitespace-nowrap leading-none`}
+                        className={`relative z-10 ${bubble.colorClass} animate-premium-bubble ${bubble.darkText ? "text-stone-800" : "text-white"} text-[9px] font-extrabold px-2 py-1 rounded-full whitespace-nowrap leading-none`}
                       >
                         {bubble.text}
                       </div>
                       <div
-                        className={`w-2 h-2 ${bubble.colorClass} animate-premium-bubble rotate-45 rounded-[1px] -mt-1`}
+                        className={`relative w-2 h-2 ${bubble.colorClass} rotate-45 rounded-[1px] -mt-1`}
                       />
                     </div>
                   ))}
@@ -1175,12 +1175,12 @@ export default function Step() {
                               BUBBLE_PREVIEWS[item.id] ? (
                                 <div className="flex flex-col items-center">
                                   <div
-                                    className={`${BUBBLE_PREVIEWS[item.id].colorClass} ${BUBBLE_PREVIEWS[item.id].premium ? "animate-premium-bubble" : ""} ${BUBBLE_PREVIEWS[item.id].darkText ? "text-stone-800" : "text-white"} text-[7px] font-extrabold px-1.5 py-1.5 rounded-full whitespace-nowrap leading-none`}
+                                    className={`relative z-10 ${BUBBLE_PREVIEWS[item.id].colorClass} ${BUBBLE_PREVIEWS[item.id].premium ? "animate-premium-bubble" : ""} ${BUBBLE_PREVIEWS[item.id].darkText ? "text-stone-800" : "text-white"} text-[7px] font-extrabold px-1.5 py-1.5 rounded-full whitespace-nowrap leading-none`}
                                   >
                                     {BUBBLE_PREVIEWS[item.id].text}
                                   </div>
                                   <div
-                                    className={`w-2 h-2 ${BUBBLE_PREVIEWS[item.id].colorClass} ${BUBBLE_PREVIEWS[item.id].premium ? "animate-premium-bubble" : ""} rotate-45 rounded-[1px] -mt-1`}
+                                    className={`relative w-2 h-2 ${BUBBLE_PREVIEWS[item.id].colorClass} rotate-45 rounded-[1px] -mt-1`}
                                   />
                                 </div>
                               ) : type === "postFrame" &&
