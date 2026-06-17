@@ -1,4 +1,6 @@
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { isNotificationPermissionDenied } from "../lib/fcmService";
 import { HiArrowLeft } from "react-icons/hi";
 import {
   HiBell,
@@ -142,6 +144,31 @@ function PushPermissionCard({ userId }: { userId: string | null }) {
   );
 }
 
+function NativePermissionBanner() {
+  const [denied, setDenied] = useState(false);
+
+  useEffect(() => {
+    isNotificationPermissionDenied().then(setDenied);
+  }, []);
+
+  if (!denied) return null;
+
+  return (
+    <div className="bg-red-50 border border-red-200 rounded-2xl px-4 py-3.5 flex items-start gap-3">
+      <HiBell size={18} className="text-red-400 flex-shrink-0 mt-0.5" />
+      <div>
+        <p className="text-sm font-extrabold text-red-600">기기 알림이 꺼져 있어요</p>
+        <p className="text-xs text-red-500 mt-1 leading-relaxed">
+          운동 트래커가 잠금화면에 표시되지 않아요.
+        </p>
+        <p className="text-xs text-red-400 mt-1 leading-relaxed">
+          <strong>폰 설정 → 앱 → 함께걸어요 → 알림</strong>에서 켜주세요.
+        </p>
+      </div>
+    </div>
+  );
+}
+
 export default function NotificationSettings() {
   const navigate = useNavigate();
   const { user } = useUser();
@@ -163,6 +190,9 @@ export default function NotificationSettings() {
 
       {/* 콘텐츠 */}
       <div className="flex flex-col gap-3 px-4 pb-28">
+        {/* 기기 알림 권한 거부 시 안내 */}
+        <NativePermissionBanner />
+
         {/* 기기 푸시 */}
         <PushPermissionCard userId={user?.id ?? null} />
 
