@@ -1060,6 +1060,7 @@ export default function Party() {
                 <p className="text-xs">함께 운동할 파티를 찾아보세요!</p>
               </>
             )}
+            {tab === "neighbor" && <FakePartyPreview />}
           </div>
         ) : (
           <>
@@ -1088,7 +1089,6 @@ export default function Party() {
                 }}
               />
             ))}
-            {tab === "neighbor" && <FakePartyPreview />}
           </>
         )}
       </div>

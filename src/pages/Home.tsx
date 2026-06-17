@@ -1031,9 +1031,6 @@ export default function Home() {
                               {activeMyRank.steps.toLocaleString()} 걸음
                             </p>
                           </div>
-                          <span className="text-xs text-gray-400 font-semibold">
-                            전체 {activeMyRank.total}명
-                          </span>
                         </div>
                       ) : (
                         <div className="px-5 py-3.5 text-center rounded-b-3xl bg-gray-50">
