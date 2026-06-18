@@ -135,7 +135,7 @@ const FAKE_USER_PROFILES: FakeUserProfile[] = [
   },
   {
     id: "fake-user-004",
-    nickname: "밤달리기",
+    nickname: "요요",
     character_id: c[7].id,
     character_image: c[7].image,
     activity: "runner",
@@ -154,7 +154,7 @@ const FAKE_USER_PROFILES: FakeUserProfile[] = [
   },
   {
     id: "fake-user-005",
-    nickname: "파워워킹장인",
+    nickname: "운동하자아",
     character_id: c[17].id,
     character_image: c[17].image,
     activity: "power_walker",
