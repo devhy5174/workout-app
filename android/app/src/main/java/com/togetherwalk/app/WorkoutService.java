@@ -9,6 +9,7 @@ import android.app.Service;
 import android.content.pm.ServiceInfo;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -51,6 +52,20 @@ public class WorkoutService extends Service implements SensorEventListener {
     static final String ACTION_PAUSE  = "ACTION_PAUSE";
     static final String ACTION_RESUME = "ACTION_RESUME";
     static final String ACTION_STOP   = "ACTION_STOP";
+
+    // 크래시 복구용 오프셋 Extra 키
+    static final String EXTRA_INITIAL_STEPS   = "initial_steps";
+    static final String EXTRA_INITIAL_ELAPSED = "initial_elapsed_sec";
+    static final String EXTRA_INITIAL_GPS_M   = "initial_gps_meters";
+
+    // SharedPreferences — 프로세스 종료 후에도 중단 운동 데이터 보존
+    static final String PREFS_NAME      = "wk_persisted";
+    static final String PREFS_ACTIVE    = "is_active";
+    static final String PREFS_STEPS     = "steps";
+    static final String PREFS_ELAPSED   = "elapsed";
+    static final String PREFS_GPS_KM    = "gps_km";
+    static final String PREFS_ACTIVITY  = "activity_type";
+    static final String PREFS_SAVED_AT  = "saved_at_ms";
     static final String EXTRA_ACTIVITY  = "activity_type";
     static final String EXTRA_NICKNAME  = "nickname";
     static final String EXTRA_CHARACTER = "character_id";
@@ -61,9 +76,10 @@ public class WorkoutService extends Service implements SensorEventListener {
     private SensorManager sensorManager;
     private Sensor stepSensor;
 
-    private int    baselineSteps = -1;
-    private int    currentSteps  = 0;
-    private long   startTimeMs   = 0;
+    private int    baselineSteps      = -1;
+    private int    currentSteps       = 0;
+    private int    initialStepsOffset = 0; // 크래시 복구 시 이전 걸음수 오프셋
+    private long   startTimeMs        = 0;
     private long   pausedMs      = 0;
     private long   pauseStartMs  = 0;
     private boolean isPaused     = false;
@@ -118,6 +134,8 @@ public class WorkoutService extends Service implements SensorEventListener {
 
     @Override
     public void onDestroy() {
+        // 정상 종료(ACTION_STOP) 외 OS 강제 종료 시 현재 값을 보존
+        if (isRunning) persistState();
         isRunning = false;
         try { sensorManager.unregisterListener(this); } catch (Exception ignored) {}
         stopGpsTracking();
@@ -181,14 +199,21 @@ public class WorkoutService extends Service implements SensorEventListener {
                     cachedCharBitmap = null;
                     cachedCharId     = null;
                 }
-                baselineSteps    = -1;
-                currentSteps     = 0;
-                gpsDistanceMeters = 0.0;
-                lastGpsLocation  = null;
-                gpsActive        = false;
+                clearPersistedState(); // 새 운동 시작 → 이전 중단 데이터 초기화
+                // 크래시 복구 오프셋 (일반 시작이면 0)
+                int    initSteps   = intent.getIntExtra(EXTRA_INITIAL_STEPS, 0);
+                int    initElapsed = intent.getIntExtra(EXTRA_INITIAL_ELAPSED, 0);
+                double initGpsM    = intent.getDoubleExtra(EXTRA_INITIAL_GPS_M, 0.0);
+                baselineSteps      = -1;
+                currentSteps       = 0;
+                initialStepsOffset = initSteps;
+                gpsDistanceMeters  = initGpsM;
+                lastGpsLocation    = null;
+                gpsActive          = initGpsM > 0; // 복구된 GPS가 있으면 active 표시
                 routePoints.clear();
                 lastRoutePointsJson = "[]";
-                startTimeMs   = System.currentTimeMillis();
+                // initElapsed > 0 이면 마치 그 시간 전에 시작한 것처럼 타이머 조정
+                startTimeMs   = System.currentTimeMillis() - ((long)initElapsed * 1000L);
                 pausedMs      = 0;
                 isPaused      = false;
                 isRunning     = true;
@@ -239,6 +264,7 @@ public class WorkoutService extends Service implements SensorEventListener {
                 } catch (Exception ignored) {
                     lastRoutePointsJson = "[]";
                 }
+                clearPersistedState(); // 정상 종료 → 복구 데이터 불필요
                 stopForeground(true);
                 stopSelf();
                 break;
@@ -336,7 +362,7 @@ public class WorkoutService extends Service implements SensorEventListener {
     public void onSensorChanged(SensorEvent event) {
         int total = (int) event.values[0];
         if (baselineSteps < 0) baselineSteps = total;
-        currentSteps = total - baselineSteps;
+        currentSteps = (total - baselineSteps) + initialStepsOffset;
         // 알림 업데이트는 1초 타이머에서 처리 — 센서마다 호출하면 배터리 낭비
         broadcastUpdate();
     }
@@ -350,6 +376,22 @@ public class WorkoutService extends Service implements SensorEventListener {
         bc.putExtra("gps_distance_m",  gpsDistanceMeters);
         bc.putExtra("gps_active",      gpsActive);
         sendBroadcast(bc);
+        persistState(); // 1초마다 상태 기록 — 프로세스 종료 시 복구에 사용
+    }
+
+    private void persistState() {
+        SharedPreferences.Editor ed = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).edit();
+        ed.putBoolean(PREFS_ACTIVE,   isRunning);
+        ed.putInt(PREFS_STEPS,        currentSteps);
+        ed.putInt(PREFS_ELAPSED,      getElapsedSec());
+        ed.putFloat(PREFS_GPS_KM,     (float)(gpsDistanceMeters / 1000.0));
+        ed.putString(PREFS_ACTIVITY,  activityType);
+        ed.putLong(PREFS_SAVED_AT,    System.currentTimeMillis());
+        ed.apply();
+    }
+
+    private void clearPersistedState() {
+        getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).edit().clear().apply();
     }
 
     public int getElapsedSec() {

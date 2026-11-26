@@ -32,7 +32,7 @@ import { notifyGoalReached } from "../utils/notificationTriggers";
 import { checkAndGrantEventRewards } from "../lib/eventService";
 import { BUBBLE_PREVIEWS } from "../data/bubblePreviews";
 import { HiSparkles } from "react-icons/hi2";
-import WorkoutNative, { isNative } from "../lib/workoutNative";
+import WorkoutNative, { isNative, type PersistedWorkoutState } from "../lib/workoutNative";
 import { codeToCondition } from "../hooks/useWeather";
 
 // 세션스토리지에 캐시된 날씨에서 조건 문자열 추출 (API 재호출 없음)
@@ -178,6 +178,9 @@ export default function Workout() {
 
   const [showBuddies, setShowBuddies] = useState(true);
   const [tooShort, setTooShort] = useState(false);
+  const [saveErrorMsg, setSaveErrorMsg] = useState<string | null>(null);
+  const [showRecoverModal, setShowRecoverModal] = useState(false);
+  const recoveredDataRef = useRef<{ steps: number; elapsed: number; gpsKm: number } | null>(null);
   const [savedRoutePoints, setSavedRoutePoints] = useState<
     { lat: number; lng: number; timestamp: number }[]
   >([]);
@@ -195,6 +198,9 @@ export default function Workout() {
   const [showGpsModal, setShowGpsModal] = useState(false);
 
   const isSaved = useRef(false);
+  const isSaving = useRef(false); // 저장 진행 중 guard (동시 중복 호출 방지)
+  const isCrashRecoveryRef = useRef(false); // 크래시 복구 paused 상태 — 재개 시 startWorkout 사용
+  const pendingOverridesRef = useRef<{ steps?: number; elapsed?: number; date?: string } | null>(null);
   const lastSavedAt = useRef<number>(0);
   const workoutStartDateRef = useRef<string>("");
   const wakeLockRef = useRef<WakeLockSentinel | null>(null);
@@ -345,18 +351,25 @@ export default function Workout() {
 
   // overrideSteps/overrideElapsed: handleStop에서 서비스 종료 전 가져온 정확한 값
   // overrideDate: 자정 자동 저장 시 실제 운동 날짜(어제 날짜)를 지정
+  // isRetry: 사용자가 재시도 버튼을 눌렀을 때 true — 60초 쿨타임 무시
   const performSave = async (
     overrideSteps?: number,
     overrideElapsed?: number,
     overrideDate?: string,
+    isRetry = false,
   ) => {
     if (isSaved.current) return;
     if (localStorage.getItem(WK_KEY.isSaved) === "1") return;
-    const now = Date.now();
-    if (now - lastSavedAt.current < 60_000) return;
-    isSaved.current = true;
-    lastSavedAt.current = now;
-    localStorage.setItem(WK_KEY.isSaved, "1");
+    if (isSaving.current) return; // 동시 저장 진행 중
+    if (!isRetry) {
+      const now = Date.now();
+      if (now - lastSavedAt.current < 60_000) return;
+      lastSavedAt.current = now;
+    }
+    isSaving.current = true;
+    setSaveErrorMsg(null);
+    // 재시도 시 override 값을 그대로 쓸 수 있도록 보관
+    pendingOverridesRef.current = { steps: overrideSteps, elapsed: overrideElapsed, date: overrideDate };
 
     const finalSteps = overrideSteps ?? stepsRef.current;
     const currentElapsedRef = overrideElapsed ?? elapsedRef.current;
@@ -380,7 +393,9 @@ export default function Workout() {
         "finalSteps:",
         finalSteps,
       );
+      isSaving.current = false;
       setTooShort(true);
+      setShowModal(true);
       clearWorkoutSession();
       if (user) endSession(user.id);
       return;
@@ -448,8 +463,18 @@ export default function Workout() {
 
     if (saveResult.error) {
       console.error("운동 저장 실패 — Supabase 에러:", saveResult.error);
+      isSaving.current = false; // 재시도 허용
+      setSaveErrorMsg(saveResult.error);
       return;
     }
+
+    // 저장 성공 시에만 중복 방지 플래그 설정
+    isSaved.current = true;
+    localStorage.setItem(WK_KEY.isSaved, "1");
+    isSaving.current = false;
+
+    // 완료 모달 표시 (성공 경로에서만)
+    setShowModal(true);
 
     // 이벤트 달성 자동 지급 — 신규 지급 항목 있으면 팝업
     if (user) {
@@ -466,6 +491,11 @@ export default function Workout() {
         goalValue: userGoal.goal_value,
       }).catch(() => {});
     }
+  };
+
+  const handleRetrySave = () => {
+    const o = pendingOverridesRef.current;
+    performSave(o?.steps, o?.elapsed, o?.date, true);
   };
 
   // GPS 모달 이후 공통 진행 로직 (배터리 최적화 → 운동 시작)
@@ -532,7 +562,8 @@ export default function Workout() {
           serviceElapsed = status.elapsed;
         }
       } catch (_) {}
-      WorkoutNative.stopWorkout().catch(() => {});
+      // await로 직렬화 — stopWorkout Intent 발송 후 performSave 진입
+      await WorkoutNative.stopWorkout().catch(() => {});
     } else if (estimationMode) {
       console.log("[FINAL_SNAPSHOT]", {
         serviceRunning: false,
@@ -543,7 +574,7 @@ export default function Workout() {
     }
     setState("done");
     await performSave(serviceSteps, serviceElapsed);
-    setShowModal(true);
+    // setShowModal은 performSave 성공 경로에서 호출됨
   };
 
   // 앱 재실행 시 백그라운드 경과 시간 복구 — 웹 전용 (네이티브는 getStatus()로 복구)
@@ -633,6 +664,8 @@ export default function Workout() {
     if (!isNative()) return;
 
     const restoreFromNative = async () => {
+      // 저장 진행 중이면 복구 로직을 건너뜀 — stopWorkout 직후 visibilitychange 경쟁 방지
+      if (isSaving.current) return;
       try {
         const status = await WorkoutNative.getStatus();
         if (status.isRunning) {
@@ -660,11 +693,56 @@ export default function Workout() {
           stateRef.current === "running" ||
           stateRef.current === "paused"
         ) {
-          // 서비스가 종료됐는데 React는 진행 중으로 알고 있는 경우 (알림에서 종료)
+          // 크래시 복구 paused 상태이면 서비스 미실행은 정상 — 건드리지 않음
+          if (isCrashRecoveryRef.current) return;
+          // 서비스가 종료됐는데 React가 진행 중으로 알고 있는 경우 (알림에서 종료)
           clearWorkoutSession();
           setState("idle");
+        } else {
+          // 서비스 미실행 + React idle → 중단된 세션 복구 시도
+          // 우선순위: SharedPreferences(GPS 포함) > localStorage(steps/elapsed만)
+          await tryRecoverInterruptedSession();
         }
       } catch (_) {}
+    };
+
+    const tryRecoverInterruptedSession = async () => {
+      // 이미 저장 완료된 세션은 복구하지 않음
+      if (localStorage.getItem(WK_KEY.isSaved) === "1") return;
+
+      let recovered: { steps: number; elapsed: number; gpsKm: number } | null = null;
+
+      // 1순위: SharedPreferences (GPS 거리 포함, 가장 최신)
+      try {
+        const persisted: PersistedWorkoutState = await WorkoutNative.getPersistedState();
+        if (persisted.hasData && (persisted.steps ?? 0) > 50 && (persisted.elapsed ?? 0) > 30) {
+          recovered = {
+            steps: persisted.steps ?? 0,
+            elapsed: persisted.elapsed ?? 0,
+            gpsKm: persisted.gpsKm ?? 0,
+          };
+        }
+      } catch (_) {}
+
+      // 2순위: localStorage fallback (GPS 없음)
+      if (!recovered) {
+        const lsState = localStorage.getItem(WK_KEY.state) as WorkoutState | null;
+        if (lsState === "running" || lsState === "paused") {
+          const lsSteps = Number(localStorage.getItem(WK_KEY.steps) ?? 0);
+          const lsElapsed = Number(localStorage.getItem(WK_KEY.elapsed) ?? 0);
+          if (lsSteps > 50 && lsElapsed > 30) {
+            recovered = { steps: lsSteps, elapsed: lsElapsed, gpsKm: 0 };
+          } else {
+            clearWorkoutSession();
+          }
+        }
+      }
+
+      if (recovered) {
+        // 복구 데이터를 ref에 보관 후 사용자에게 안내 모달 표시
+        recoveredDataRef.current = recovered;
+        setShowRecoverModal(true);
+      }
     };
 
     restoreFromNative();
@@ -687,6 +765,20 @@ export default function Workout() {
       // 백그라운드 복구 세션이면 서비스 이미 살아있음 — startWorkout 생략
       if (isRestoredSessionRef.current) {
         isRestoredSessionRef.current = false;
+        return;
+      }
+      // 크래시 복구 후 재개: 서비스가 죽어있으므로 이전 기록을 오프셋으로 넘겨 startWorkout
+      if (prev === "paused" && isCrashRecoveryRef.current) {
+        isCrashRecoveryRef.current = false;
+        WorkoutNative.startWorkout({
+          activityType: selectedActivityType?.type ?? "walker",
+          nickname: userProfile?.nickname ?? "",
+          characterId: userProfile?.character_id ?? "",
+          theme,
+          initialSteps: stepsRef.current,
+          initialElapsedSec: elapsedRef.current,
+          initialGpsKm: gpsDistanceRef.current > 0 ? gpsDistanceRef.current : undefined,
+        }).catch(() => {});
         return;
       }
       // paused → running: ACTION_RESUME (이 경로에서 startWorkout 하면 카운터 초기화됨)
@@ -1440,6 +1532,87 @@ export default function Workout() {
             setShowBatteryGuide(false);
             setState("running");
           }}
+        />
+      )}
+
+      {/* 크래시 복구 안내 — 앱 강제 종료 후 재실행 시 */}
+      {showRecoverModal && recoveredDataRef.current && (
+        <AlertModal
+          icon={IoFootsteps}
+          iconClass="text-primary"
+          title="이전 운동을 이어서 할까요?"
+          message={
+            <div className="space-y-2 text-center">
+              <p className="text-gray-600">
+                오류로 앱이 종료되었지만
+                <br />
+                운동 기록이 보존되어 있어요.
+              </p>
+              <p className="font-extrabold text-gray-800">
+                {recoveredDataRef.current.steps.toLocaleString()}보
+                {" · "}
+                {formatTime(recoveredDataRef.current.elapsed)}
+                {recoveredDataRef.current.gpsKm > 0 &&
+                  ` · ${recoveredDataRef.current.gpsKm.toFixed(2)}km`}
+              </p>
+              <p className="text-xs text-gray-400">
+                이어서 진행하면 중단된 시점부터 계속 기록돼요.
+              </p>
+            </div>
+          }
+          confirmLabel="이어서 진행하기"
+          onConfirm={() => {
+            setShowRecoverModal(false);
+            const d = recoveredDataRef.current!;
+            setSteps(d.steps);
+            stepsRef.current = d.steps;
+            setElapsed(d.elapsed);
+            elapsedRef.current = d.elapsed;
+            if (d.gpsKm > 0) {
+              setGpsDistance(d.gpsKm);
+              gpsDistanceRef.current = d.gpsKm;
+              setDistanceSource("gps");
+            }
+            // 크래시 복구 paused: 재개 시 startWorkout에 오프셋 전달
+            isCrashRecoveryRef.current = true;
+            isRestoredSessionRef.current = true; // pauseWorkout 호출 방지
+            setState("paused");
+          }}
+          cancelLabel="버리기"
+          onCancel={() => {
+            setShowRecoverModal(false);
+            clearWorkoutSession();
+          }}
+          zClass="z-[60]"
+        />
+      )}
+
+      {/* 운동 기록 저장 실패 — 재시도 모달 */}
+      {saveErrorMsg !== null && (
+        <AlertModal
+          icon={MdBatteryAlert}
+          iconClass="text-red-400"
+          title="운동 기록 저장 실패"
+          message={
+            <div className="space-y-2 text-center">
+              <p>
+                네트워크 오류로 운동 기록이 저장되지 않았어요.
+                <br />
+                운동 데이터는 보존되어 있으니 재시도해 주세요.
+              </p>
+              <p className="text-xs text-gray-400 pt-1">
+                Wi-Fi나 데이터 연결을 확인한 뒤 재시도해 주세요.
+              </p>
+            </div>
+          }
+          confirmLabel="재시도"
+          onConfirm={handleRetrySave}
+          cancelLabel="저장 건너뛰기"
+          onCancel={() => {
+            setSaveErrorMsg(null);
+            clearWorkoutSession();
+          }}
+          zClass="z-[60]"
         />
       )}
 

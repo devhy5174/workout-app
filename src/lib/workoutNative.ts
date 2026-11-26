@@ -10,6 +10,15 @@ export interface WorkoutStatus {
   gpsActive?: boolean;
 }
 
+export interface PersistedWorkoutState {
+  hasData: boolean;
+  steps?: number;
+  elapsed?: number;
+  gpsKm?: number;
+  activityType?: string;
+  savedAt?: number;
+}
+
 export interface WorkoutPlugin {
   isBatteryOptimizationExcluded(): Promise<{ excluded: boolean }>;
   requestBatteryOptimizationExclusion(): Promise<void>;
@@ -22,12 +31,16 @@ export interface WorkoutPlugin {
     nickname: string;
     characterId: string;
     theme?: string;
+    initialSteps?: number;      // 크래시 복구 시 이전 걸음수 오프셋
+    initialElapsedSec?: number; // 크래시 복구 시 이전 경과 시간 오프셋
+    initialGpsKm?: number;      // 크래시 복구 시 이전 GPS 거리 오프셋
   }): Promise<void>;
   pauseWorkout(): Promise<void>;
   resumeWorkout(): Promise<void>;
   stopWorkout(): Promise<void>;
   getRoutePoints(): Promise<{ json: string }>;
   getStatus(): Promise<WorkoutStatus>;
+  getPersistedState(): Promise<PersistedWorkoutState>;
   addListener(
     eventName: "workoutUpdate",
     callback: (data: WorkoutUpdate) => void,

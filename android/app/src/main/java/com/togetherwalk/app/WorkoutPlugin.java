@@ -142,6 +142,10 @@ public class WorkoutPlugin extends Plugin {
         String nickname     = call.getString("nickname", "");
         String characterId  = call.getString("characterId", "");
         String theme        = call.getString("theme", "energy");
+        // 크래시 복구 오프셋 (없으면 0)
+        int    initialSteps   = call.getInt("initialSteps", 0);
+        int    initialElapsed = call.getInt("initialElapsedSec", 0);
+        double initialGpsKm   = call.getDouble("initialGpsKm", 0.0);
         currentActivityType = activityType;
 
         Intent intent = new Intent(getContext(), WorkoutService.class);
@@ -150,6 +154,9 @@ public class WorkoutPlugin extends Plugin {
         intent.putExtra(WorkoutService.EXTRA_NICKNAME, nickname);
         intent.putExtra(WorkoutService.EXTRA_CHARACTER, characterId);
         intent.putExtra(WorkoutService.EXTRA_THEME, theme);
+        intent.putExtra(WorkoutService.EXTRA_INITIAL_STEPS,   initialSteps);
+        intent.putExtra(WorkoutService.EXTRA_INITIAL_ELAPSED, initialElapsed);
+        intent.putExtra(WorkoutService.EXTRA_INITIAL_GPS_M,   initialGpsKm * 1000.0);
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             getContext().startForegroundService(intent);
@@ -181,6 +188,34 @@ public class WorkoutPlugin extends Plugin {
     public void getRoutePoints(PluginCall call) {
         JSObject result = new JSObject();
         result.put("json", WorkoutService.getStaticRoutePointsJson());
+        call.resolve(result);
+    }
+
+    @PluginMethod
+    public void getPersistedState(PluginCall call) {
+        android.content.SharedPreferences prefs =
+            getContext().getSharedPreferences(WorkoutService.PREFS_NAME, Context.MODE_PRIVATE);
+        boolean isActive = prefs.getBoolean(WorkoutService.PREFS_ACTIVE, false);
+        JSObject result = new JSObject();
+        if (!isActive) {
+            result.put("hasData", false);
+            call.resolve(result);
+            return;
+        }
+        long savedAt = prefs.getLong(WorkoutService.PREFS_SAVED_AT, 0L);
+        // 16시간 경과 시 stale 데이터로 간주 — 하루 활동 시간(기상~취침) 기준
+        if (System.currentTimeMillis() - savedAt > 16L * 60 * 60 * 1000) {
+            prefs.edit().clear().apply();
+            result.put("hasData", false);
+            call.resolve(result);
+            return;
+        }
+        result.put("hasData",      true);
+        result.put("steps",        prefs.getInt(WorkoutService.PREFS_STEPS, 0));
+        result.put("elapsed",      prefs.getInt(WorkoutService.PREFS_ELAPSED, 0));
+        result.put("gpsKm",        (double) prefs.getFloat(WorkoutService.PREFS_GPS_KM, 0f));
+        result.put("activityType", prefs.getString(WorkoutService.PREFS_ACTIVITY, "walker"));
+        result.put("savedAt",      savedAt);
         call.resolve(result);
     }
 

@@ -1,5 +1,49 @@
 # Changelog
 
+## [1.0.26] — 2026-11-26
+
+### 버그 수정
+
+#### 운동 기록 간헐적 미저장 문제 전면 수정
+
+장시간 운동 후 완료 버튼을 눌렀을 때 기록이 사라지는 문제를 원인별로 분리해 수정했습니다.
+
+**[B-1] 저장 성공 전 중복 방지 플래그 선설정 (`Workout.tsx`)**
+- 기존: `isSaved` 플래그를 Supabase 저장 호출 전에 설정 → 저장 실패 시 재시도 영구 차단
+- 수정: `isSaved` 및 `localStorage.wk_is_saved` 플래그를 저장 성공 콜백 이후로 이동
+- 저장 진행 중 동시 호출 방지용 `isSaving` ref 분리
+
+**[B-2] 저장 실패 시 사용자 알림 없음 (`Workout.tsx`)**
+- 저장 실패 시 `AlertModal`로 "운동 기록 저장 실패" 안내
+- **재시도** 버튼: 이전 steps/elapsed/date 오버라이드 값 보관 후 재호출 (60초 쿨타임 무시)
+- **저장 건너뛰기** 버튼: 에러 상태 해제 + 세션 정리
+- 완료 모달(`setShowModal`)을 저장 성공 경로에서만 표시하도록 이동
+
+**[B-3] 네트워크 오류 단일 시도 (`workoutService.ts`)**
+- 최대 2회 자동 재시도 (1.5초 간격 exponential back-off)
+- 재시도 제외: GPS 컬럼 미지원(fallback 경로), JWT 만료, 권한 오류, 중복 삽입
+
+**[A-1] WorkoutService 프로세스 종료 시 데이터 소실 (`WorkoutService.java`)**
+- 운동 중 1초마다 `SharedPreferences`에 steps/elapsed/GPS/activityType 저장
+- `onDestroy()` 진입 시 최종값 긴급 저장 (OS 강제 종료 대응)
+- 정상 완료(`ACTION_STOP`) 및 새 운동 시작(`ACTION_START`) 시 SharedPreferences 초기화
+- 유효 시간: **16시간** (기상~취침 한 활동일 기준, 초과 시 stale 처리)
+
+**[A-2] 크래시 후 재실행 시 중단 세션 복구 (`Workout.tsx`, `WorkoutPlugin.java`, `workoutNative.ts`)**
+- 앱 재실행 시 ForegroundService 미실행 + localStorage/SharedPreferences에 유효 운동 데이터 감지 시 복구 모달 표시
+  - 복구 우선순위: SharedPreferences(GPS 포함) → localStorage fallback
+  - 모달: "오류로 앱이 종료되었지만 운동 기록이 보존되어 있어요 — 이어서 진행하기 / 버리기"
+- **이어서 진행하기**: 일시정지 상태로 복구 → 재개 시 `startWorkout`에 `initialSteps / initialElapsedSec / initialGpsKm` 오프셋 전달
+  - Native 서비스: 걸음수 센서에 오프셋 합산, 타이머를 initElapsed 초 전에 시작한 것처럼 조정, GPS도 이전 거리부터 누적
+- `isCrashRecoveryRef`로 정상 세션 복구(resumeWorkout)와 크래시 복구(startWorkout with offset) 경로 분리
+
+**[A-3] `stopWorkout` fire-and-forget 경쟁 조건 (`Workout.tsx`)**
+- `handleStop`에서 `WorkoutNative.stopWorkout()`을 `await`로 직렬화
+- `restoreFromNative` 진입 시 `isSaving.current` 체크 → 저장 중이면 복구 로직 건너뜀 (visibilitychange 경쟁 방지)
+- 크래시 복구 paused 상태에서 앱 전환 시 세션이 초기화되는 버그 수정 (`isCrashRecoveryRef` 가드)
+
+---
+
 ## [1.0.24] — 2026-06-17
 
 ### 기능 추가

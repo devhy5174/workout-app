@@ -63,21 +63,43 @@ export type UserGoal = {
   created_at?: string;
 };
 
+const SAVE_MAX_RETRIES = 2;
+const SAVE_RETRY_DELAY_MS = 1500;
+
+// 재시도 대상이 아닌 오류 코드 (인증·권한·스키마 오류는 재시도 무의미)
+function isNonRetryableError(code: string | undefined, msg: string): boolean {
+  if (!code) return false;
+  if (code === "42703" || msg.includes("column")) return true;  // GPS 컬럼 없음 → fallback 경로
+  if (code === "PGRST301") return true;  // JWT expired
+  if (code === "42501") return true;     // insufficient_privilege
+  if (code === "23505") return true;     // unique_violation (중복 삽입)
+  return false;
+}
+
 export async function saveWorkoutRecord(
   record: Omit<WorkoutRecord, "id" | "user_id" | "created_at">,
   userId: string,
 ): Promise<{ data: WorkoutRecord | null; error: string | null }> {
-  const { data, error } = await supabase
-    .from("workout_history")
-    .insert({ ...record, user_id: userId })
-    .select()
-    .single();
+  for (let attempt = 0; attempt <= SAVE_MAX_RETRIES; attempt++) {
+    if (attempt > 0) {
+      await new Promise<void>((r) => setTimeout(r, SAVE_RETRY_DELAY_MS * attempt));
+      console.warn(`[workout_history] insert 재시도 (${attempt}/${SAVE_MAX_RETRIES})`);
+    }
 
-  if (error) {
-    // GPS 컬럼이 아직 없으면(마이그레이션 미실행) GPS 필드 제외 후 재시도
-    // PostgreSQL undefined_column = 42703, Supabase REST도 동일 code 반환
+    const { data, error } = await supabase
+      .from("workout_history")
+      .insert({ ...record, user_id: userId })
+      .select()
+      .single();
+
+    if (!error) {
+      console.log("[workout_history] 저장 성공:", data);
+      return { data: data as WorkoutRecord, error: null };
+    }
+
+    // GPS 컬럼 미지원: fallback insert (재시도 없음)
     if (error.code === "42703" || error.message?.includes("column")) {
-      console.warn("[workout_history] GPS 컬럼 없음 — supabase/gps_columns.sql 실행 필요. GPS 필드 제외 후 재시도.");
+      console.warn("[workout_history] GPS 컬럼 없음 — GPS 필드 제외 후 fallback 저장.");
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { gps_distance: _g, distance_source: _s, avg_pace: _p, route_points: _r, weather_condition: _w, ...fallback } = record;
       const { data: fd, error: fe } = await supabase
@@ -93,12 +115,20 @@ export async function saveWorkoutRecord(
       return { data: fd as WorkoutRecord, error: null };
     }
 
-    console.error("[workout_history] insert 실패:", error.code, error.message, error.details);
-    return { data: null, error: error.message };
+    // 인증·권한·중복 오류: 재시도 의미 없음
+    if (isNonRetryableError(error.code, error.message ?? "")) {
+      console.error("[workout_history] insert 실패 (재시도 불가):", error.code, error.message);
+      return { data: null, error: error.message };
+    }
+
+    // 마지막 시도 실패
+    if (attempt === SAVE_MAX_RETRIES) {
+      console.error("[workout_history] insert 실패 (재시도 초과):", error.code, error.message, error.details);
+      return { data: null, error: error.message };
+    }
   }
 
-  console.log("[workout_history] 저장 성공:", data);
-  return { data: data as WorkoutRecord, error: null };
+  return { data: null, error: "알 수 없는 저장 오류" };
 }
 
 export async function fetchWorkoutHistory(
